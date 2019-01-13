@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ListEntry.cpp" />
+    <ClCompile Include="ListEntryGui.cpp" />
+    <ClCompile Include="Slider.cpp" />
+    <ClCompile Include="SliderGui.cpp" />
+    <ClCompile Include="..\se_sdk3\mp_sdk_audio.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_gui.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\smart_audio_pin.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\xplatform_modifier_keys.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\it_enum_list.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="Scope3.cpp" />
+    <ClCompile Include="Scope3Gui.cpp" />
+    <ClCompile Include="TriggerScope.cpp" />
+    <ClCompile Include="..\se_sdk3\TimerManager.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\ImageCache.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="Slider2.cpp" />
+    <ClCompile Include="Slider2Gui.cpp" />
+    <ClCompile Include="..\shared\FontCache.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\keyboard2\keyboard.cpp" />
+    <ClCompile Include="Keyboard2Gui.cpp" />
+    <ClCompile Include="..\sharedLegacyWidgets\BitmapWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sharedLegacyWidgets\EditWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sharedLegacyWidgets\ListWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sharedLegacyWidgets\TextWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sharedLegacyWidgets\Widget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="TextEntry.cpp" />
+    <ClCompile Include="TextEntryGui.cpp" />
+    <ClCompile Include="ClassicControlGuiBase.cpp" />
+    <ClCompile Include="..\sharedLegacyWidgets\TextEditWidget.cpp">
+      <Filter>widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\ImageMetadata.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="FreqAnalyser.cpp" />
+    <ClCompile Include="FreqAnalyserGui.cpp" />
+    <ClCompile Include="..\shared\real_fft.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="VoltMeter.cpp" />
+    <ClCompile Include="VoltMeterGui.cpp" />
+    <ClCompile Include="Waveshaper3Xp.cpp" />
+    <ClCompile Include="Waveshaper3XpGui.cpp" />
+    <ClCompile Include="..\shared\expression_evaluate.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="MidiMonitor.cpp" />
+    <ClCompile Include="MidiMonitorGui.cpp" />
+    <ClCompile Include="KeyboardMidi.cpp" />
+    <ClCompile Include="KeyboardMidiGui.cpp" />
+    <ClCompile Include="ImpulseResponse.cpp" />
+    <ClCompile Include="ImpulseResponseGui.cpp" />
+    <ClCompile Include="Monitor.cpp" />
+    <ClCompile Include="MonitorGui.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ListEntry.h" />
+    <ClInclude Include="ListEntryGui.h" />
+    <ClInclude Include="Slider.h" />
+    <ClInclude Include="SliderGui.h" />
+    <ClInclude Include="resource.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_audio.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\xplatform_modifier_keys.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\smart_audio_pin.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\it_enum_list.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="Scope3.h" />
+    <ClInclude Include="Scope3Gui.h" />
+    <ClInclude Include="TriggerScope.h" />
+    <ClInclude Include="..\se_sdk3\TimerManager.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\ImageCache.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="Slider2.h" />
+    <ClInclude Include="Slider2Gui.h" />
+    <ClInclude Include="..\shared\FontCache.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing_API.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\keyboard2\keyboard.h" />
+    <ClInclude Include="Keyboard2Gui.h" />
+    <ClInclude Include="..\sharedLegacyWidgets\BitmapWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\EditWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\ListWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\TextWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\Widget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\WidgetHost.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\RotarySwitchWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="TextEntry.h" />
+    <ClInclude Include="TextEntryGui.h" />
+    <ClInclude Include="ClassicControlGuiBase.h" />
+    <ClInclude Include="..\sharedLegacyWidgets\TextEditWidget.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\ImageMetadata.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="FreqAnalyser.h" />
+    <ClInclude Include="FreqAnalyserGui.h" />
+    <ClInclude Include="..\shared\real_fft.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="VoltMeter.h" />
+    <ClInclude Include="VoltMeterGui.h" />
+    <ClInclude Include="..\shared\skinBitmap.h">
+      <Filter>widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui2.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\expression_evaluate.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\SubControlBase.h" />
+    <ClInclude Include="DrawKeyboard.h" />
+    <ClInclude Include="MidiMonitor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ControlsXp.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="widgets">
+      <UniqueIdentifier>{39e39b68-3c99-4139-98ed-4490831128fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{6a3de397-3953-4336-9de5-49f4715082ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{592c5b52-d463-48be-8927-d6baff0ed6c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ControlsXp.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

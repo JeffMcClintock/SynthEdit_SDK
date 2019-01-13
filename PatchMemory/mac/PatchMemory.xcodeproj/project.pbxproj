@@ -1,0 +1,461 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C078AD419BE94CB00E1AD4E /* PatchMemory.sem in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D576316048677EA00EA77CD /* PatchMemory.sem */; };
+		8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */; };
+		8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8D5B49A704867FD3000E48DA /* InfoPlist.strings */; };
+		D54FC9D12085AF8800CAE344 /* it_enum_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D54FC9CE2085AF8800CAE344 /* it_enum_list.cpp */; };
+		D5A2F7FD21C0844C00A93F36 /* PatchBrowserGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5A1A26321924283005B65EA /* PatchBrowserGui.cpp */; };
+		D5A2F7FF21C085A300A93F36 /* FileFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5A1A266219242AE005B65EA /* FileFinder.cpp */; };
+		D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */ = {isa = PBXBuildFile; fileRef = D5C87A3F17D6B09100ED3316 /* PkgInfo */; };
+		D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */; };
+		D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */; };
+		D5E7B70C17D80C49005D53E6 /* PatchMemoryFloat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B70617D80C49005D53E6 /* PatchMemoryFloat.cpp */; };
+		D5E7B75117D80DA7005D53E6 /* PatchInfoGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B71717D80DA7005D53E6 /* PatchInfoGui.cpp */; };
+		D5E7B75217D80DA7005D53E6 /* PatchMemory.xml in Resources */ = {isa = PBXBuildFile; fileRef = D5E7B71917D80DA7005D53E6 /* PatchMemory.xml */; };
+		D5E7B75317D80DA7005D53E6 /* PatchMemoryBlob.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B71A17D80DA7005D53E6 /* PatchMemoryBlob.cpp */; };
+		D5E7B75417D80DA7005D53E6 /* PatchMemoryBlobGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B71C17D80DA7005D53E6 /* PatchMemoryBlobGui.cpp */; };
+		D5E7B75617D80DA7005D53E6 /* PatchMemoryBlobOutGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B72017D80DA7005D53E6 /* PatchMemoryBlobOutGui.cpp */; };
+		D5E7B75717D80DA7005D53E6 /* PatchMemoryBool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B72217D80DA7005D53E6 /* PatchMemoryBool.cpp */; };
+		D5E7B75817D80DA7005D53E6 /* PatchMemoryBoolGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B72417D80DA7005D53E6 /* PatchMemoryBoolGui.cpp */; };
+		D5E7B75B17D80DA7005D53E6 /* PatchMemoryBoolOutGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B72A17D80DA7005D53E6 /* PatchMemoryBoolOutGui.cpp */; };
+		D5E7B75D17D80DA7005D53E6 /* PatchMemoryfloatGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B72D17D80DA7005D53E6 /* PatchMemoryfloatGui.cpp */; };
+		D5E7B76017D80DA7005D53E6 /* PatchMemoryFloatOutGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B73217D80DA7005D53E6 /* PatchMemoryFloatOutGui.cpp */; };
+		D5E7B76117D80DA7005D53E6 /* PatchmemoryGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B73417D80DA7005D53E6 /* PatchmemoryGui.cpp */; };
+		D5E7B76217D80DA7005D53E6 /* PatchMemoryInt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B73617D80DA7005D53E6 /* PatchMemoryInt.cpp */; };
+		D5E7B76417D80DA7005D53E6 /* PatchMemoryIntGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B73917D80DA7005D53E6 /* PatchMemoryIntGui.cpp */; };
+		D5E7B76717D80DA7005D53E6 /* PatchMemoryIntOutGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B73E17D80DA7005D53E6 /* PatchMemoryIntOutGui.cpp */; };
+		D5E7B76817D80DA7005D53E6 /* PatchMemoryList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B74017D80DA7005D53E6 /* PatchMemoryList.cpp */; };
+		D5E7B76A17D80DA7005D53E6 /* PatchMemoryListGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B74317D80DA7005D53E6 /* PatchMemoryListGui.cpp */; };
+		D5E7B76B17D80DA7005D53E6 /* PatchMemoryText.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B74517D80DA7005D53E6 /* PatchMemoryText.cpp */; };
+		D5E7B76D17D80DA7005D53E6 /* PatchMemoryTextGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B74917D80DA7005D53E6 /* PatchMemoryTextGui.cpp */; };
+		D5E7B77017D80DA7005D53E6 /* PatchMemoryTextOutGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B74E17D80DA7005D53E6 /* PatchMemoryTextOutGui.cpp */; };
+		D5E7B77517D80DE1005D53E6 /* mp_sdk_gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5E7B77317D80DE1005D53E6 /* mp_sdk_gui.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0C56D7381BB3882C00C27F86 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0C56D7341BB3882C00C27F86 /* SubControlsXp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8D576316048677EA00EA77CD;
+			remoteInfo = TextEntry4;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0C078AD319BE94BE00E1AD4E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/../../../../SynthEdit/mac_assets/modules";
+			dstSubfolderSpec = 0;
+			files = (
+				0C078AD419BE94CB00E1AD4E /* PatchMemory.sem in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		0C56D7341BB3882C00C27F86 /* SubControlsXp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SubControlsXp.xcodeproj; path = ../../SubControlsXp/mac/SubControlsXp.xcodeproj; sourceTree = "<group>"; };
+		8D576316048677EA00EA77CD /* PatchMemory.sem */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PatchMemory.sem; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D576317048677EA00EA77CD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D54FC9CE2085AF8800CAE344 /* it_enum_list.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = it_enum_list.cpp; path = ../../se_sdk3/it_enum_list.cpp; sourceTree = "<group>"; };
+		D54FC9D02085AF8800CAE344 /* it_enum_list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = it_enum_list.h; path = ../../se_sdk3/it_enum_list.h; sourceTree = "<group>"; };
+		D5A1A26321924283005B65EA /* PatchBrowserGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchBrowserGui.cpp; path = ../PatchBrowserGui.cpp; sourceTree = "<group>"; };
+		D5A1A266219242AE005B65EA /* FileFinder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FileFinder.cpp; path = ../../shared/FileFinder.cpp; sourceTree = "<group>"; };
+		D5A1A267219242AE005B65EA /* FileFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileFinder.h; path = ../../shared/FileFinder.h; sourceTree = "<group>"; };
+		D5C87A3F17D6B09100ED3316 /* PkgInfo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PkgInfo; sourceTree = "<group>"; };
+		D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_audio.cpp; path = ../../se_sdk3/mp_sdk_audio.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_audio.h; path = ../../se_sdk3/mp_sdk_audio.h; sourceTree = SOURCE_ROOT; };
+		D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_common.cpp; path = ../../se_sdk3/mp_sdk_common.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_common.h; path = ../../se_sdk3/mp_sdk_common.h; sourceTree = SOURCE_ROOT; };
+		D5E7B70617D80C49005D53E6 /* PatchMemoryFloat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryFloat.cpp; path = ../PatchMemoryFloat.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B70717D80C49005D53E6 /* PatchMemoryFloat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryFloat.h; path = ../PatchMemoryFloat.h; sourceTree = SOURCE_ROOT; };
+		D5E7B71717D80DA7005D53E6 /* PatchInfoGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchInfoGui.cpp; path = ../PatchInfoGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B71817D80DA7005D53E6 /* PatchInfoGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchInfoGui.h; path = ../PatchInfoGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B71917D80DA7005D53E6 /* PatchMemory.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = PatchMemory.xml; path = ../PatchMemory.xml; sourceTree = SOURCE_ROOT; };
+		D5E7B71A17D80DA7005D53E6 /* PatchMemoryBlob.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBlob.cpp; path = ../PatchMemoryBlob.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B71B17D80DA7005D53E6 /* PatchMemoryBlob.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBlob.h; path = ../PatchMemoryBlob.h; sourceTree = SOURCE_ROOT; };
+		D5E7B71C17D80DA7005D53E6 /* PatchMemoryBlobGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBlobGui.cpp; path = ../PatchMemoryBlobGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B71D17D80DA7005D53E6 /* PatchMemoryBlobGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBlobGui.h; path = ../PatchMemoryBlobGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B72017D80DA7005D53E6 /* PatchMemoryBlobOutGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBlobOutGui.cpp; path = ../PatchMemoryBlobOutGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B72117D80DA7005D53E6 /* PatchMemoryBlobOutGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBlobOutGui.h; path = ../PatchMemoryBlobOutGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B72217D80DA7005D53E6 /* PatchMemoryBool.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBool.cpp; path = ../PatchMemoryBool.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B72317D80DA7005D53E6 /* PatchMemoryBool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBool.h; path = ../PatchMemoryBool.h; sourceTree = SOURCE_ROOT; };
+		D5E7B72417D80DA7005D53E6 /* PatchMemoryBoolGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBoolGui.cpp; path = ../PatchMemoryBoolGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B72517D80DA7005D53E6 /* PatchMemoryBoolGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBoolGui.h; path = ../PatchMemoryBoolGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B72A17D80DA7005D53E6 /* PatchMemoryBoolOutGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryBoolOutGui.cpp; path = ../PatchMemoryBoolOutGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B72B17D80DA7005D53E6 /* PatchMemoryBoolOutGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryBoolOutGui.h; path = ../PatchMemoryBoolOutGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B72D17D80DA7005D53E6 /* PatchMemoryfloatGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryfloatGui.cpp; path = ../PatchMemoryfloatGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B72E17D80DA7005D53E6 /* PatchMemoryFloatGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryFloatGui.h; path = ../PatchMemoryFloatGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B73217D80DA7005D53E6 /* PatchMemoryFloatOutGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryFloatOutGui.cpp; path = ../PatchMemoryFloatOutGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B73317D80DA7005D53E6 /* PatchMemoryFloatOutGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryFloatOutGui.h; path = ../PatchMemoryFloatOutGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B73417D80DA7005D53E6 /* PatchmemoryGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchmemoryGui.cpp; path = ../PatchmemoryGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B73517D80DA7005D53E6 /* PatchmemoryGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchmemoryGui.h; path = ../PatchmemoryGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B73617D80DA7005D53E6 /* PatchMemoryInt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryInt.cpp; path = ../PatchMemoryInt.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B73717D80DA7005D53E6 /* PatchMemoryInt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryInt.h; path = ../PatchMemoryInt.h; sourceTree = SOURCE_ROOT; };
+		D5E7B73917D80DA7005D53E6 /* PatchMemoryIntGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryIntGui.cpp; path = ../PatchMemoryIntGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B73A17D80DA7005D53E6 /* PatchMemoryIntGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryIntGui.h; path = ../PatchMemoryIntGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B73E17D80DA7005D53E6 /* PatchMemoryIntOutGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryIntOutGui.cpp; path = ../PatchMemoryIntOutGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B73F17D80DA7005D53E6 /* PatchMemoryIntOutGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryIntOutGui.h; path = ../PatchMemoryIntOutGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B74017D80DA7005D53E6 /* PatchMemoryList.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryList.cpp; path = ../PatchMemoryList.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B74117D80DA7005D53E6 /* PatchMemoryList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryList.h; path = ../PatchMemoryList.h; sourceTree = SOURCE_ROOT; };
+		D5E7B74317D80DA7005D53E6 /* PatchMemoryListGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryListGui.cpp; path = ../PatchMemoryListGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B74417D80DA7005D53E6 /* PatchMemoryListGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryListGui.h; path = ../PatchMemoryListGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B74517D80DA7005D53E6 /* PatchMemoryText.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryText.cpp; path = ../PatchMemoryText.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B74617D80DA7005D53E6 /* PatchMemoryText.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryText.h; path = ../PatchMemoryText.h; sourceTree = SOURCE_ROOT; };
+		D5E7B74917D80DA7005D53E6 /* PatchMemoryTextGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryTextGui.cpp; path = ../PatchMemoryTextGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B74A17D80DA7005D53E6 /* PatchMemoryTextGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryTextGui.h; path = ../PatchMemoryTextGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B74E17D80DA7005D53E6 /* PatchMemoryTextOutGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PatchMemoryTextOutGui.cpp; path = ../PatchMemoryTextOutGui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B74F17D80DA7005D53E6 /* PatchMemoryTextOutGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PatchMemoryTextOutGui.h; path = ../PatchMemoryTextOutGui.h; sourceTree = SOURCE_ROOT; };
+		D5E7B77317D80DE1005D53E6 /* mp_sdk_gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui.cpp; path = ../../se_sdk3/mp_sdk_gui.cpp; sourceTree = SOURCE_ROOT; };
+		D5E7B77417D80DE1005D53E6 /* mp_sdk_gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui.h; path = ../../se_sdk3/mp_sdk_gui.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D576313048677EA00EA77CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				D5C87A3F17D6B09100ED3316 /* PkgInfo */,
+				19C28FB6FE9D52B211CA2CBB /* Products */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				D5C87A4F17D6B11000ED3316 /* SDK */,
+				08FB77AFFE84173DC02AAC07 /* Source */,
+				0C56D7341BB3882C00C27F86 /* SubControlsXp.xcodeproj */,
+			);
+			name = Untitled;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D5E7B71917D80DA7005D53E6 /* PatchMemory.xml */,
+				8D576317048677EA00EA77CD /* Info.plist */,
+				8D5B49A704867FD3000E48DA /* InfoPlist.strings */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77AFFE84173DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D5A1A26321924283005B65EA /* PatchBrowserGui.cpp */,
+				D5E7B71717D80DA7005D53E6 /* PatchInfoGui.cpp */,
+				D5E7B71817D80DA7005D53E6 /* PatchInfoGui.h */,
+				D5E7B71A17D80DA7005D53E6 /* PatchMemoryBlob.cpp */,
+				D5E7B71B17D80DA7005D53E6 /* PatchMemoryBlob.h */,
+				D5E7B71C17D80DA7005D53E6 /* PatchMemoryBlobGui.cpp */,
+				D5E7B71D17D80DA7005D53E6 /* PatchMemoryBlobGui.h */,
+				D5E7B72017D80DA7005D53E6 /* PatchMemoryBlobOutGui.cpp */,
+				D5E7B72117D80DA7005D53E6 /* PatchMemoryBlobOutGui.h */,
+				D5E7B72217D80DA7005D53E6 /* PatchMemoryBool.cpp */,
+				D5E7B72317D80DA7005D53E6 /* PatchMemoryBool.h */,
+				D5E7B72417D80DA7005D53E6 /* PatchMemoryBoolGui.cpp */,
+				D5E7B72517D80DA7005D53E6 /* PatchMemoryBoolGui.h */,
+				D5E7B72A17D80DA7005D53E6 /* PatchMemoryBoolOutGui.cpp */,
+				D5E7B72B17D80DA7005D53E6 /* PatchMemoryBoolOutGui.h */,
+				D5E7B72D17D80DA7005D53E6 /* PatchMemoryfloatGui.cpp */,
+				D5E7B72E17D80DA7005D53E6 /* PatchMemoryFloatGui.h */,
+				D5E7B73217D80DA7005D53E6 /* PatchMemoryFloatOutGui.cpp */,
+				D5E7B73317D80DA7005D53E6 /* PatchMemoryFloatOutGui.h */,
+				D5E7B73417D80DA7005D53E6 /* PatchmemoryGui.cpp */,
+				D5E7B73517D80DA7005D53E6 /* PatchmemoryGui.h */,
+				D5E7B73617D80DA7005D53E6 /* PatchMemoryInt.cpp */,
+				D5E7B73717D80DA7005D53E6 /* PatchMemoryInt.h */,
+				D5E7B73917D80DA7005D53E6 /* PatchMemoryIntGui.cpp */,
+				D5E7B73A17D80DA7005D53E6 /* PatchMemoryIntGui.h */,
+				D5E7B73E17D80DA7005D53E6 /* PatchMemoryIntOutGui.cpp */,
+				D5E7B73F17D80DA7005D53E6 /* PatchMemoryIntOutGui.h */,
+				D5E7B74017D80DA7005D53E6 /* PatchMemoryList.cpp */,
+				D5E7B74117D80DA7005D53E6 /* PatchMemoryList.h */,
+				D5E7B74317D80DA7005D53E6 /* PatchMemoryListGui.cpp */,
+				D5E7B74417D80DA7005D53E6 /* PatchMemoryListGui.h */,
+				D5E7B74517D80DA7005D53E6 /* PatchMemoryText.cpp */,
+				D5E7B74617D80DA7005D53E6 /* PatchMemoryText.h */,
+				D5E7B74917D80DA7005D53E6 /* PatchMemoryTextGui.cpp */,
+				D5E7B74A17D80DA7005D53E6 /* PatchMemoryTextGui.h */,
+				D5E7B74E17D80DA7005D53E6 /* PatchMemoryTextOutGui.cpp */,
+				D5E7B74F17D80DA7005D53E6 /* PatchMemoryTextOutGui.h */,
+				D5E7B70617D80C49005D53E6 /* PatchMemoryFloat.cpp */,
+				D5E7B70717D80C49005D53E6 /* PatchMemoryFloat.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		0C56D7351BB3882C00C27F86 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0C56D7391BB3882C00C27F86 /* SubControlsXp.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		19C28FB6FE9D52B211CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D576316048677EA00EA77CD /* PatchMemory.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D5C87A4F17D6B11000ED3316 /* SDK */ = {
+			isa = PBXGroup;
+			children = (
+				D5A1A266219242AE005B65EA /* FileFinder.cpp */,
+				D5A1A267219242AE005B65EA /* FileFinder.h */,
+				D54FC9CE2085AF8800CAE344 /* it_enum_list.cpp */,
+				D54FC9D02085AF8800CAE344 /* it_enum_list.h */,
+				D5E7B77317D80DE1005D53E6 /* mp_sdk_gui.cpp */,
+				D5E7B77417D80DE1005D53E6 /* mp_sdk_gui.h */,
+				D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */,
+				D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */,
+				D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */,
+				D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */,
+			);
+			name = SDK;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D57630D048677EA00EA77CD /* PatchMemory */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "PatchMemory" */;
+			buildPhases = (
+				8D57630F048677EA00EA77CD /* Resources */,
+				8D576311048677EA00EA77CD /* Sources */,
+				8D576313048677EA00EA77CD /* Frameworks */,
+				0C078AD319BE94BE00E1AD4E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PatchMemory;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = Untitled;
+			productReference = 8D576316048677EA00EA77CD /* PatchMemory.sem */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "PatchMemory" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* Untitled */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 0C56D7351BB3882C00C27F86 /* Products */;
+					ProjectRef = 0C56D7341BB3882C00C27F86 /* SubControlsXp.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				8D57630D048677EA00EA77CD /* PatchMemory */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		0C56D7391BB3882C00C27F86 /* SubControlsXp.sem */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = SubControlsXp.sem;
+			remoteRef = 0C56D7381BB3882C00C27F86 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D57630F048677EA00EA77CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */,
+				D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */,
+				D5E7B75217D80DA7005D53E6 /* PatchMemory.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D576311048677EA00EA77CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */,
+				D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */,
+				D5A2F7FF21C085A300A93F36 /* FileFinder.cpp in Sources */,
+				D5E7B70C17D80C49005D53E6 /* PatchMemoryFloat.cpp in Sources */,
+				D5E7B75117D80DA7005D53E6 /* PatchInfoGui.cpp in Sources */,
+				D5E7B75317D80DA7005D53E6 /* PatchMemoryBlob.cpp in Sources */,
+				D5E7B75417D80DA7005D53E6 /* PatchMemoryBlobGui.cpp in Sources */,
+				D5E7B75617D80DA7005D53E6 /* PatchMemoryBlobOutGui.cpp in Sources */,
+				D5E7B75717D80DA7005D53E6 /* PatchMemoryBool.cpp in Sources */,
+				D5E7B75817D80DA7005D53E6 /* PatchMemoryBoolGui.cpp in Sources */,
+				D5E7B75B17D80DA7005D53E6 /* PatchMemoryBoolOutGui.cpp in Sources */,
+				D5E7B75D17D80DA7005D53E6 /* PatchMemoryfloatGui.cpp in Sources */,
+				D5E7B76017D80DA7005D53E6 /* PatchMemoryFloatOutGui.cpp in Sources */,
+				D54FC9D12085AF8800CAE344 /* it_enum_list.cpp in Sources */,
+				D5A2F7FD21C0844C00A93F36 /* PatchBrowserGui.cpp in Sources */,
+				D5E7B76117D80DA7005D53E6 /* PatchmemoryGui.cpp in Sources */,
+				D5E7B76217D80DA7005D53E6 /* PatchMemoryInt.cpp in Sources */,
+				D5E7B76417D80DA7005D53E6 /* PatchMemoryIntGui.cpp in Sources */,
+				D5E7B76717D80DA7005D53E6 /* PatchMemoryIntOutGui.cpp in Sources */,
+				D5E7B76817D80DA7005D53E6 /* PatchMemoryList.cpp in Sources */,
+				D5E7B76A17D80DA7005D53E6 /* PatchMemoryListGui.cpp in Sources */,
+				D5E7B76B17D80DA7005D53E6 /* PatchMemoryText.cpp in Sources */,
+				D5E7B76D17D80DA7005D53E6 /* PatchMemoryTextGui.cpp in Sources */,
+				D5E7B77017D80DA7005D53E6 /* PatchMemoryTextOutGui.cpp in Sources */,
+				D5E7B77517D80DE1005D53E6 /* mp_sdk_gui.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		8D5B49A704867FD3000E48DA /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C167EFE841241C02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB911B08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = _DEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Debug;
+		};
+		1DEB911C08733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Release;
+		};
+		1DEB911F08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.8;
+			};
+			name = Debug;
+		};
+		1DEB912008733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.8;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "PatchMemory" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911B08733D790010E9CD /* Debug */,
+				1DEB911C08733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "PatchMemory" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911F08733D790010E9CD /* Debug */,
+				1DEB912008733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}

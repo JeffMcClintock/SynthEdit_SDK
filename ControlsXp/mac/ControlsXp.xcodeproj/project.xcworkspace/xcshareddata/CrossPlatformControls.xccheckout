@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>EB490B22-F88A-467A-807B-F8D118625A04</string>
+	<key>IDESourceControlProjectName</key>
+	<string>CrossPlatformControls</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>9DC464E3-C774-46C1-B20E-90A677D5724B</key>
+		<string>https://synthedit.visualstudio.com/defaultcollection/_git/SynthEdit</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>SE_DSP_CORE/modules/Cross Platform Controls/mac/CrossPlatformControls.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>9DC464E3-C774-46C1-B20E-90A677D5724B</key>
+		<string>../../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://synthedit.visualstudio.com/defaultcollection/_git/SynthEdit</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>9DC464E3-C774-46C1-B20E-90A677D5724B</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>9DC464E3-C774-46C1-B20E-90A677D5724B</string>
+			<key>IDESourceControlWCCName</key>
+			<string>My Projects</string>
+		</dict>
+	</array>
+</dict>
+</plist>

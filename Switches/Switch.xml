@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <!-- GUI Switches -->
+  <Plugin id="SE GuiSwitch &lt; (Bool)" name="Switch &lt; (Bool)" category="Switches/GUI" >
+    <GUI>
+      <Pin name="Choice" datatype="int" default="0"/>
+      <Pin name="Value" datatype="bool" direction="out" />
+      <Pin name="Spare" datatype="bool" autoRename="true" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE GuiSwitch &lt; (Float)" name="Switch &lt; (Float)" category="Switches/GUI" >
+    <GUI>
+      <Pin name="Choice" datatype="int" default="0"/>
+      <Pin name="Value" datatype="float" direction="out" />
+      <Pin name="Spare" datatype="float" autoRename="true" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE GuiSwitch &lt; (Blob)" name="Switch &lt; (Blob)" category="Switches/GUI" >
+    <GUI>
+      <Pin name="Choice" datatype="int" default="0"/>
+      <Pin name="Value" datatype="blob" direction="out" />
+      <Pin name="Spare" datatype="blob" autoRename="true" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE GuiSwitch &lt; (Int)" name="Switch &lt; (Int)" category="Switches/GUI" >
+    <GUI>
+      <Pin name="Choice" datatype="int" default="0"/>
+      <Pin name="Value" datatype="int" direction="out" />
+      <Pin name="Spare" datatype="int" autoRename="true" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE GuiSwitch &lt; (Text)" name="Switch &lt; (Text)" category="Switches/GUI" >
+    <GUI>
+      <Pin name="Choice" datatype="int" default="0"/>
+      <Pin name="Value" datatype="string" direction="out" />
+      <Pin name="Spare" datatype="string" autoRename="true" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+
+  <!-- DSP Switches -->
+  <Plugin id="SE Switch &gt; (Float)" name="Switch &gt; (Float)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Output" datatype="float" direction="out" />
+      <Pin name="Spare Input" datatype="float" autoRename="true" linearInput="true" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &gt; (Int)" name="Switch &gt; (Int)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Output" datatype="int" direction="out" />
+      <Pin name="Spare Input" datatype="int" autoRename="true" linearInput="true" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &gt; (Text)" name="Switch &gt; (Text)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Output" datatype="string" direction="out" />
+      <Pin name="Spare Input" datatype="string" autoRename="true" linearInput="true" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &gt; (Bool)" name="Switch &gt; (Bool)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Output" datatype="bool" direction="out" />
+      <Pin name="Spare Input" datatype="bool" autoRename="true" linearInput="true" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &gt; (Blob)" name="Switch &gt; (Blob)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Output" datatype="blob" direction="out" />
+      <Pin name="Spare Input" datatype="blob" autoRename="true" linearInput="true" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE Switch &lt; (Float)" name="Switch &lt; (Float)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Input" datatype="float"  />
+      <Pin name="Spare Output" datatype="float" autoRename="true" direction="out" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &lt; (Int)" name="Switch &lt; (Int)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Input" datatype="int"  />
+      <Pin name="Spare Output" datatype="int" autoRename="true" direction="out" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &lt; (Bool)" name="Switch &lt; (Bool)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Input" datatype="bool"  />
+      <Pin name="Spare Output" datatype="bool" autoRename="true" direction="out" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+  <Plugin id="SE Switch &lt; (Blob)" name="Switch &lt; (Blob)" category="Switches">
+    <Audio>
+      <Pin name="Choice" datatype="enum" metadata="{AUTO}" />
+      <Pin name="Input" datatype="blob"  />
+      <Pin name="Spare Output" datatype="blob" autoRename="true" direction="out" autoDuplicate="true" />
+    </Audio>
+  </Plugin>
+
+</PluginList>

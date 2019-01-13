@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <Plugin id="SE Image3" name="Image3" category="Sub-Controls" graphicsApi="GmpiGui" >
+    <GUI>
+      <Pin id="0" name="Animation Position" datatype="float" />
+      <Pin id="1" name="Filename" datatype="string" default="knob_sm" isFilename="true" metadata="bmp" />
+      <Pin id="2" name="Hint" datatype="string" />
+      <Pin id="3" name="Menu Items" datatype="string" />
+      <Pin id="4" name="Menu Selection" datatype="int" />
+      <Pin id="5" name="Mouse Down" datatype="bool" direction="out" private="true" />
+      <Pin id="6" name="Mouse Down" datatype="bool" />
+      <Pin id="7" name="Frame Count" datatype="int" private="true" />
+      <Pin id="8" name="Frame Count" datatype="int" direction="out" />
+    </GUI>
+  </Plugin>
+</PluginList>

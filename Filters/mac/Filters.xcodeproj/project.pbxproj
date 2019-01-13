@@ -1,0 +1,345 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0CBCDAA719C13C95009EEA29 /* Filters.sem in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D576316048677EA00EA77CD /* Filters.sem */; };
+		8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */; };
+		8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8D5B49A704867FD3000E48DA /* InfoPlist.strings */; };
+		A6A3AE631F6B303D00739EB5 /* Filters.xml in Resources */ = {isa = PBXBuildFile; fileRef = A6A3AE621F6B303D00739EB5 /* Filters.xml */; };
+		D50CB28E20B219C4005EB769 /* ButterworthLp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D50CB28A20B219C4005EB769 /* ButterworthLp.cpp */; };
+		D50CB29620B219F2005EB769 /* Butterworth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D50CB29220B219F2005EB769 /* Butterworth.cpp */; };
+		D50CB29720B219F2005EB769 /* Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D50CB29420B219F2005EB769 /* Biquad.cpp */; };
+		D50CB29820B219F2005EB769 /* Cascade.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D50CB29520B219F2005EB769 /* Cascade.cpp */; };
+		D50CB29E20B21A34005EB769 /* PoleFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D50CB29C20B21A34005EB769 /* PoleFilter.cpp */; };
+		D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */ = {isa = PBXBuildFile; fileRef = D5C87A3F17D6B09100ED3316 /* PkgInfo */; };
+		D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */; };
+		D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0CEB1F9C19B95CE40024780F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/../../../../SynthEdit/mac_assets/modules";
+			dstSubfolderSpec = 0;
+			files = (
+				0CBCDAA719C13C95009EEA29 /* Filters.sem in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		8D576316048677EA00EA77CD /* Filters.sem */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Filters.sem; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D576317048677EA00EA77CD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A6A3AE621F6B303D00739EB5 /* Filters.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = Filters.xml; path = ../Filters.xml; sourceTree = "<group>"; };
+		D50CB28A20B219C4005EB769 /* ButterworthLp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ButterworthLp.cpp; path = ../ButterworthLp.cpp; sourceTree = "<group>"; };
+		D50CB28C20B219C4005EB769 /* ButterworthLp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ButterworthLp.h; path = ../ButterworthLp.h; sourceTree = "<group>"; };
+		D50CB29020B219F2005EB769 /* Butterworth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Butterworth.h; path = ../DSPFilters/Butterworth.h; sourceTree = "<group>"; };
+		D50CB29120B219F2005EB769 /* Biquad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Biquad.h; path = ../DSPFilters/Biquad.h; sourceTree = "<group>"; };
+		D50CB29220B219F2005EB769 /* Butterworth.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Butterworth.cpp; path = ../DSPFilters/Butterworth.cpp; sourceTree = "<group>"; };
+		D50CB29320B219F2005EB769 /* Cascade.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Cascade.h; path = ../DSPFilters/Cascade.h; sourceTree = "<group>"; };
+		D50CB29420B219F2005EB769 /* Biquad.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Biquad.cpp; path = ../DSPFilters/Biquad.cpp; sourceTree = "<group>"; };
+		D50CB29520B219F2005EB769 /* Cascade.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Cascade.cpp; path = ../DSPFilters/Cascade.cpp; sourceTree = "<group>"; };
+		D50CB29A20B21A20005EB769 /* Filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Filter.h; path = ../DSPFilters/Filter.h; sourceTree = "<group>"; };
+		D50CB29B20B21A20005EB769 /* Layout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Layout.h; path = ../DSPFilters/Layout.h; sourceTree = "<group>"; };
+		D50CB29C20B21A34005EB769 /* PoleFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PoleFilter.cpp; path = ../DSPFilters/PoleFilter.cpp; sourceTree = "<group>"; };
+		D50CB29D20B21A34005EB769 /* PoleFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PoleFilter.h; path = ../DSPFilters/PoleFilter.h; sourceTree = "<group>"; };
+		D50CB29F20B21A3F005EB769 /* MathSupplement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MathSupplement.h; path = ../DSPFilters/MathSupplement.h; sourceTree = "<group>"; };
+		D50CB2A620B21E78005EB769 /* FilterBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FilterBase.h; path = ../../shared/FilterBase.h; sourceTree = "<group>"; };
+		D5C87A3F17D6B09100ED3316 /* PkgInfo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PkgInfo; sourceTree = "<group>"; };
+		D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_audio.cpp; path = ../../se_sdk3/mp_sdk_audio.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_audio.h; path = ../../se_sdk3/mp_sdk_audio.h; sourceTree = SOURCE_ROOT; };
+		D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_common.cpp; path = ../../se_sdk3/mp_sdk_common.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_common.h; path = ../../se_sdk3/mp_sdk_common.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D576313048677EA00EA77CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				D5C87A4F17D6B11000ED3316 /* SDK */,
+				08FB77AFFE84173DC02AAC07 /* Source */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				19C28FB6FE9D52B211CA2CBB /* Products */,
+				D5C87A3F17D6B09100ED3316 /* PkgInfo */,
+			);
+			name = Untitled;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A6A3AE621F6B303D00739EB5 /* Filters.xml */,
+				8D576317048677EA00EA77CD /* Info.plist */,
+				8D5B49A704867FD3000E48DA /* InfoPlist.strings */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77AFFE84173DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D50CB29920B219F5005EB769 /* DSP Filters */,
+				D50CB28A20B219C4005EB769 /* ButterworthLp.cpp */,
+				D50CB28C20B219C4005EB769 /* ButterworthLp.h */,
+				D50CB2A620B21E78005EB769 /* FilterBase.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		19C28FB6FE9D52B211CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D576316048677EA00EA77CD /* Filters.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D50CB29920B219F5005EB769 /* DSP Filters */ = {
+			isa = PBXGroup;
+			children = (
+				D50CB29F20B21A3F005EB769 /* MathSupplement.h */,
+				D50CB29C20B21A34005EB769 /* PoleFilter.cpp */,
+				D50CB29D20B21A34005EB769 /* PoleFilter.h */,
+				D50CB29A20B21A20005EB769 /* Filter.h */,
+				D50CB29B20B21A20005EB769 /* Layout.h */,
+				D50CB29420B219F2005EB769 /* Biquad.cpp */,
+				D50CB29120B219F2005EB769 /* Biquad.h */,
+				D50CB29220B219F2005EB769 /* Butterworth.cpp */,
+				D50CB29020B219F2005EB769 /* Butterworth.h */,
+				D50CB29520B219F2005EB769 /* Cascade.cpp */,
+				D50CB29320B219F2005EB769 /* Cascade.h */,
+			);
+			name = "DSP Filters";
+			sourceTree = "<group>";
+		};
+		D5C87A4F17D6B11000ED3316 /* SDK */ = {
+			isa = PBXGroup;
+			children = (
+				D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */,
+				D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */,
+				D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */,
+				D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */,
+			);
+			name = SDK;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D57630D048677EA00EA77CD /* Filters */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "Filters" */;
+			buildPhases = (
+				8D57630F048677EA00EA77CD /* Resources */,
+				8D576311048677EA00EA77CD /* Sources */,
+				8D576313048677EA00EA77CD /* Frameworks */,
+				0CEB1F9C19B95CE40024780F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Filters;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = Untitled;
+			productReference = 8D576316048677EA00EA77CD /* Filters.sem */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "Filters" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* Untitled */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8D57630D048677EA00EA77CD /* Filters */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D57630F048677EA00EA77CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */,
+				A6A3AE631F6B303D00739EB5 /* Filters.xml in Resources */,
+				D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D576311048677EA00EA77CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D50CB28E20B219C4005EB769 /* ButterworthLp.cpp in Sources */,
+				D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */,
+				D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */,
+				D50CB29620B219F2005EB769 /* Butterworth.cpp in Sources */,
+				D50CB29E20B21A34005EB769 /* PoleFilter.cpp in Sources */,
+				D50CB29820B219F2005EB769 /* Cascade.cpp in Sources */,
+				D50CB29720B219F2005EB769 /* Biquad.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		8D5B49A704867FD3000E48DA /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C167EFE841241C02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB911B08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_DEBUG,
+					SE_TARGET_SEM,
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "\"/SE/My Projects/modules/se_sdk3\"";
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Debug;
+		};
+		1DEB911C08733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					NDEBUG,
+					SE_TARGET_SEM,
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "\"/SE/My Projects/modules/se_sdk3\"";
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Release;
+		};
+		1DEB911F08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+			};
+			name = Debug;
+		};
+		1DEB912008733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "Filters" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911B08733D790010E9CD /* Debug */,
+				1DEB911C08733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "Filters" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911F08733D790010E9CD /* Debug */,
+				1DEB912008733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}

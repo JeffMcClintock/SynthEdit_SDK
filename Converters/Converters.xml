@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+  <!-- GUI CONVERTERS -->
+  <Plugin id="SE List to Animation" name="List to Animation" category="Sub-Controls/Conversion" helpUrl="SE List to Animation.html">
+    <GUI>
+      <Pin name="Choice" datatype="int" />
+      <Pin name="Item List" datatype="string"/>
+      <Pin name="Animation Position" datatype="float" direction="out" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE Bools To Int2" name="Bools To Int" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin name="Int Val" datatype="int" direction="out" />
+      <Pin name="Bool Val" datatype="bool" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE Bool Splitter" name="Bool Splitter" category="Sub-Controls/Old">
+    <GUI>
+      <Pin id="0" name="Out" datatype="bool" direction="out" />
+      <Pin id="1" name="In" datatype="bool" direction="in" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE Float Splitter" name="Float Splitter" category="Sub-Controls/Old">
+    <GUI>
+      <Pin name="Out" datatype="float" direction="out" />
+      <Pin name="In" datatype="float" autoDuplicate="true" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE IntToBool GUI" name="Int to Bool" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE IntToFloat GUI" name="Int To Float" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE IntToText GUI" name="Int To Text" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Text Val" direction="out" datatype="string"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE FloatToInt GUI" name="Float To Int" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE FloatToBool GUI" name="Float To Bool" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE FloatToText GUI" name="Float To Text" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Decimal Places" direction="in" datatype="int" default="-1"/>
+      <Pin id="2" name="Text Val" direction="out" datatype="string"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE BoolToInt GUI" name="Bool To Int" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE BoolToFloat GUI" name="Bool To Float" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE BoolToText GUI" name="Bool To Text" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Text Val" direction="out" datatype="string"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE TextToInt GUI" name="Text To Int" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </GUI>
+  </Plugin>
+  <Plugin id="SE TextToFloat GUI" name="Text To Float" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </GUI>
+  </Plugin>
+  <Plugin id="SE TextToBool GUI" name="Text To Bool" category="Sub-Controls/Conversion" helpUrl="Sub-control-converters.htm">
+    <GUI>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE Int to Bools" name="Int to Bools" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="synthedit.chm::/mdl_sdk3/IntToBools.htm">
+    <GUI>
+      <Pin id="0" name="Value" direction="in" datatype="int"/>
+      <Pin id="1" name="Spare" direction="out" datatype="bool" autoDuplicate="true" autoRename="true"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE Bools to Int" name="Int to Bools" category="Sub-Controls/Old" graphicsApi="none" helpUrl="IntToBools.htm">
+    <GUI>
+      <Pin id="0" name="Value" direction="in" datatype="int"/>
+      <Pin id="1" name="Spare" direction="out" datatype="bool" autoDuplicate="true" autoRename="true"/>
+    </GUI>
+  </Plugin>
+
+  <Plugin id="SE Command Trigger" name="Command Trigger" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="synthedit.chm::/mdl_sdk3/CommandTrigger.htm">
+    <GUI>
+      <Pin id="0" name="Command" direction="in" datatype="int"/>
+      <Pin id="1" name="Spare" direction="out" datatype="bool" autoDuplicate="true" autoRename="true"/>
+    </GUI>
+  </Plugin>
+
+  <!-- old version has 'Frame Count' direction reversed for backward compatibility with SE V1.0-->
+  <Plugin id="SynthEdit Image to Frame (old)" name="Image to Frame (old)" category="Old">
+    <GUI>
+      <Pin id="0" name="Animation Position" direction="out" datatype="float"/>
+      <Pin id="1" name="Frame Count" direction="out" datatype="int"/>
+      <Pin id="2" name="Frame Number" direction="in" datatype="int"/>
+    </GUI>
+  </Plugin>
+  <Plugin id="SynthEdit Image to Frame" name="Image to Frame" category="Sub-Controls" helpUrl="ImageToFrame.htm">
+    <GUI>
+      <Pin id="0" name="Animation Position" direction="out" datatype="float"/>
+      <Pin id="1" name="Frame Count" direction="in" datatype="int"/>
+      <Pin id="2" name="Frame Number" direction="in" datatype="int"/>
+    </GUI>
+  </Plugin>
+  <Plugin id="SE ListToText" name="List to Text" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="synthedit.chm::/mdl_sdk3/ListToText.htm">
+    <GUI>
+      <Pin id="0" name="Choice" direction="in" datatype="int" />
+      <Pin id="1" name="Item List" direction="in" datatype="string" />
+      <Pin id="2" name="Item Text" direction="out" datatype="string" />
+    </GUI>
+  </Plugin>
+    <Plugin id="SE Float Scaler2" name="Float Scaler2" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="converters.htm">
+      <GUI>
+        <Pin id="0" name="Value Out" direction="out" datatype="float"/>
+        <Pin id="1" name="Multiply by" direction="in" datatype="float" default = "1"/>
+        <Pin id="2" name="Add" direction="in" datatype="float"/>
+        <Pin id="3" name="Value In" direction="in" datatype="float"/>
+      </GUI>
+    </Plugin>
+
+  <Plugin id="SE BlobToText GUI" name="Blob to Text" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="converters.htm">
+    <GUI>
+      <Pin id="0" name="Value In" direction="in" datatype="blob"/>
+      <Pin id="1" name="Value Out" direction="out" datatype="string"/>
+    </GUI>
+  </Plugin>
+  <Plugin id="SE TextToBlob GUI" name="Text to Blob" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="converters.htm">
+    <GUI>
+      <Pin id="0" name="Value In" direction="in" datatype="string"/>
+      <Pin id="1" name="Value Out" direction="out" datatype="blob"/>
+    </GUI>
+  </Plugin>
+
+    <Plugin id="SE Float Function GUI" name="Float Function" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="synthedit.chm::/mdl_sdk3/FloatFunction.htm">
+      <GUI>
+        <Pin id="0" name="A" direction="in" datatype="float"/>
+        <Pin id="1" name="B" direction="out" datatype="float"/>
+        <Pin id="2" name="Formula: A=" direction="in" datatype="string" default="B*2"/>
+        <Pin id="3" name="Formula: B=" direction="in" datatype="string" default="A/2"/>
+      </GUI>
+    </Plugin>
+
+
+  <!-- AUDIO CONVERTERS -->
+  <Plugin id="SE IntToBool" name="Int to Bool" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE IntToFloat" name="Int To Float" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE IntToText" name="Int To Text" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Int Val" direction="in" datatype="int"/>
+      <Pin id="1" name="Text Val" direction="out" datatype="string"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE FloatToInt" name="Float To Int" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE FloatToBool" name="Float To Bool" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE FloatToText" name="Float To Text" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Float Val" direction="in" datatype="float"/>
+      <Pin id="1" name="Text Val" direction="out" datatype="string"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE BoolToInt" name="Bool To Int" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE BoolToFloat" name="Bool To Float" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE BoolToText" name="Bool To Text" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Bool Val" direction="in" datatype="bool"/>
+      <Pin id="1" name="Text Val" direction="out" datatype="string"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE TextToInt" name="Text To Int" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </Audio>
+  </Plugin>
+  <Plugin id="SE TextToFloat" name="Text To Float" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Float Val" direction="out" datatype="float"/>
+    </Audio>
+  </Plugin>
+  <Plugin id="SE TextToBool" name="Text To Bool" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="Text Val" direction="in" datatype="string"/>
+      <Pin id="1" name="Bool Val" direction="out" datatype="bool"/>
+    </Audio>
+  </Plugin>
+
+  <!-- WTF?, How is it meant to provide the list values?? -->
+  <Plugin id="SE ListToInt" name="List To Int" category="Obsolete" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin id="0" name="List Val" direction="in" datatype="enum"/>
+      <Pin id="1" name="Int Val" direction="out" datatype="int"/>
+    </Audio>
+  </Plugin>
+  
+  <Plugin id="SE Float Function DSP" name="Float Function" category="Conversion" helpUrl="synthedit.chm::/mdl_sdk3/FloatFunction.htm">
+    <Audio>
+      <Pin id="0" name="A" direction="in" datatype="float"/>
+      <Pin id="1" name="B" direction="out" datatype="float"/>
+      <Pin id="2" name="Formula: B=" direction="in" datatype="string" default="A*2"/>
+    </Audio>
+  </Plugin>
+  
+  <Plugin id="SE dBToAnimation" name="dB to Animation" category="Sub-Controls/Conversion" graphicsApi="none" helpUrl="synthedit.chm::/mdl_dB_to_Animation.htm">
+    <GUI>
+      <Pin id="0" name="Animation Position" direction="out" datatype="float"/>
+      <Pin id="1" name="Db" direction="in" datatype="float"/>
+    </GUI>
+  </Plugin>
+  
+  <Plugin id="SE Unit Converter" name="Unit Converter" category="Conversion" graphicsApi="none" >
+    <Audio>
+      <Pin id="0" name="A" direction="in" datatype="float"/>
+      <Pin id="1" name="B" direction="out" datatype="float"/>
+      <Pin id="2" name="Mode" direction="in" datatype="enum" isMinimised="true" metadata="Hz to Octave (Volts), dB to VCA(dB), dB to VCA(exp),ms to ADSR2,ms to Portamento, Octaves to Hz=100, VCA(dB) Volts to dB, VCA(exp) Volts to dB,ADSR2 to ms,Portamento to ms"/>
+    </Audio>
+  </Plugin>
+  
+  <Plugin id="SE Unit Converter (Volts)" name="Unit Converter (Volts)" category="Conversion" >
+    <Audio>
+      <Pin id="0" name="A" direction="in" datatype="float" rate="audio"/>
+      <Pin id="1" name="B" direction="out" datatype="float" rate="audio"/>
+      <Pin id="2" name="Mode" direction="in" datatype="enum" isMinimised="true" metadata="kHz to Octave (Volts), dB to VCA(dB), dB to VCA(exp), Volts to KHz=100, VCA(dB) Volts to dB, VCA(exp) Volts to dB" />
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE VoltsToBool" name="Volts to Bool" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin name="In" datatype="float" rate="audio"/>
+      <Pin name="Out" direction="out" datatype="bool"/>
+    </Audio>
+  </Plugin>
+  
+  <Plugin id="SE BoolToVolts" name="Bool to Volts" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin name="In" datatype="bool"/>
+      <Pin name="Out" direction="out" datatype="float" rate="audio"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE VoltsToInt" name="Volts to Int" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin name="In" datatype="float" rate="audio"/>
+      <Pin name="Out" direction="out" datatype="int"/>
+    </Audio>
+  </Plugin>
+
+  <Plugin id="SE IntToVolts" name="Int to Volts" category="Conversion" helpUrl="converters.htm" AlwaysExport="true">
+    <Audio>
+      <Pin name="In" datatype="int"/>
+      <Pin name="Out" direction="out" datatype="float" rate="audio"/>
+    </Audio>
+  </Plugin>
+
+
+</PluginList>

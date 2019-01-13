@@ -1,0 +1,391 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C078A2D19BE6FB400E1AD4E /* ImageToFrameGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A2919BE6FB400E1AD4E /* ImageToFrameGui.cpp */; };
+		0C078A2E19BE6FB400E1AD4E /* IntToBoolsGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A2B19BE6FB400E1AD4E /* IntToBoolsGui.cpp */; };
+		0C078A3119BE6FC800E1AD4E /* ConvertersGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A2F19BE6FC800E1AD4E /* ConvertersGui.cpp */; };
+		0C078A3619BE6FD300E1AD4E /* FloatFormulaGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A3219BE6FD300E1AD4E /* FloatFormulaGui.cpp */; };
+		0C078A3719BE6FD300E1AD4E /* FloatScaler2Gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A3419BE6FD300E1AD4E /* FloatScaler2Gui.cpp */; };
+		0C078A3A19BE6FDE00E1AD4E /* DbToAnimationGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C078A3819BE6FDE00E1AD4E /* DbToAnimationGui.cpp */; };
+		0C078AC019BE941500E1AD4E /* Converters.sem in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D576316048677EA00EA77CD /* Converters.sem */; };
+		0CEB1FBA19B966540024780F /* FloatToText.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB1FB819B966540024780F /* FloatToText.cpp */; };
+		0CEB1FBD19B966680024780F /* ListToTextGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB1FBB19B966680024780F /* ListToTextGui.cpp */; };
+		0CEB1FC019B96AA40024780F /* mp_sdk_gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB1FBE19B96AA40024780F /* mp_sdk_gui.cpp */; };
+		0CEB1FC319B96AD20024780F /* it_enum_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB1FC119B96AD20024780F /* it_enum_list.cpp */; };
+		8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */; };
+		8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8D5B49A704867FD3000E48DA /* InfoPlist.strings */; };
+		A67D38B31F6B60E300168770 /* Converters.xml in Resources */ = {isa = PBXBuildFile; fileRef = A67D38B21F6B60E300168770 /* Converters.xml */; };
+		D5814B1320BF5DCC005D148F /* ListToAnimationGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5814B1220BF5DCC005D148F /* ListToAnimationGui.cpp */; };
+		D5814B1620BF5E30005D148F /* BoolSplitterGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5814B1520BF5E30005D148F /* BoolSplitterGui.cpp */; };
+		D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */ = {isa = PBXBuildFile; fileRef = D5C87A3F17D6B09100ED3316 /* PkgInfo */; };
+		D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */; };
+		D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */; };
+		D5D5191B1806189A008EBC46 /* Converters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D519191806189A008EBC46 /* Converters.cpp */; };
+		D5D51921180618C6008EBC46 /* my_type_convert.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D5191F180618C6008EBC46 /* my_type_convert.cpp */; };
+		D5D51924180618D5008EBC46 /* UnitConverter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D51922180618D5008EBC46 /* UnitConverter.cpp */; };
+		D5D5192A180618F1008EBC46 /* FloatFormula.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D51927180618F1008EBC46 /* FloatFormula.cpp */; };
+		D5D5193C18061AB3008EBC46 /* expression_evaluate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D5193A18061AB3008EBC46 /* expression_evaluate.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0C078ABF19BE940900E1AD4E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/../../../../SynthEdit/mac_assets/modules";
+			dstSubfolderSpec = 0;
+			files = (
+				0C078AC019BE941500E1AD4E /* Converters.sem in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		0C078A2919BE6FB400E1AD4E /* ImageToFrameGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageToFrameGui.cpp; path = ../ImageToFrameGui.cpp; sourceTree = "<group>"; };
+		0C078A2A19BE6FB400E1AD4E /* ImageToFrameGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageToFrameGui.h; path = ../ImageToFrameGui.h; sourceTree = "<group>"; };
+		0C078A2B19BE6FB400E1AD4E /* IntToBoolsGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IntToBoolsGui.cpp; path = ../IntToBoolsGui.cpp; sourceTree = "<group>"; };
+		0C078A2C19BE6FB400E1AD4E /* IntToBoolsGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IntToBoolsGui.h; path = ../IntToBoolsGui.h; sourceTree = "<group>"; };
+		0C078A2F19BE6FC800E1AD4E /* ConvertersGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConvertersGui.cpp; path = ../ConvertersGui.cpp; sourceTree = "<group>"; };
+		0C078A3019BE6FC800E1AD4E /* ConvertersGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConvertersGui.h; path = ../ConvertersGui.h; sourceTree = "<group>"; };
+		0C078A3219BE6FD300E1AD4E /* FloatFormulaGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FloatFormulaGui.cpp; path = ../FloatFormulaGui.cpp; sourceTree = "<group>"; };
+		0C078A3319BE6FD300E1AD4E /* FloatFormulaGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FloatFormulaGui.h; path = ../FloatFormulaGui.h; sourceTree = "<group>"; };
+		0C078A3419BE6FD300E1AD4E /* FloatScaler2Gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FloatScaler2Gui.cpp; path = ../FloatScaler2Gui.cpp; sourceTree = "<group>"; };
+		0C078A3519BE6FD300E1AD4E /* FloatScaler2Gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FloatScaler2Gui.h; path = ../FloatScaler2Gui.h; sourceTree = "<group>"; };
+		0C078A3819BE6FDE00E1AD4E /* DbToAnimationGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DbToAnimationGui.cpp; path = ../DbToAnimationGui.cpp; sourceTree = "<group>"; };
+		0C078A3919BE6FDE00E1AD4E /* DbToAnimationGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DbToAnimationGui.h; path = ../DbToAnimationGui.h; sourceTree = "<group>"; };
+		0CEB1FB819B966540024780F /* FloatToText.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FloatToText.cpp; path = ../FloatToText.cpp; sourceTree = "<group>"; };
+		0CEB1FB919B966540024780F /* FloatToText.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FloatToText.h; path = ../FloatToText.h; sourceTree = "<group>"; };
+		0CEB1FBB19B966680024780F /* ListToTextGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ListToTextGui.cpp; path = ../ListToTextGui.cpp; sourceTree = "<group>"; };
+		0CEB1FBC19B966680024780F /* ListToTextGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ListToTextGui.h; path = ../ListToTextGui.h; sourceTree = "<group>"; };
+		0CEB1FBE19B96AA40024780F /* mp_sdk_gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui.cpp; path = ../../se_sdk3/mp_sdk_gui.cpp; sourceTree = "<group>"; };
+		0CEB1FBF19B96AA40024780F /* mp_sdk_gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui.h; path = ../../se_sdk3/mp_sdk_gui.h; sourceTree = "<group>"; };
+		0CEB1FC119B96AD20024780F /* it_enum_list.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = it_enum_list.cpp; path = ../../se_sdk3/it_enum_list.cpp; sourceTree = "<group>"; };
+		0CEB1FC219B96AD20024780F /* it_enum_list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = it_enum_list.h; path = ../../se_sdk3/it_enum_list.h; sourceTree = "<group>"; };
+		8D576316048677EA00EA77CD /* Converters.sem */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Converters.sem; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D576317048677EA00EA77CD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A67D38B21F6B60E300168770 /* Converters.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = Converters.xml; path = ../Converters.xml; sourceTree = "<group>"; };
+		D5814B1220BF5DCC005D148F /* ListToAnimationGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ListToAnimationGui.cpp; path = ../ListToAnimationGui.cpp; sourceTree = "<group>"; };
+		D5814B1420BF5E30005D148F /* BoolSplitterGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BoolSplitterGui.h; path = ../BoolSplitterGui.h; sourceTree = "<group>"; };
+		D5814B1520BF5E30005D148F /* BoolSplitterGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BoolSplitterGui.cpp; path = ../BoolSplitterGui.cpp; sourceTree = "<group>"; };
+		D5C87A3F17D6B09100ED3316 /* PkgInfo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PkgInfo; sourceTree = "<group>"; };
+		D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_audio.cpp; path = ../../se_sdk3/mp_sdk_audio.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_audio.h; path = ../../se_sdk3/mp_sdk_audio.h; sourceTree = SOURCE_ROOT; };
+		D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_common.cpp; path = ../../se_sdk3/mp_sdk_common.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_common.h; path = ../../se_sdk3/mp_sdk_common.h; sourceTree = SOURCE_ROOT; };
+		D5D519191806189A008EBC46 /* Converters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Converters.cpp; path = ../Converters.cpp; sourceTree = SOURCE_ROOT; };
+		D5D5191A1806189A008EBC46 /* Converters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Converters.h; path = ../Converters.h; sourceTree = SOURCE_ROOT; };
+		D5D5191F180618C6008EBC46 /* my_type_convert.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = my_type_convert.cpp; path = ../my_type_convert.cpp; sourceTree = SOURCE_ROOT; };
+		D5D51920180618C6008EBC46 /* my_type_convert.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = my_type_convert.h; path = ../my_type_convert.h; sourceTree = SOURCE_ROOT; };
+		D5D51922180618D5008EBC46 /* UnitConverter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = UnitConverter.cpp; path = ../UnitConverter.cpp; sourceTree = SOURCE_ROOT; };
+		D5D51923180618D5008EBC46 /* UnitConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UnitConverter.h; path = ../UnitConverter.h; sourceTree = SOURCE_ROOT; };
+		D5D51927180618F1008EBC46 /* FloatFormula.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FloatFormula.cpp; path = ../FloatFormula.cpp; sourceTree = SOURCE_ROOT; };
+		D5D51928180618F1008EBC46 /* FloatFormula.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FloatFormula.h; path = ../FloatFormula.h; sourceTree = SOURCE_ROOT; };
+		D5D5193A18061AB3008EBC46 /* expression_evaluate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = expression_evaluate.cpp; path = ../../shared/expression_evaluate.cpp; sourceTree = SOURCE_ROOT; };
+		D5D5193B18061AB3008EBC46 /* expression_evaluate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = expression_evaluate.h; path = ../../shared/expression_evaluate.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D576313048677EA00EA77CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				D5C87A4F17D6B11000ED3316 /* SDK */,
+				08FB77AFFE84173DC02AAC07 /* Source */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				19C28FB6FE9D52B211CA2CBB /* Products */,
+				D5C87A3F17D6B09100ED3316 /* PkgInfo */,
+			);
+			name = Untitled;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A67D38B21F6B60E300168770 /* Converters.xml */,
+				8D576317048677EA00EA77CD /* Info.plist */,
+				8D5B49A704867FD3000E48DA /* InfoPlist.strings */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77AFFE84173DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D5814B1520BF5E30005D148F /* BoolSplitterGui.cpp */,
+				D5814B1420BF5E30005D148F /* BoolSplitterGui.h */,
+				D5D519191806189A008EBC46 /* Converters.cpp */,
+				D5D5191A1806189A008EBC46 /* Converters.h */,
+				0C078A2F19BE6FC800E1AD4E /* ConvertersGui.cpp */,
+				0C078A3019BE6FC800E1AD4E /* ConvertersGui.h */,
+				0C078A3819BE6FDE00E1AD4E /* DbToAnimationGui.cpp */,
+				0C078A3919BE6FDE00E1AD4E /* DbToAnimationGui.h */,
+				D5D5193A18061AB3008EBC46 /* expression_evaluate.cpp */,
+				D5D5193B18061AB3008EBC46 /* expression_evaluate.h */,
+				D5D51927180618F1008EBC46 /* FloatFormula.cpp */,
+				D5D51928180618F1008EBC46 /* FloatFormula.h */,
+				0C078A3219BE6FD300E1AD4E /* FloatFormulaGui.cpp */,
+				0C078A3319BE6FD300E1AD4E /* FloatFormulaGui.h */,
+				0C078A3419BE6FD300E1AD4E /* FloatScaler2Gui.cpp */,
+				0C078A3519BE6FD300E1AD4E /* FloatScaler2Gui.h */,
+				0CEB1FB819B966540024780F /* FloatToText.cpp */,
+				0CEB1FB919B966540024780F /* FloatToText.h */,
+				0C078A2919BE6FB400E1AD4E /* ImageToFrameGui.cpp */,
+				0C078A2A19BE6FB400E1AD4E /* ImageToFrameGui.h */,
+				0C078A2B19BE6FB400E1AD4E /* IntToBoolsGui.cpp */,
+				0C078A2C19BE6FB400E1AD4E /* IntToBoolsGui.h */,
+				D5814B1220BF5DCC005D148F /* ListToAnimationGui.cpp */,
+				0CEB1FBB19B966680024780F /* ListToTextGui.cpp */,
+				0CEB1FBC19B966680024780F /* ListToTextGui.h */,
+				D5D5191F180618C6008EBC46 /* my_type_convert.cpp */,
+				D5D51920180618C6008EBC46 /* my_type_convert.h */,
+				D5D51922180618D5008EBC46 /* UnitConverter.cpp */,
+				D5D51923180618D5008EBC46 /* UnitConverter.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		19C28FB6FE9D52B211CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D576316048677EA00EA77CD /* Converters.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D5C87A4F17D6B11000ED3316 /* SDK */ = {
+			isa = PBXGroup;
+			children = (
+				0CEB1FC119B96AD20024780F /* it_enum_list.cpp */,
+				0CEB1FC219B96AD20024780F /* it_enum_list.h */,
+				0CEB1FBE19B96AA40024780F /* mp_sdk_gui.cpp */,
+				0CEB1FBF19B96AA40024780F /* mp_sdk_gui.h */,
+				D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */,
+				D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */,
+				D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */,
+				D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */,
+			);
+			name = SDK;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D57630D048677EA00EA77CD /* Converters */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "Converters" */;
+			buildPhases = (
+				8D57630F048677EA00EA77CD /* Resources */,
+				8D576311048677EA00EA77CD /* Sources */,
+				8D576313048677EA00EA77CD /* Frameworks */,
+				0C078ABF19BE940900E1AD4E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Converters;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = Untitled;
+			productReference = 8D576316048677EA00EA77CD /* Converters.sem */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0720;
+			};
+			buildConfigurationList = 1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "Converters" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* Untitled */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8D57630D048677EA00EA77CD /* Converters */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D57630F048677EA00EA77CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */,
+				D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */,
+				A67D38B31F6B60E300168770 /* Converters.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D576311048677EA00EA77CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0CEB1FBD19B966680024780F /* ListToTextGui.cpp in Sources */,
+				D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */,
+				D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */,
+				0CEB1FC019B96AA40024780F /* mp_sdk_gui.cpp in Sources */,
+				D5D5191B1806189A008EBC46 /* Converters.cpp in Sources */,
+				0C078A3619BE6FD300E1AD4E /* FloatFormulaGui.cpp in Sources */,
+				D5D51921180618C6008EBC46 /* my_type_convert.cpp in Sources */,
+				0C078A2D19BE6FB400E1AD4E /* ImageToFrameGui.cpp in Sources */,
+				D5D51924180618D5008EBC46 /* UnitConverter.cpp in Sources */,
+				D5D5192A180618F1008EBC46 /* FloatFormula.cpp in Sources */,
+				0CEB1FBA19B966540024780F /* FloatToText.cpp in Sources */,
+				0C078A3719BE6FD300E1AD4E /* FloatScaler2Gui.cpp in Sources */,
+				D5D5193C18061AB3008EBC46 /* expression_evaluate.cpp in Sources */,
+				0C078A3A19BE6FDE00E1AD4E /* DbToAnimationGui.cpp in Sources */,
+				0C078A2E19BE6FB400E1AD4E /* IntToBoolsGui.cpp in Sources */,
+				D5814B1620BF5E30005D148F /* BoolSplitterGui.cpp in Sources */,
+				0C078A3119BE6FC800E1AD4E /* ConvertersGui.cpp in Sources */,
+				0CEB1FC319B96AD20024780F /* it_enum_list.cpp in Sources */,
+				D5814B1320BF5DCC005D148F /* ListToAnimationGui.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		8D5B49A704867FD3000E48DA /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C167EFE841241C02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB911B08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = _DEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Debug;
+		};
+		1DEB911C08733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Release;
+		};
+		1DEB911F08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+			};
+			name = Debug;
+		};
+		1DEB912008733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "Converters" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911B08733D790010E9CD /* Debug */,
+				1DEB911C08733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "Converters" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911F08733D790010E9CD /* Debug */,
+				1DEB912008733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}

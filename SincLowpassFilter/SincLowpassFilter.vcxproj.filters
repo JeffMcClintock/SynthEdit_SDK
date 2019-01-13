@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="SincLowpassFilter.cpp" />
+    <ClCompile Include="..\se_sdk3\mp_sdk_audio.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SincLowpassFilter.h" />
+    <ClInclude Include="..\se_sdk3\mp_sdk_audio.h">
+      <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="SincFilter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="SDK">
+      <UniqueIdentifier>{f34c014f-cb3f-4d52-a9f4-cb10d32c00cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{07f1106f-2c7d-4e6f-9d01-9e399dd19b4d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SincLowpassFilter.xml">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SincLowpassFilter.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

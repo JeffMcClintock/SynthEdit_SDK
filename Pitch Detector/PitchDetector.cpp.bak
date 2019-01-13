@@ -1,0 +1,320 @@
+#include ".\PitchDetector.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+REGISTER_PLUGIN ( PitchDetector, L"SE Pitch Detector" );
+
+PitchDetector::PitchDetector( IMpUnknown* host ) : MpBase( host )
+	,PeakDetectorDecay_( 0.9f )
+	,currentPeak_( 0.0f )
+	,currentNegativePeak_( 0.0f )
+	,detectorOut_( false )
+	,previousPeakTime_( 0 )
+	,time_( 0 )
+	,output_( 0.0f )
+	,prevInput_( 0.0f )
+	,prevPeak_( 0.0f )
+	,filter_y1n( 0.0f )
+	,outputMemoryIdx( 0 )
+{
+	// Register pins.
+	initializePin( 0, pinInput );
+	initializePin( 1, pinPulseWidth );
+	initializePin( 2, pinScale );
+	initializePin( 3, pinAudioOut );
+}
+
+int32_t PitchDetector::open()
+{
+	// start the memory off at 440Hz to minimise settling time from a cold start.
+	float middle_a = 0.5f;
+	int middle_a_period = (int) (getSampleRate() / 440.0f);
+	for( int i = 0 ; i < outputMemorySize; ++i )
+	{
+		outputMemory[i] = middle_a;
+		outputMemoryPeriod[i] = middle_a_period;
+	}
+
+	return MpBase::open();
+}
+
+#define SWAP( a,b ) temp=(a); (a)=(b); (b)=temp;
+float select( unsigned long k, unsigned long n, float arr[] )
+
+//Returns the kth smallest value in the array arr[1..n]. The input array will be rearranged
+//to have this value in location arr[k], with all smaller elements moved to arr[1..k-1] (in
+//arbitrary order) and all larger elements in arr[k+1..n] (also in arbitrary order).
+{
+	unsigned long i,ir,j,l,mid;
+	float a,temp;
+	l=1;
+	ir=n;
+	for (;; ) {
+		if (ir <= l+1) { //Active partition contains 1 or 2 elements.
+			if (ir == l+1 && arr[ir] < arr[l]) { // Case of 2 elements.
+				SWAP( arr[l],arr[ir] )
+			}
+			return arr[k];
+		} else {
+			mid=(l+ir) >> 1; //Choose median of left, center, and right elements as partitioning element a. Also rearrange so that arr[l]  arr[l+1],arr[ir]  arr[l+1].
+			SWAP( arr[mid],arr[l+1] )
+			if (arr[l] > arr[ir]) {
+				SWAP( arr[l],arr[ir] )
+			}
+			if (arr[l+1] > arr[ir]) {
+				SWAP( arr[l+1],arr[ir] )
+			}
+			if (arr[l] > arr[l+1]) {
+				SWAP( arr[l],arr[l+1] )
+			}
+			i=l+1; // Initialize pointers for partitioning.
+			j=ir;
+			a=arr[l+1]; // Partitioning element.
+			for (;; ) { // Beginning of innermost loop.
+				do i++; while (arr[i] < a); //Scan up to nd element > a.
+				do j--; while (arr[j] > a); //Scan down to nd element < a.
+				if (j < i) break;  //Pointers crossed. Partitioning complete.
+				SWAP( arr[i],arr[j] )
+			} //End of innermost loop.
+			arr[l+1]=arr[j]; //Insert partitioning element.
+			arr[j]=a;
+			if (j >= k) ir=j-1;  //Keep active the partition that contains the
+			if (j <= k) l=i;  // kth element.
+		}
+	}
+}
+
+void PitchDetector::subProcess( int bufferOffset, int sampleFrames )
+{
+	// Musical Applications of Microprocessors page 584.
+
+	// get pointers to in/output buffers.
+	float* input    = bufferOffset + pinInput.getBuffer();
+	float* pulseWidth       = bufferOffset + pinPulseWidth.getBuffer();
+	float* audioOut = bufferOffset + pinAudioOut.getBuffer();
+
+	float prevInput = prevInput_;
+	float prevPeak = prevPeak_;
+
+	for( int s = sampleFrames; s > 0; --s )
+	{
+		float i = *input++;
+
+		// 1 pole DC block high pass
+		filter_y1n = i + filter_l * ( filter_y1n - i );
+		i = i - filter_y1n;
+
+
+		// Binary pulse for each peak.
+		bool newDetectorOut;
+
+		if( detectorOut_ )
+		{
+			newDetectorOut = i > currentNegativePeak_;
+		}
+		else
+		{
+			newDetectorOut = i > currentPeak_;
+		}
+
+		if( detectorOut_ != newDetectorOut )
+		{
+			detectorOut_ = newDetectorOut;
+
+			if( newDetectorOut )
+			{
+				float t = (float) (time_ + sampleFrames - s);
+
+				// interpolate exact crossing time.
+				// in presence of noise, don't really matter, better to average out several.
+				float y1 = prevInput - prevPeak;
+				float y2 = i - currentPeak_;
+
+				t = t - 1.0 + -y1 / (y2-y1);
+
+				float period = t - previousPeakTime_;
+
+				period = min( period, getSampleRate() * 0.02f ); // prevent divide-by-zero. 50Hz minimum freq.
+				//period = max( period, getSampleRate() * 0.0005 ); // maximum 2KHz.
+
+				float minPeriod = getSampleRate() * 0.0005f; // maximum 2KHz.
+				if( period < minPeriod ) // noise dominating?
+				{
+					period = minPeriod;
+				}
+
+				//const float decayRate = logf( 0.35f ); // Decay about 60% of amplitude over 1 period.
+				//PeakDetectorDecay_ = expf( decayRate / period );
+
+				previousPeakTime_ = t;
+				double Hz = getSampleRate() / period;
+
+				float unfiltered;
+				if( pinScale == 1 ) // Khz.
+				{
+					unfiltered = (float) Hz * 0.001f;
+				}
+				else
+				{
+					double volts = log( Hz ) / 0.69314718055994529 - 3.7813597135246599;
+					unfiltered = (float) volts * 0.1f;
+				}
+
+				outputMemoryIdx = (outputMemoryIdx + 1) % outputMemorySize;
+				outputMemory[outputMemoryIdx] = unfiltered;
+				outputMemoryPeriod[outputMemoryIdx] = period;
+
+				if( pinScale == 5 ) // unfiltered.
+				{
+					output_ = unfiltered;
+				}
+				else
+				{
+					float PitchSamples[outputMemorySize];
+
+					// Want needle updated about 20 times per second.
+					// Count number of transitions in last 1/20th second.
+					const float inv_update_rate_hz = 1.0f / 20.0f;
+					int cycles = 0;
+					int time = getSampleRate() * inv_update_rate_hz;
+					int idx = outputMemoryIdx;
+					int averagePeriod = 0;
+					while( time > 0 && cycles < outputMemorySize )
+					{
+						PitchSamples[cycles] = outputMemory[idx];
+						time -= outputMemoryPeriod[idx];
+						averagePeriod += outputMemoryPeriod[idx];
+						++cycles;
+						idx = (idx + outputMemorySize - 1) % outputMemorySize;
+					}
+
+					averagePeriod /= cycles;
+
+					// Median.
+					float median = select( cycles/2, cycles - 1, PitchSamples );
+
+					// Average.
+					float simple_average = 0.0f;
+					for( int i = 0; i < cycles; ++i )
+					{
+						simple_average += PitchSamples[i];
+					}
+
+					simple_average /= (float) cycles;
+
+					// Standard deviation.
+					float varience = 0.0f;
+					for( int i = 0; i < cycles; ++i )
+					{
+						float dif = PitchSamples[i] - simple_average;
+						varience += dif * dif; // difference from mean squared.
+					}
+					varience /= (float) cycles;
+					//float standard_deviation = sqrtf( standard_deviation );
+
+					output_ = median;
+					_RPTW4(_CRT_WARN, L" Cycles %3d, Average %4f, Median %4f, Varience %4f \n", cycles, simple_average, median, varience );
+
+					// Switch offf output when signal gets noisy.
+					if( pinScale == 0 ) // official output.
+					{
+						if( varience > 0.03f ) // official output. pure noise = 0.1
+						{
+							output_ = -1.0f;
+						}
+					}
+
+					// impose sanity on peak decay rate.
+					averagePeriod = min( averagePeriod, getSampleRate() * 0.05f ); // prevent divide-by-zero. 20Hz minimum freq.
+					averagePeriod = max( averagePeriod, getSampleRate() * 0.0005 ); // maximum 2KHz.
+
+					//const float decayRate = logf( 0.35f ); // Decay about 60% of amplitude over 1 period.
+					const float decayRate = logf( 0.50f ); // Guess - need to sytematically optimise this with real guitar samples.
+					PeakDetectorDecay_ = expf( decayRate / averagePeriod );
+
+					if( pinScale == 6 ) // noise estimate.
+					{
+						output_ = varience;
+					}
+					if( pinScale == 7 ) // Median filter.
+					{
+						output_ = median;
+					}
+					if( pinScale == 8 ) //Simple Average.
+					{
+						output_ = simple_average;
+					}
+				}
+			}
+
+			if( pinScale == 4 ) // pulses.
+			{
+				output_ = 0.5f * ((float) !newDetectorOut - 0.5f);
+			}
+		}
+
+		// Peak followers,
+		if( currentPeak_ > i )
+		{
+			currentPeak_ *= PeakDetectorDecay_; // linear decay.
+			currentPeak_ = max( currentPeak_, 0.0f );
+		}
+		currentPeak_ = max( currentPeak_, i );
+
+		if(currentNegativePeak_ < i)
+		{
+			currentNegativePeak_ *= PeakDetectorDecay_; // linear decay.
+			currentNegativePeak_ = min( currentNegativePeak_, 0.0f );
+		}
+		currentNegativePeak_ = min( currentNegativePeak_, i );
+
+		if( pinScale == 2 ) // Peaks.
+		{
+			output_ = currentPeak_;
+		}
+		if( pinScale == 3 ) // -Peaks.
+		{
+			output_ = currentNegativePeak_;
+		}
+
+		*audioOut++ = output_;
+
+		prevInput = i;
+		prevPeak = currentPeak_;
+
+		if( pinScale == 4 ) // pulses.
+		{
+			output_ = 0.0f;
+		}
+	}
+
+	time_ += sampleFrames;
+
+	prevInput_ = prevInput;
+	prevPeak_ = prevPeak;
+}
+
+void PitchDetector::onSetPins( void )
+{
+	// Check which pins are updated.
+	if( pinInput.isStreaming() )
+	{
+	}
+	if( pinPulseWidth.isStreaming() )
+	{
+	}
+	if( pinScale.isUpdated() )
+	{
+	}
+
+	// Set state of output audio pins.
+	pinAudioOut.setStreaming( true );
+
+	// Set processing method.
+	SET_PROCESS( &PitchDetector::subProcess );
+
+	// In absence of peaks, reduce blanking period. 2.5ms
+	const float hiPassHz = 30.0f;
+	filter_l = exp( -M_PI * 2.0f * hiPassHz / getSampleRate());
+}
+

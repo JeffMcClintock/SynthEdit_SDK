@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "container:AGain/mac/AGain.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:BoolInverter/mac/BoolInverter.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:BPMClock3/mac/BpmClock3.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:ControlsXp/mac/ControlsXp.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Converters/mac/Converters.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:EnvelopeAdsr/mac/EnvelopeAdsr.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:FloatLimiter/mac/FloatLimiter.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Gain/mac/Gain.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Guitar De Channelizer/mac/GuitarDechannelizer.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Increment3/mac/Increment3.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Inverter/mac/Inverter.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:keyboard2/mac/Keyboard2.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:List Combiner/mac/ListCombiner.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:/SE/My Projects/SE_DSP_CORE/modules/MidiPlayer2/mac/MidiPlayer2.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:OversamplingControl/mac/OversamplingControl.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:PatchMemory/mac/PatchMemory.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:PolyphonyControl/mac/PolyphonyControl.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:/SE/My Projects/SE_DSP_CORE/modules/Sample Oscillator2/mac/SampleOscillator2.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:SampleRate/mac/SampleRate.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Scope3/mac/Scope3.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Spring2/mac/Spring2.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Streaming State/mac/StreamingState.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:SubControls/mac/SubControls.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:SubControlsXp/mac/SubControlsXp.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:/SE/My Projects/SE_DSP_CORE/modules/SVFilter2/mac/SvFilter2.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:System Command/mac/SystemCommand.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Triggerator/mac/Triggerator.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:UnisonFix/mac/UnisonFix.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:VoiceMute/mac/VoiceMute.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:VoiceWatcherBlocker/mac/VoiceWatcherBlocker.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Waveshapers/mac/Waveshapers.xcodeproj">
+   </FileRef>
+</Workspace>

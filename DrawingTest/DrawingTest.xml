@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <Plugin id="SE Drawing Test - Lines" name="Drawing Test - Lines" category="Experimental/Sub-Controls" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin name="Test" datatype="enum" isMinimised="true" metadata="1,2, Gamma" />
+      <Pin name="Fontface" datatype="enum" isMinimised="true" metadata="Segoe UI,Arial,Courier New,Times New Roman,MS Sans Serif" />
+      <Pin name="Fontsize" datatype="enum" default="10" isMinimised="true" metadata="10=10, 14=14, 18=18, 34=34, 72=72" />
+      <Pin name="Text" datatype="string" />
+      <Pin name="Gamma Correction" datatype="bool" isMinimised="true" />
+      <Pin name="Adjust" datatype="float" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE Drawing Test" name="Drawing Test" category="Experimental/Sub-Controls" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin name="Test" direction="in" datatype="enum" isMinimised="true" metadata="1,2, Gamma, Gradient"/>
+      <Pin name="Fontface" direction="in" datatype="enum" isMinimised="true" metadata="Segoe UI,Arial,Courier New,Times New Roman,MS Sans Serif"/>
+      <Pin name="Fontsize" direction="in" datatype="enum" isMinimised="true" default="10" metadata="10=10, 14=14, 18=18, 34=34, 72=72"/>
+      <Pin name="Text" datatype="string" />
+      <Pin name="Gamma Correction" direction="in" datatype="bool" isMinimised="true" />
+      <Pin name="Adjust" direction="in" datatype="float" />
+    </GUI>
+  </Plugin>
+</PluginList>

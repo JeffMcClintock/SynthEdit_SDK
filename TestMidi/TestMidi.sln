@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestMidi", "TestMidi.vcproj", "{411C7FFE-CC26-47D3-AE3C-89D9D5C68FFB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{411C7FFE-CC26-47D3-AE3C-89D9D5C68FFB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{411C7FFE-CC26-47D3-AE3C-89D9D5C68FFB}.Debug|Win32.Build.0 = Debug|Win32
+		{411C7FFE-CC26-47D3-AE3C-89D9D5C68FFB}.Release|Win32.ActiveCfg = Release|Win32
+		{411C7FFE-CC26-47D3-AE3C-89D9D5C68FFB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

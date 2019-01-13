@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <Plugin id="SE Joystick Image" name="Joystick Image" category="Sub-Controls" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin name="Animation Position" datatype="float" />
+      <Pin name="Filename" datatype="string" default="joystick_knob" isFilename="true" metadata="bmp" />
+      <Pin name="Hint" datatype="string" />
+      <Pin name="Menu Items" datatype="string" />
+      <Pin name="Menu Selection" datatype="int" />
+      <Pin name="Mouse Down" datatype="bool" direction="out" private="true" />
+      <Pin name="Mouse Down" datatype="bool" />
+      <Pin name="Frame Count" datatype="int" private="true" />
+      <Pin name="Frame Count" datatype="int" direction="out" />
+      <Pin name="Position X" datatype="float" />
+      <Pin name="Position Y" datatype="float" />
+    </GUI>
+  </Plugin>
+</PluginList>

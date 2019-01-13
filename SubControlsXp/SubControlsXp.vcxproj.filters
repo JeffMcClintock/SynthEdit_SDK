@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="TextEntry4Gui.cpp" />
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_gui.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\ImageMetadata.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\it_enum_list.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="ListEntry4Gui.cpp" />
+    <ClCompile Include="JoystickImageGui.cpp" />
+    <ClCompile Include="..\shared\xplatform_modifier_keys.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="Image2GuiXp.cpp" />
+    <ClCompile Include="ImageTinted2Gui.cpp" />
+    <ClCompile Include="..\shared\ImageCache.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="PlainImageGui.cpp" />
+    <ClCompile Include="..\shared\FontCache.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelGroupGui.cpp" />
+    <ClCompile Include="PopupMenuGui.cpp" />
+    <ClCompile Include="GraphicsFrameRateGui.cpp" />
+    <ClCompile Include="..\se_sdk3\TimerManager.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="TextSubcontrol.cpp" />
+    <ClCompile Include="RectangleGui.cpp" />
+    <ClCompile Include="..\sharedLegacyWidgets\ImageBase.cpp" />
+    <ClCompile Include="VectorRingGui.cpp" />
+    <ClCompile Include="StructureGroupGui.cpp" />
+    <ClCompile Include="MenuCombinerGui.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TextEntry4Gui.h" />
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\ImageMetadata.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\it_enum_list.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="ListEntry4Gui.h" />
+    <ClInclude Include="JoystickImageGui.h" />
+    <ClInclude Include="..\shared\xplatform_modifier_keys.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="Image2GuiXp.h" />
+    <ClInclude Include="ImageTinted2Gui.h" />
+    <ClInclude Include="..\shared\ImageCache.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui2.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_api_gui2_fonts.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing_API.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="PlainImageGui.h" />
+    <ClInclude Include="..\shared\FontCache.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelGroupGui.h" />
+    <ClInclude Include="PopupMenuGui.h" />
+    <ClInclude Include="GraphicsFrameRateGui.h" />
+    <ClInclude Include="..\se_sdk3\TimerManager.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="TextSubcontrol.h" />
+    <ClInclude Include="..\shared\unicode_conversion2.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="RectangleGui.h" />
+    <ClInclude Include="..\shared\fast_gamma.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sharedLegacyWidgets\ImageBase.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{22c7a52c-c11d-4b92-ada3-798ea6bf5d83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{12adcc35-08b9-44f6-92ac-54e573313e82}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SubControlsXp.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SubControlsXp.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

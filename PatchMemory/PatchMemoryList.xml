@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+  <Plugin id="SE PatchMemory List3"  name="PatchMemory List3" category="Sub-Controls" helpUrl="Patchmemory.htm" >
+    <Parameters>
+      <Parameter id="0" datatype="enum" />
+    </Parameters>
+    
+    <Audio>
+      <Pin id="0" name="Value In" direction="in" datatype="int" parameterId="0" />
+      <Pin id="1" name="Value Out" direction="out" datatype="enum" autoConfigureParameter="true"/>
+    </Audio>
+    
+    <GUI>
+      <!-- Value in would be nice as int, but datatype determins patch-mem datatype-->
+      <!-- better to specify patch-param datatype seperate-->
+      <Pin id="0" name="Value In" direction="in" datatype="int" parameterId="0" />
+      <Pin id="1" name="Name In" direction="in" datatype="string" parameterId="0" parameterField="ShortName"/>
+      <Pin id="2" name="List Values" direction="in" datatype="string" parameterId="0" parameterField="EnumList"/>
+      <Pin id="3" name="Menu Items" direction="in" datatype="string" parameterId="0" parameterField="MenuItems"/>
+      <!-- Little unusual, this is an 'in' even though it's purpose is to send to host-->
+      <Pin id="4" name="Menu Selection" direction="in" datatype="int" parameterId="0" parameterField="MenuSelection"/>
+      <Pin id="5" name="Mouse Down" direction="in" datatype="bool" parameterId="0" parameterId="0" parameterField="Grab"/>
+
+      <Pin id="6" name="Name" direction="out" datatype="string" />
+      <Pin id="7" name="Choice" direction="out" datatype="int" />
+      
+      <!-- legacy only. for replacing the Patch Mem List - B - ->
+      <Pin id="8" name="List Out" direction="in" datatype="int" isMinimised="true"/> -->
+
+      <Pin id="8" name="Item List" direction="out" datatype="string"/>
+      <Pin id="9" name="Menu Items" direction="out" datatype="string"/>
+      <Pin id="10" name="Menu Selection" direction="out" datatype="int"/>
+      <Pin id="11" name="Mouse Down" direction="out" datatype="bool"/>
+    </GUI>
+  </Plugin>
+</PluginList>

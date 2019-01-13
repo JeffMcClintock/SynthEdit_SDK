@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="SignalLogger.cpp" />
+    <ClCompile Include="SignalLoggerGui.cpp" />
+    <ClCompile Include="..\se_sdk3\mp_sdk_audio.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_gui.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SignalLogger.h" />
+    <ClInclude Include="SignalLoggerGui.h" />
+    <ClInclude Include="..\se_sdk3\mp_sdk_audio.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\PinIterator.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SignalLogger.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{dbbf4b1f-150b-4350-bbd5-7233ea096716}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{24708b2e-2c1e-4375-b88d-03e1677f96d8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SignalLogger.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

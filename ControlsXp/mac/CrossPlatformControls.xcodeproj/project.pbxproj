@@ -1,0 +1,345 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C0A8D611B8AC93200F7A6EF /* mp_sdk_gui2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D5F1B8AC93200F7A6EF /* mp_sdk_gui2.cpp */; };
+		0C0A8D641B8AC95600F7A6EF /* mp_sdk_gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D621B8AC95600F7A6EF /* mp_sdk_gui.cpp */; };
+		0C0A8D671B8AC97100F7A6EF /* it_enum_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D651B8AC97100F7A6EF /* it_enum_list.cpp */; };
+		0C0A8D6A1B8AC98B00F7A6EF /* ImageMetadata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D681B8AC98B00F7A6EF /* ImageMetadata.cpp */; };
+		0C0A8D6D1B8ACA0B00F7A6EF /* smart_audio_pin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D6B1B8ACA0B00F7A6EF /* smart_audio_pin.cpp */; };
+		0C0A8D701B8ACA3900F7A6EF /* xplatform_modifier_keys.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A8D6E1B8ACA3900F7A6EF /* xplatform_modifier_keys.cpp */; };
+		0CBCDAA719C13C95009EEA29 /* CrossPlatformControls.sem in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D576316048677EA00EA77CD /* CrossPlatformControls.sem */; };
+		0CE7A4F81B8ABE7500DC8C01 /* ListEntry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CE7A4F31B8ABE7500DC8C01 /* ListEntry.cpp */; };
+		0CE7A4F91B8ABE7500DC8C01 /* ListEntryGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CE7A4F51B8ABE7500DC8C01 /* ListEntryGui.cpp */; };
+		0CE7A4FE1B8ABE8700DC8C01 /* Slider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CE7A4FA1B8ABE8700DC8C01 /* Slider.cpp */; };
+		0CE7A4FF1B8ABE8700DC8C01 /* SliderGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CE7A4FC1B8ABE8700DC8C01 /* SliderGui.cpp */; };
+		8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */; };
+		8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8D5B49A704867FD3000E48DA /* InfoPlist.strings */; };
+		D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */ = {isa = PBXBuildFile; fileRef = D5C87A3F17D6B09100ED3316 /* PkgInfo */; };
+		D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */; };
+		D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0CEB1F9C19B95CE40024780F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/../../../../SynthEdit/mac_assets/modules";
+			dstSubfolderSpec = 0;
+			files = (
+				0CBCDAA719C13C95009EEA29 /* CrossPlatformControls.sem in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		0C0A8D5F1B8AC93200F7A6EF /* mp_sdk_gui2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui2.cpp; path = ../../se_sdk3/mp_sdk_gui2.cpp; sourceTree = "<group>"; };
+		0C0A8D601B8AC93200F7A6EF /* mp_sdk_gui2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui2.h; path = ../../se_sdk3/mp_sdk_gui2.h; sourceTree = "<group>"; };
+		0C0A8D621B8AC95600F7A6EF /* mp_sdk_gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui.cpp; path = ../../se_sdk3/mp_sdk_gui.cpp; sourceTree = "<group>"; };
+		0C0A8D631B8AC95600F7A6EF /* mp_sdk_gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui.h; path = ../../se_sdk3/mp_sdk_gui.h; sourceTree = "<group>"; };
+		0C0A8D651B8AC97100F7A6EF /* it_enum_list.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = it_enum_list.cpp; path = ../../shared/it_enum_list.cpp; sourceTree = "<group>"; };
+		0C0A8D661B8AC97100F7A6EF /* it_enum_list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = it_enum_list.h; path = ../../shared/it_enum_list.h; sourceTree = "<group>"; };
+		0C0A8D681B8AC98B00F7A6EF /* ImageMetadata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageMetadata.cpp; path = ../../shared/ImageMetadata.cpp; sourceTree = "<group>"; };
+		0C0A8D691B8AC98B00F7A6EF /* ImageMetadata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageMetadata.h; path = ../../shared/ImageMetadata.h; sourceTree = "<group>"; };
+		0C0A8D6B1B8ACA0B00F7A6EF /* smart_audio_pin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = smart_audio_pin.cpp; path = ../../se_sdk3/smart_audio_pin.cpp; sourceTree = "<group>"; };
+		0C0A8D6C1B8ACA0B00F7A6EF /* smart_audio_pin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = smart_audio_pin.h; path = ../../se_sdk3/smart_audio_pin.h; sourceTree = "<group>"; };
+		0C0A8D6E1B8ACA3900F7A6EF /* xplatform_modifier_keys.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = xplatform_modifier_keys.cpp; path = ../../shared/xplatform_modifier_keys.cpp; sourceTree = "<group>"; };
+		0C0A8D6F1B8ACA3900F7A6EF /* xplatform_modifier_keys.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xplatform_modifier_keys.h; path = ../../shared/xplatform_modifier_keys.h; sourceTree = "<group>"; };
+		0CE7A4F31B8ABE7500DC8C01 /* ListEntry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ListEntry.cpp; path = ../ListEntry.cpp; sourceTree = "<group>"; };
+		0CE7A4F41B8ABE7500DC8C01 /* ListEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ListEntry.h; path = ../ListEntry.h; sourceTree = "<group>"; };
+		0CE7A4F51B8ABE7500DC8C01 /* ListEntryGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ListEntryGui.cpp; path = ../ListEntryGui.cpp; sourceTree = "<group>"; };
+		0CE7A4F61B8ABE7500DC8C01 /* ListEntryGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ListEntryGui.h; path = ../ListEntryGui.h; sourceTree = "<group>"; };
+		0CE7A4FA1B8ABE8700DC8C01 /* Slider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Slider.cpp; path = ../Slider.cpp; sourceTree = "<group>"; };
+		0CE7A4FB1B8ABE8700DC8C01 /* Slider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Slider.h; path = ../Slider.h; sourceTree = "<group>"; };
+		0CE7A4FC1B8ABE8700DC8C01 /* SliderGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SliderGui.cpp; path = ../SliderGui.cpp; sourceTree = "<group>"; };
+		0CE7A4FD1B8ABE8700DC8C01 /* SliderGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SliderGui.h; path = ../SliderGui.h; sourceTree = "<group>"; };
+		8D576316048677EA00EA77CD /* CrossPlatformControls.sem */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CrossPlatformControls.sem; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D576317048677EA00EA77CD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D5C87A3F17D6B09100ED3316 /* PkgInfo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PkgInfo; sourceTree = "<group>"; };
+		D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_audio.cpp; path = ../../se_sdk3/mp_sdk_audio.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_audio.h; path = ../../se_sdk3/mp_sdk_audio.h; sourceTree = SOURCE_ROOT; };
+		D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_common.cpp; path = ../../se_sdk3/mp_sdk_common.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_common.h; path = ../../se_sdk3/mp_sdk_common.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D576313048677EA00EA77CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				D5C87A4F17D6B11000ED3316 /* SDK */,
+				08FB77AFFE84173DC02AAC07 /* Source */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				19C28FB6FE9D52B211CA2CBB /* Products */,
+				D5C87A3F17D6B09100ED3316 /* PkgInfo */,
+			);
+			name = Untitled;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				8D576317048677EA00EA77CD /* Info.plist */,
+				8D5B49A704867FD3000E48DA /* InfoPlist.strings */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77AFFE84173DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				0CE7A4FA1B8ABE8700DC8C01 /* Slider.cpp */,
+				0CE7A4FB1B8ABE8700DC8C01 /* Slider.h */,
+				0CE7A4FC1B8ABE8700DC8C01 /* SliderGui.cpp */,
+				0CE7A4FD1B8ABE8700DC8C01 /* SliderGui.h */,
+				0CE7A4F31B8ABE7500DC8C01 /* ListEntry.cpp */,
+				0CE7A4F41B8ABE7500DC8C01 /* ListEntry.h */,
+				0CE7A4F51B8ABE7500DC8C01 /* ListEntryGui.cpp */,
+				0CE7A4F61B8ABE7500DC8C01 /* ListEntryGui.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		19C28FB6FE9D52B211CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D576316048677EA00EA77CD /* CrossPlatformControls.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D5C87A4F17D6B11000ED3316 /* SDK */ = {
+			isa = PBXGroup;
+			children = (
+				0C0A8D6E1B8ACA3900F7A6EF /* xplatform_modifier_keys.cpp */,
+				0C0A8D6F1B8ACA3900F7A6EF /* xplatform_modifier_keys.h */,
+				0C0A8D6B1B8ACA0B00F7A6EF /* smart_audio_pin.cpp */,
+				0C0A8D6C1B8ACA0B00F7A6EF /* smart_audio_pin.h */,
+				0C0A8D681B8AC98B00F7A6EF /* ImageMetadata.cpp */,
+				0C0A8D691B8AC98B00F7A6EF /* ImageMetadata.h */,
+				0C0A8D651B8AC97100F7A6EF /* it_enum_list.cpp */,
+				0C0A8D661B8AC97100F7A6EF /* it_enum_list.h */,
+				0C0A8D621B8AC95600F7A6EF /* mp_sdk_gui.cpp */,
+				0C0A8D631B8AC95600F7A6EF /* mp_sdk_gui.h */,
+				0C0A8D5F1B8AC93200F7A6EF /* mp_sdk_gui2.cpp */,
+				0C0A8D601B8AC93200F7A6EF /* mp_sdk_gui2.h */,
+				D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */,
+				D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */,
+				D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */,
+				D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */,
+			);
+			name = SDK;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D57630D048677EA00EA77CD /* CrossPlatformControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "CrossPlatformControls" */;
+			buildPhases = (
+				8D57630F048677EA00EA77CD /* Resources */,
+				8D576311048677EA00EA77CD /* Sources */,
+				8D576313048677EA00EA77CD /* Frameworks */,
+				0CEB1F9C19B95CE40024780F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CrossPlatformControls;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = Untitled;
+			productReference = 8D576316048677EA00EA77CD /* CrossPlatformControls.sem */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "CrossPlatformControls" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* Untitled */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8D57630D048677EA00EA77CD /* CrossPlatformControls */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D57630F048677EA00EA77CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */,
+				D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D576311048677EA00EA77CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */,
+				0C0A8D671B8AC97100F7A6EF /* it_enum_list.cpp in Sources */,
+				0C0A8D6D1B8ACA0B00F7A6EF /* smart_audio_pin.cpp in Sources */,
+				0C0A8D641B8AC95600F7A6EF /* mp_sdk_gui.cpp in Sources */,
+				0CE7A4F81B8ABE7500DC8C01 /* ListEntry.cpp in Sources */,
+				D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */,
+				0C0A8D611B8AC93200F7A6EF /* mp_sdk_gui2.cpp in Sources */,
+				0CE7A4FF1B8ABE8700DC8C01 /* SliderGui.cpp in Sources */,
+				0C0A8D701B8ACA3900F7A6EF /* xplatform_modifier_keys.cpp in Sources */,
+				0C0A8D6A1B8AC98B00F7A6EF /* ImageMetadata.cpp in Sources */,
+				0CE7A4FE1B8ABE8700DC8C01 /* Slider.cpp in Sources */,
+				0CE7A4F91B8ABE7500DC8C01 /* ListEntryGui.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		8D5B49A704867FD3000E48DA /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C167EFE841241C02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB911B08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = _DEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx10.8;
+				VALID_ARCHS = "i386 x86_64";
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Debug;
+		};
+		1DEB911C08733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx10.8;
+				VALID_ARCHS = "i386 x86_64";
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Release;
+		};
+		1DEB911F08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		1DEB912008733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "CrossPlatformControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911B08733D790010E9CD /* Debug */,
+				1DEB911C08733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "CrossPlatformControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911F08733D790010E9CD /* Debug */,
+				1DEB912008733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}

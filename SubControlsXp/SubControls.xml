@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <Plugin id="ImageJoystick" name="Joystick Image" category="Sub-Controls" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin name="Animation Position" datatype="float" />
+      <Pin name="Filename" datatype="string" default="joystick_knob" isFilename="true" metadata="bmp" />
+      <Pin name="Hint" datatype="string" />
+      <Pin name="Menu Items" datatype="string" />
+      <Pin name="Menu Selection" datatype="int" />
+      <Pin name="Mouse Down" datatype="bool" direction="out" private="true" />
+      <Pin name="Mouse Down" datatype="bool" />
+      <Pin name="Frame Count" datatype="int" private="true" />
+      <Pin name="Frame Count" datatype="int" direction="out" />
+      <Pin name="Position X" datatype="float" />
+      <Pin name="Position Y" datatype="float" />
+    </GUI>
+  </Plugin>
+  <Plugin id="Image2" name="Image2" category="Sub-Controls" graphicsApi="GmpiGui" >
+    <GUI>
+      <Pin name="Animation Position" datatype="float" />
+      <Pin name="Filename" datatype="string" default="knob_sm" isFilename="true" metadata="bmp" />
+      <Pin name="Hint" datatype="string" />
+      <Pin name="Menu Items" datatype="string" />
+      <Pin name="Menu Selection" datatype="int" />
+      <Pin name="Mouse Down" datatype="bool" direction="out" private="true" />
+      <Pin name="Mouse Down" datatype="bool" />
+      <Pin name="Frame Count" datatype="int" private="true" />
+      <Pin name="Frame Count" datatype="int" direction="out" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE FileDialog" name="File Dialog" category="Sub-Controls">
+    <GUI>
+      <Pin name="File Name" datatype="string" />
+      <Pin name="File Extension" datatype="string" />
+      <Pin name="Trigger" datatype="bool" direction="out" />
+      <Pin name="Save Mode" datatype="bool" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE Text Entry4" name="Text Entry4" category="Sub-Controls/Cross Platform" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin name="Text" datatype="string" />
+      <Pin name="Style" datatype="string" default="normal" />
+      <Pin name="Multiline" datatype="bool" />
+      <Pin name="Writeable" datatype="bool" default="1" />
+      <Pin name="Greyed" datatype="bool" />
+      <Pin name="Hint" datatype="string" />
+      <Pin name="Menu Items" datatype="string" />
+      <Pin name="Menu Selection" datatype="int" />
+      <Pin name="Mouse Down" datatype="bool" direction="out" />
+    </GUI>
+  </Plugin>
+  <Plugin id="SE List Entry4" name="List Entry4" category="Sub-Controls/Cross Platform" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin id="0" name="Choice" datatype="int" />
+      <Pin id="1" name="Item List" datatype="string" />
+      <Pin id="2" name="Style" datatype="string" default="normal" />
+      <Pin id="3" name="Writeable" datatype="bool" default="1" />
+      <Pin id="4" name="Greyed" datatype="bool" />
+      <Pin id="5" name="Hint" datatype="string" />
+      <Pin id="6" name="Menu Items" datatype="string" />
+      <Pin id="7" name="Menu Selection" datatype="int" />
+    </GUI>
+  </Plugin>
+</PluginList>

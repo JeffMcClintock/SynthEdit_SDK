@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+  <Plugin id="SynthEdit ADSR" name="ADSR2" category="Waveform" helpUrl="EnveloperAdsr.htm">
+    <Audio>
+      <Pin id="0" name="Trigger" direction="in" datatype="float" rate="audio" default="0.1"/>
+      <Pin id="1" name="Gate" direction="in" datatype="float" rate="audio" default="0.1"/>
+      <Pin id="2" name="Attack" direction="in" datatype="float" rate="audio" default="0"/>
+      <Pin id="3" name="Decay" direction="in" datatype="float" rate="audio" default="0.5"/>
+      <Pin id="4" name="Sustain" direction="in" datatype="float" rate="audio" default="0.7"/>
+      <Pin id="5" name="Release" direction="in" datatype="float" rate="audio" default="0.4"/>
+      <Pin id="6" name="Overall Level" direction="in" datatype="float" rate="audio" default="1.0"/>
+      <Pin id="7" name="Signal Out" direction="out" datatype="float" rate="audio"/>
+      <Pin id="8" name="VoiceReset" direction="in" datatype="float" hostConnect="Voice/Active" isPolyphonic="true" />
+    </Audio>
+  </Plugin>
+</PluginList>
+
+

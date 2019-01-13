@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<PluginList>
+  <Plugin id="SE List Entry4" name="List Entry4" category="Sub-Controls" graphicsApi="GmpiGui">
+    <GUI>
+      <Pin id="0" name="Choice" datatype="int" />
+      <Pin id="1" name="Item List" datatype="string" />
+      <Pin id="2" name="Style" datatype="string" default="normal" />
+      <Pin id="3" name="Writeable" datatype="bool" default="1" />
+      <Pin id="4" name="Greyed" datatype="bool" />
+      <Pin id="5" name="Hint" datatype="string" />
+      <Pin id="6" name="Menu Items" datatype="string" />
+      <Pin id="7" name="Menu Selection" datatype="int" />
+    </GUI>
+  </Plugin>
+</PluginList>

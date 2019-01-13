@@ -1,0 +1,26 @@
+Creating your project
+First, create a new empty Xcode project. Now add a new target to the project, which should use the “Bundle” template under the “Framework & Library” group (for Mac OS X, of course). Set the product name, bundle identifier, and choose to link it against the Cocoa Framework.
+
+Adding resource files
+Create a new empty file in your project named “PkgInfo” with the contents “BNDL????” (no quotes, and no newline either). You can verify that this file will be copied to the VST bundle by clicking on your project’s target in the file browser, and then expanding the “Copy Bundle Resources” section underneath “Build Phases”.
+
+Add a Group "SDK", Add Existing Files:
+- mp_sdk_common.h
+- mp_sdk_common.cpp
+- mp_sdk_audio.h
+- mp_sdk_audio.cpp
+
+To group "Source", Add existing Files:
+MyModule.h  (or whatever your module is called)
+MyModule.cpp
+
+Go to Targets-Untitled, rename it: SE Module,
+right-click Get-Info, Build, Pre-processor macros,
+Select Configuration DEBUG
+add macro _DEBUG
+Select Configuration RELEASE
+add macro NDEBUG
+
+targets - ALL CONFIGURASTIONS, packaging, 
+Wrapper Extension = sem
+Product Name = MyModule

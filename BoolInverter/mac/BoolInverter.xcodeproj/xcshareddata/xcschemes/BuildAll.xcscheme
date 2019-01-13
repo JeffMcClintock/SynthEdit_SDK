@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "0820"
+   version = "1.3">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "BoolInverter.sem"
+               BlueprintName = "BoolInverter"
+               ReferencedContainer = "container:BoolInverter.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "BpmClock3.sem"
+               BlueprintName = "BpmClock3"
+               ReferencedContainer = "container:../../BPMClock3/mac/BpmClock3.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "ControlsXp.sem"
+               BlueprintName = "CrossPlatformControls"
+               ReferencedContainer = "container:../../ControlsXp/mac/ControlsXp.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Converters.sem"
+               BlueprintName = "Converters"
+               ReferencedContainer = "container:../../Converters/mac/Converters.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "EnveloperAdsr.sem"
+               BlueprintName = "EnveloperAdsr"
+               ReferencedContainer = "container:../../EnvelopeAdsr/mac/EnvelopeAdsr.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "FloatLimiter.sem"
+               BlueprintName = "FloatLimiter"
+               ReferencedContainer = "container:../../FloatLimiter/mac/FloatLimiter.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "GuitarDechannelizer.sem"
+               BlueprintName = "GuitarDechannelizer"
+               ReferencedContainer = "container:../../Guitar De Channelizer/mac/GuitarDechannelizer.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Increment3.sem"
+               BlueprintName = "Increment3"
+               ReferencedContainer = "container:../../Increment3/mac/Increment3.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Inverter.sem"
+               BlueprintName = "Inverter"
+               ReferencedContainer = "container:../../Inverter/mac/Inverter.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Keyboard2.sem"
+               BlueprintName = "Keyboard2"
+               ReferencedContainer = "container:../../keyboard2/mac/Keyboard2.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "ListCombiner.sem"
+               BlueprintName = "ListCombiner"
+               ReferencedContainer = "container:../../List Combiner/mac/ListCombiner.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "MidiPlayer2.sem"
+               BlueprintName = "MidiPlayer2"
+               ReferencedContainer = "container:../../MidiPlayer2/mac/MidiPlayer2.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "OscillatorNaive.sem"
+               BlueprintName = "OscillatorNaive"
+               ReferencedContainer = "container:../../OscillatorNaive/mac/OscillatorNaive.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "OversamplingControl.sem"
+               BlueprintName = "OversamplingControl"
+               ReferencedContainer = "container:../../OversamplingControl/mac/OversamplingControl.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "PatchMemory.sem"
+               BlueprintName = "PatchMemory"
+               ReferencedContainer = "container:../../PatchMemory/mac/PatchMemory.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "PolyphonyControl.sem"
+               BlueprintName = "PolyphonyControl"
+               ReferencedContainer = "container:../../PolyphonyControl/mac/PolyphonyControl.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SampleRate.sem"
+               BlueprintName = "SampleRate"
+               ReferencedContainer = "container:../../SampleRate/mac/SampleRate.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D01CCC60486CAD60068D4B7"
+               BuildableName = "SeAu.component"
+               BlueprintName = "SeAu"
+               ReferencedContainer = "container:../../../../se_au/SeAu.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Spring2.sem"
+               BlueprintName = "Spring2"
+               ReferencedContainer = "container:../../Spring2/mac/Spring2.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "StreamingState.sem"
+               BlueprintName = "StreamingState"
+               ReferencedContainer = "container:../../Streaming State/mac/StreamingState.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SubControlsXp.sem"
+               BlueprintName = "SubControlsXp"
+               ReferencedContainer = "container:../../SubControlsXp/mac/SubControlsXp.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SystemCommand.sem"
+               BlueprintName = "SystemCommand"
+               ReferencedContainer = "container:../../System Command/mac/SystemCommand.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "TestSem.sem"
+               BlueprintName = "TestSem"
+               ReferencedContainer = "container:../../Template Test SEM/mac/TestSem.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Triggerator.sem"
+               BlueprintName = "Triggerator"
+               ReferencedContainer = "container:../../Triggerator/mac/Triggerator.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "UnisonFix.sem"
+               BlueprintName = "UnisonFix"
+               ReferencedContainer = "container:../../UnisonFix/mac/UnisonFix.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "VoiceWatcherBlocker.sem"
+               BlueprintName = "VoiceWatcherBlocker"
+               ReferencedContainer = "container:../../VoiceWatcherBlocker/mac/VoiceWatcherBlocker.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "WaveRecorder2.sem"
+               BlueprintName = "WaveRecorder2"
+               ReferencedContainer = "container:../../WaveRecorder2/mac/WaveRecorder2.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Waveshapers.sem"
+               BlueprintName = "Waveshapers"
+               ReferencedContainer = "container:../../Waveshapers/mac/Waveshapers.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Scope3.sem"
+               BlueprintName = "Scope3"
+               ReferencedContainer = "container:../../Scope3/mac/Scope3.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SwitchFloat.sem"
+               BlueprintName = "SwitchFloat"
+               ReferencedContainer = "container:../../Switches/mac/Switches.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SubControls.sem"
+               BlueprintName = "SubControls"
+               ReferencedContainer = "container:../../SubControls/mac/SubControls.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "NoteExpression.sem"
+               BlueprintName = "NoteExpression"
+               ReferencedContainer = "container:../../NoteExpression/mac/NoteExpression.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "VaFilters.sem"
+               BlueprintName = "VaFilters"
+               ReferencedContainer = "container:../../VaFilters/mac/VaFilters.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Filters.sem"
+               BlueprintName = "Filters"
+               ReferencedContainer = "container:../../Filters/mac/Filters.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "SampleOscillator2.sem"
+               BlueprintName = "SampleOscillator2"
+               ReferencedContainer = "container:../../Sample Oscillator2/mac/SampleOscillator2.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Reverb.sem"
+               BlueprintName = "Reverb"
+               ReferencedContainer = "container:../../Reverb/mac/Reverb.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Softdistortion.sem"
+               BlueprintName = "Softdistortion"
+               ReferencedContainer = "container:../../SoftDistortion/mac/Softdistortion.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "DrawingTest.sem"
+               BlueprintName = "DrawingTest"
+               ReferencedContainer = "container:../../DrawingTest/mac/DrawingTest.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+               BuildableName = "Soundpipe.sem"
+               BlueprintName = "Soundpipe"
+               ReferencedContainer = "container:../../SoundPipe/mac/Soundpipe.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <Testables>
+      </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+            BuildableName = "BoolInverter.sem"
+            BlueprintName = "BoolInverter"
+            ReferencedContainer = "container:BoolInverter.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <AdditionalOptions>
+      </AdditionalOptions>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <PathRunnable
+         runnableDebuggingMode = "0"
+         BundleIdentifier = "com.ableton.live"
+         FilePath = "/Applications/Ableton Live 9 Standard.app">
+      </PathRunnable>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+            BuildableName = "BoolInverter.sem"
+            BlueprintName = "BoolInverter"
+            ReferencedContainer = "container:BoolInverter.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-v aumu FS8G Synt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+      </CommandLineArguments>
+      <AdditionalOptions>
+      </AdditionalOptions>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "8D57630D048677EA00EA77CD"
+            BuildableName = "BoolInverter.sem"
+            BlueprintName = "BoolInverter"
+            ReferencedContainer = "container:BoolInverter.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>

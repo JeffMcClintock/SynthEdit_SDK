@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+  <Plugin id="SE UserSettingText" name="User Setting - Text" category="Sub-Controls" graphicsApi="none" helpUrl="synthedit.chm::/mdl_sdk3/UserSettingText.htm">
+    <GUI>
+      <Pin id="0" name="Product" direction="in" datatype="string" default="SynthEdit Plugin"/>
+      <Pin id="1" name="Key" direction="in" datatype="string" default="SampleFolder"/>
+      <Pin id="2" name="Default" direction="in" datatype="string" default="C:\Samples"/>
+      <Pin id="3" name="Value" direction="out" datatype="string"/>
+    </GUI>
+    <!--
+    <Audio>
+      <Pin id="0" name="Value Out" direction="out" datatype="string"/>
+    </Audio>
+    -->
+  </Plugin>
+</PluginList>
+
+

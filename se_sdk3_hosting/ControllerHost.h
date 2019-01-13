@@ -1,0 +1,111 @@
+#pragma once
+/*
+#include "../se_sdk3_hosting/ControllerHost.h"
+*/
+#include "../se_sdk3/mp_sdk_common.h"
+#include "../se_sdk3_hosting/Controller.h"
+
+class ControllerIterator :
+	public gmpi::IMpControllerIterator
+{
+public:
+	ControllerIterator() {};
+
+	// IMpPinIterator support.
+	virtual int32_t MP_STDCALL getCount() override
+	{
+		return 0;
+	}
+	virtual int32_t MP_STDCALL first() override
+	{
+		return gmpi::MP_OK;
+	}
+	virtual int32_t MP_STDCALL next() override
+	{
+		return gmpi::MP_OK;
+	}
+	virtual int32_t MP_STDCALL getCurrent(gmpi::IMpControllerIteratorItem** returnCurent) override
+	{
+		return gmpi::MP_OK;
+	}
+
+	GMPI_QUERYINTERFACE1(gmpi::MP_IID_CONTROLLER_ITERATOR, gmpi::IMpControllerIterator);
+	GMPI_REFCOUNT;
+
+private:
+	//HasGuiPins* module_;
+	//int current_;
+};
+
+// Acts as host for an instance of a SDK controller object.
+class ControllerHost : public gmpi::IMpControllerHost
+{
+	// Plugin asks host for parameter value. Host will call back indirectly via setParameter.
+	virtual void updateParameter(int32_t parameterHandle, int32_t paramFieldType, int32_t voice) override
+	{
+		// apply filter/ lookup 
+
+		return patchManager->initializeGui(controller_.get(), parameterHandle, (ParameterFieldType)paramFieldType, voice);
+	}
+
+	// plugin -> Patch-Manager.
+	virtual int32_t MP_STDCALL setParameter(int32_t parameterHandle, int32_t paramFieldType, int32_t voice, const void* data, int32_t size) override
+	{
+		patchManager->setParameterValue(RawView(data, size), parameterHandle, paramFieldType, voice);
+		return gmpi::MP_OK;
+	}
+
+public:
+
+	//  Patch-Manager -> plugin.
+	int32_t setPluginParameter(int32_t parameterHandle, int32_t paramFieldType, int32_t voice, const void* data, int32_t size)
+	{
+		return controller_->setParameter(parameterHandle, paramFieldType, voice, data, size );
+	}
+
+	virtual int32_t MP_STDCALL getHandle(int32_t& returnHandle) override
+	{
+		returnHandle = handle;
+		return gmpi::MP_OK;
+	}
+//	virtual int32_t MP_STDCALL getParameter(int32_t paramId, int32_t paramFieldType, int32_t voice, gmpi::IString* value) override
+
+	virtual int32_t getParameterHandle(int32_t moduleHandle, int32_t moduleParameterId) override
+	{
+		return patchManager->getParameterHandle(moduleHandle, moduleParameterId);
+	}
+	virtual int32_t getParameterModuleAndParamId(int32_t parameterHandle, int32_t* returnModuleHandle, int32_t* returnModuleParameterId) override
+	{
+		return patchManager->getParameterModuleAndParamId(parameterHandle, returnModuleHandle, returnModuleParameterId);
+	}
+
+	virtual int32_t MP_STDCALL createControllerIterator(gmpi::IMpControllerIterator** returnIterator) override
+	{
+		*returnIterator = new ControllerIterator();
+		return gmpi::MP_OK;
+	}
+
+	virtual int32_t MP_STDCALL setLatency(int32_t latency) override
+	{
+		// TODO !!!!!
+		return gmpi::MP_OK;
+	}
+
+	virtual int32_t MP_STDCALL pinTransmit(int32_t pinId, int32_t voice, int64_t size, const void* data) override
+	{
+		assert(false);
+
+		// get param handle from pinId
+		int32_t parameterHandle = -1;
+		int32_t fieldId = FT_VALUE;
+		patchManager->setParameterValue(RawView(), parameterHandle, fieldId, voice);
+		return gmpi::MP_OK;
+	}
+
+	gmpi_sdk::mp_shared_ptr<gmpi::IMpController> controller_;
+	int handle;
+	class IGuiHost2* patchManager;
+
+	GMPI_QUERYINTERFACE1(gmpi::MP_IID_CONTROLLER_HOST, gmpi::IMpControllerHost);
+	GMPI_REFCOUNT;
+};

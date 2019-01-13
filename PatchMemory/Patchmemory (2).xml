@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+	<Plugin id="SE PatchMemory" name="PatchMemory" category="Sub-Controls" graphicsApi="none" helpUrl="Patchmemory.htm">
+		<Parameters>
+			<Parameter id="0" name="" datatype="float"/>
+		</Parameters>
+		<Audio>
+			<Pin id="0" name="Value In" direction="in" datatype="float" parameterId="0" private="true"/>
+			<Pin id="1" name="Value Out" direction="out" datatype="float"/>
+		</Audio>
+		<GUI>
+			<Pin id="0" name="Value In" direction="in" datatype="float" parameterId="0" private="true"/>
+			<Pin id="1" name="Name In" direction="in" datatype="string" parameterId="0" private="true"/>
+			<Pin id="2" name="Menu Items" direction="in" datatype="string" parameterId="0" private="true"/>
+			<Pin id="3" name="Menu Selection" direction="in" datatype="int" parameterId="0" private="true"/>
+			<Pin id="4" name="Mouse Down" direction="in" datatype="bool" parameterId="0" private="true"/>
+			<Pin id="5" name="AnimationIn" direction="in" datatype="float" parameterId="0" private="true"/>
+			<Pin id="6" name="Name" direction="out" datatype="string"/>
+			<Pin id="7" name="Value" direction="out" datatype="float"/>
+			<Pin id="8" name="Animation Position" direction="out" datatype="float"/>
+			<Pin id="9" name="Menu Items Out" direction="out" datatype="string"/>
+			<Pin id="10" name="Menu Selection Out" direction="out" datatype="int"/>
+			<Pin id="11" name="Mouse Down Out" direction="out" datatype="bool"/>
+		</GUI>
+	</Plugin>
+</PluginList>
+
+

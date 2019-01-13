@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\se_sdk3\mp_sdk_gui.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\ImageMetadata.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\it_enum_list.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="FileDialogGui.cpp" />
+    <ClCompile Include="..\shared\xplatform_modifier_keys.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\ImageMetadata.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\it_enum_list.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="FileDialogGui.h" />
+    <ClInclude Include="..\shared\xplatform_modifier_keys.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{22c7a52c-c11d-4b92-ada3-798ea6bf5d83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{12adcc35-08b9-44f6-92ac-54e573313e82}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SubControls.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="SubControls.xml">
+      <Filter>Resources</Filter>
+    </Xml>
+  </ItemGroup>
+</Project>

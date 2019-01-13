@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\se_sdk3\mp_sdk_common.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawingTestGui.cpp" />
+    <ClCompile Include="..\se_sdk3\mp_sdk_gui.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawingTestLinesGui.cpp" />
+    <ClCompile Include="..\se_sdk3\TimerManager.cpp">
+      <Filter>sdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\se_sdk3\mp_sdk_common.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawingTestGui.h" />
+    <ClInclude Include="..\se_sdk3\mp_sdk_gui.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing_API.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\se_sdk3\Drawing.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawingTestLinesGui.h" />
+    <ClInclude Include="..\se_sdk3\TimerManager.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\fast_gamma.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DrawingTest.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{c70fc6f8-3abc-4fff-a436-8fb639a3e7fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{15b5f461-63f5-4b31-88be-8130b6ec8068}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DrawingTest.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

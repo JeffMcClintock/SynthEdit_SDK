@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<PluginList>
+	<Plugin id="SE Signal Logger" name="Signal Logger" category="Diagnostic" graphicsApi="HWND" helpUrl="SignalLogger.htm">
+		<Audio>
+			<Pin id="0" name="Signal" direction="in" datatype="float" rate="audio" autoDuplicate="true"/>
+		</Audio>
+		<GUI>
+      <Pin id="0" name="Zoom-X" direction="in" datatype="float" default="20" />
+      <Pin id="1" name="Zoom-Y" direction="in" datatype="float" default="1.0" />
+      <Pin id="2" name="Pan-X" direction="in" datatype="float" default="0" />
+      <Pin id="3" name="Pan-Y" direction="in" datatype="float" default="0" />
+    </GUI>
+	</Plugin>
+</PluginList>
+
+

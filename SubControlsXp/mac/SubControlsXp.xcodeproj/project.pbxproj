@@ -1,0 +1,429 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C56D7421BB3886500C27F86 /* JoystickImageGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D73E1BB3886500C27F86 /* JoystickImageGui.cpp */; };
+		0C56D7451BB3886F00C27F86 /* ListEntry4Gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D7431BB3886F00C27F86 /* ListEntry4Gui.cpp */; };
+		0C56D7481BB3887800C27F86 /* TextEntry4Gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D7461BB3887800C27F86 /* TextEntry4Gui.cpp */; };
+		0C56D74D1BB3897000C27F86 /* mp_sdk_gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D7491BB3897000C27F86 /* mp_sdk_gui.cpp */; };
+		0C56D74E1BB3897000C27F86 /* mp_sdk_gui2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D74B1BB3897000C27F86 /* mp_sdk_gui2.cpp */; };
+		0C56D7511BB389B100C27F86 /* ImageMetadata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D74F1BB389B100C27F86 /* ImageMetadata.cpp */; };
+		0C56D7541BB389CB00C27F86 /* it_enum_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D7521BB389CB00C27F86 /* it_enum_list.cpp */; };
+		0C56D7571BB389E200C27F86 /* xplatform_modifier_keys.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0C56D7551BB389E200C27F86 /* xplatform_modifier_keys.cpp */; };
+		0CB820B41BC4EAE3000DF46B /* Image2GuiXp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0CB820B21BC4EAE3000DF46B /* Image2GuiXp.cpp */; };
+		0CBCDAA719C13C95009EEA29 /* SubControlsXp.sem in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D576316048677EA00EA77CD /* SubControlsXp.sem */; };
+		8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */; };
+		8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8D5B49A704867FD3000E48DA /* InfoPlist.strings */; };
+		A67D38971F6B5FF700168770 /* SubControlsXp.xml in Resources */ = {isa = PBXBuildFile; fileRef = A67D38961F6B5FF700168770 /* SubControlsXp.xml */; };
+		A6B20AEC1F5636EF001190CA /* ImageBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6B20AEA1F5636EF001190CA /* ImageBase.cpp */; };
+		A6E3F4BC1EF1F06A0075009B /* PanelGroupGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4B41EF1F06A0075009B /* PanelGroupGui.cpp */; };
+		A6E3F4BD1EF1F06A0075009B /* PlainImageGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4B61EF1F06A0075009B /* PlainImageGui.cpp */; };
+		A6E3F4BE1EF1F06A0075009B /* PopupMenuGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4B81EF1F06A0075009B /* PopupMenuGui.cpp */; };
+		A6E3F4BF1EF1F06A0075009B /* RectangleGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4BA1EF1F06A0075009B /* RectangleGui.cpp */; };
+		A6E3F4C21EF1F08F0075009B /* ImageTinted2Gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4C01EF1F08F0075009B /* ImageTinted2Gui.cpp */; };
+		A6E3F4C51EF1F0990075009B /* GraphicsFrameRateGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4C31EF1F0990075009B /* GraphicsFrameRateGui.cpp */; };
+		A6E3F4C81EF1F0A40075009B /* TextSubcontrol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4C61EF1F0A40075009B /* TextSubcontrol.cpp */; };
+		A6E3F4CB1EF1F63B0075009B /* FontCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6E3F4C91EF1F63B0075009B /* FontCache.cpp */; };
+		D5346A9C217967F1008091C5 /* StructureGroupGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5346A9B217967F1008091C5 /* StructureGroupGui.cpp */; };
+		D5346A9F217967FE008091C5 /* VectorRingGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5346A9D217967FE008091C5 /* VectorRingGui.cpp */; };
+		D5346AA0217967FE008091C5 /* VectorBarGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5346A9E217967FE008091C5 /* VectorBarGui.cpp */; };
+		D5346AA22179682D008091C5 /* MenuCombinerGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5346AA12179682D008091C5 /* MenuCombinerGui.cpp */; };
+		D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */ = {isa = PBXBuildFile; fileRef = D5C87A3F17D6B09100ED3316 /* PkgInfo */; };
+		D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */; };
+		D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */; };
+		D5D432BA1C9B6B40003A59D3 /* TimerManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D432B81C9B6B40003A59D3 /* TimerManager.cpp */; };
+		D5D432CC1C9B7706003A59D3 /* ImageCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D432CA1C9B7706003A59D3 /* ImageCache.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0CEB1F9C19B95CE40024780F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/../../../../SynthEdit/mac_assets/modules";
+			dstSubfolderSpec = 0;
+			files = (
+				0CBCDAA719C13C95009EEA29 /* SubControlsXp.sem in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		0C56D73E1BB3886500C27F86 /* JoystickImageGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JoystickImageGui.cpp; path = ../JoystickImageGui.cpp; sourceTree = "<group>"; };
+		0C56D73F1BB3886500C27F86 /* JoystickImageGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JoystickImageGui.h; path = ../JoystickImageGui.h; sourceTree = "<group>"; };
+		0C56D7431BB3886F00C27F86 /* ListEntry4Gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ListEntry4Gui.cpp; path = ../ListEntry4Gui.cpp; sourceTree = "<group>"; };
+		0C56D7441BB3886F00C27F86 /* ListEntry4Gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ListEntry4Gui.h; path = ../ListEntry4Gui.h; sourceTree = "<group>"; };
+		0C56D7461BB3887800C27F86 /* TextEntry4Gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextEntry4Gui.cpp; path = ../TextEntry4Gui.cpp; sourceTree = "<group>"; };
+		0C56D7471BB3887800C27F86 /* TextEntry4Gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextEntry4Gui.h; path = ../TextEntry4Gui.h; sourceTree = "<group>"; };
+		0C56D7491BB3897000C27F86 /* mp_sdk_gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui.cpp; path = ../../se_sdk3/mp_sdk_gui.cpp; sourceTree = "<group>"; };
+		0C56D74A1BB3897000C27F86 /* mp_sdk_gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui.h; path = ../../se_sdk3/mp_sdk_gui.h; sourceTree = "<group>"; };
+		0C56D74B1BB3897000C27F86 /* mp_sdk_gui2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_gui2.cpp; path = ../../se_sdk3/mp_sdk_gui2.cpp; sourceTree = "<group>"; };
+		0C56D74C1BB3897000C27F86 /* mp_sdk_gui2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_gui2.h; path = ../../se_sdk3/mp_sdk_gui2.h; sourceTree = "<group>"; };
+		0C56D74F1BB389B100C27F86 /* ImageMetadata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageMetadata.cpp; path = ../../shared/ImageMetadata.cpp; sourceTree = "<group>"; };
+		0C56D7501BB389B100C27F86 /* ImageMetadata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageMetadata.h; path = ../../shared/ImageMetadata.h; sourceTree = "<group>"; };
+		0C56D7521BB389CB00C27F86 /* it_enum_list.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = it_enum_list.cpp; path = ../../shared/it_enum_list.cpp; sourceTree = "<group>"; };
+		0C56D7531BB389CB00C27F86 /* it_enum_list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = it_enum_list.h; path = ../../shared/it_enum_list.h; sourceTree = "<group>"; };
+		0C56D7551BB389E200C27F86 /* xplatform_modifier_keys.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = xplatform_modifier_keys.cpp; path = ../../shared/xplatform_modifier_keys.cpp; sourceTree = "<group>"; };
+		0C56D7561BB389E200C27F86 /* xplatform_modifier_keys.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xplatform_modifier_keys.h; path = ../../shared/xplatform_modifier_keys.h; sourceTree = "<group>"; };
+		0CB820B21BC4EAE3000DF46B /* Image2GuiXp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Image2GuiXp.cpp; path = ../Image2GuiXp.cpp; sourceTree = "<group>"; };
+		0CB820B31BC4EAE3000DF46B /* Image2GuiXp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Image2GuiXp.h; path = ../Image2GuiXp.h; sourceTree = "<group>"; };
+		8D576316048677EA00EA77CD /* SubControlsXp.sem */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SubControlsXp.sem; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D576317048677EA00EA77CD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A67D38961F6B5FF700168770 /* SubControlsXp.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = SubControlsXp.xml; path = ../SubControlsXp.xml; sourceTree = "<group>"; };
+		A6B20AEA1F5636EF001190CA /* ImageBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageBase.cpp; path = ../../sharedLegacyWidgets/ImageBase.cpp; sourceTree = "<group>"; };
+		A6B20AEB1F5636EF001190CA /* ImageBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageBase.h; path = ../../sharedLegacyWidgets/ImageBase.h; sourceTree = "<group>"; };
+		A6E3F4B41EF1F06A0075009B /* PanelGroupGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PanelGroupGui.cpp; path = ../PanelGroupGui.cpp; sourceTree = "<group>"; };
+		A6E3F4B51EF1F06A0075009B /* PanelGroupGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PanelGroupGui.h; path = ../PanelGroupGui.h; sourceTree = "<group>"; };
+		A6E3F4B61EF1F06A0075009B /* PlainImageGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PlainImageGui.cpp; path = ../PlainImageGui.cpp; sourceTree = "<group>"; };
+		A6E3F4B71EF1F06A0075009B /* PlainImageGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PlainImageGui.h; path = ../PlainImageGui.h; sourceTree = "<group>"; };
+		A6E3F4B81EF1F06A0075009B /* PopupMenuGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PopupMenuGui.cpp; path = ../PopupMenuGui.cpp; sourceTree = "<group>"; };
+		A6E3F4B91EF1F06A0075009B /* PopupMenuGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PopupMenuGui.h; path = ../PopupMenuGui.h; sourceTree = "<group>"; };
+		A6E3F4BA1EF1F06A0075009B /* RectangleGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RectangleGui.cpp; path = ../RectangleGui.cpp; sourceTree = "<group>"; };
+		A6E3F4BB1EF1F06A0075009B /* RectangleGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RectangleGui.h; path = ../RectangleGui.h; sourceTree = "<group>"; };
+		A6E3F4C01EF1F08F0075009B /* ImageTinted2Gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageTinted2Gui.cpp; path = ../ImageTinted2Gui.cpp; sourceTree = "<group>"; };
+		A6E3F4C11EF1F08F0075009B /* ImageTinted2Gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageTinted2Gui.h; path = ../ImageTinted2Gui.h; sourceTree = "<group>"; };
+		A6E3F4C31EF1F0990075009B /* GraphicsFrameRateGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GraphicsFrameRateGui.cpp; path = ../GraphicsFrameRateGui.cpp; sourceTree = "<group>"; };
+		A6E3F4C41EF1F0990075009B /* GraphicsFrameRateGui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GraphicsFrameRateGui.h; path = ../GraphicsFrameRateGui.h; sourceTree = "<group>"; };
+		A6E3F4C61EF1F0A40075009B /* TextSubcontrol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextSubcontrol.cpp; path = ../TextSubcontrol.cpp; sourceTree = "<group>"; };
+		A6E3F4C71EF1F0A40075009B /* TextSubcontrol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextSubcontrol.h; path = ../TextSubcontrol.h; sourceTree = "<group>"; };
+		A6E3F4C91EF1F63B0075009B /* FontCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontCache.cpp; path = ../../shared/FontCache.cpp; sourceTree = "<group>"; };
+		A6E3F4CA1EF1F63B0075009B /* FontCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FontCache.h; path = ../../shared/FontCache.h; sourceTree = "<group>"; };
+		D5346A9B217967F1008091C5 /* StructureGroupGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StructureGroupGui.cpp; path = ../StructureGroupGui.cpp; sourceTree = "<group>"; };
+		D5346A9D217967FE008091C5 /* VectorRingGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VectorRingGui.cpp; path = ../VectorRingGui.cpp; sourceTree = "<group>"; };
+		D5346A9E217967FE008091C5 /* VectorBarGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VectorBarGui.cpp; path = ../VectorBarGui.cpp; sourceTree = "<group>"; };
+		D5346AA12179682D008091C5 /* MenuCombinerGui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MenuCombinerGui.cpp; path = ../MenuCombinerGui.cpp; sourceTree = "<group>"; };
+		D5C87A3F17D6B09100ED3316 /* PkgInfo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PkgInfo; sourceTree = "<group>"; };
+		D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_audio.cpp; path = ../../se_sdk3/mp_sdk_audio.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_audio.h; path = ../../se_sdk3/mp_sdk_audio.h; sourceTree = SOURCE_ROOT; };
+		D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mp_sdk_common.cpp; path = ../../se_sdk3/mp_sdk_common.cpp; sourceTree = SOURCE_ROOT; };
+		D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mp_sdk_common.h; path = ../../se_sdk3/mp_sdk_common.h; sourceTree = SOURCE_ROOT; };
+		D5D432B81C9B6B40003A59D3 /* TimerManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TimerManager.cpp; path = ../../se_sdk3/TimerManager.cpp; sourceTree = "<group>"; };
+		D5D432B91C9B6B40003A59D3 /* TimerManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TimerManager.h; path = ../../se_sdk3/TimerManager.h; sourceTree = "<group>"; };
+		D5D432CA1C9B7706003A59D3 /* ImageCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageCache.cpp; path = ../../shared/ImageCache.cpp; sourceTree = "<group>"; };
+		D5D432CB1C9B7706003A59D3 /* ImageCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageCache.h; path = ../../shared/ImageCache.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D576313048677EA00EA77CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D576314048677EA00EA77CD /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				D5C87A4F17D6B11000ED3316 /* SDK */,
+				08FB77AFFE84173DC02AAC07 /* Source */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				19C28FB6FE9D52B211CA2CBB /* Products */,
+				D5C87A3F17D6B09100ED3316 /* PkgInfo */,
+			);
+			name = Untitled;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0AA1909FFE8422F4C02AAC07 /* CoreFoundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A67D38961F6B5FF700168770 /* SubControlsXp.xml */,
+				8D576317048677EA00EA77CD /* Info.plist */,
+				8D5B49A704867FD3000E48DA /* InfoPlist.strings */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77AFFE84173DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D5346AA12179682D008091C5 /* MenuCombinerGui.cpp */,
+				D5346A9E217967FE008091C5 /* VectorBarGui.cpp */,
+				D5346A9D217967FE008091C5 /* VectorRingGui.cpp */,
+				D5346A9B217967F1008091C5 /* StructureGroupGui.cpp */,
+				A6B20AEA1F5636EF001190CA /* ImageBase.cpp */,
+				A6B20AEB1F5636EF001190CA /* ImageBase.h */,
+				A6E3F4C61EF1F0A40075009B /* TextSubcontrol.cpp */,
+				A6E3F4C71EF1F0A40075009B /* TextSubcontrol.h */,
+				A6E3F4C31EF1F0990075009B /* GraphicsFrameRateGui.cpp */,
+				A6E3F4C41EF1F0990075009B /* GraphicsFrameRateGui.h */,
+				A6E3F4C01EF1F08F0075009B /* ImageTinted2Gui.cpp */,
+				A6E3F4C11EF1F08F0075009B /* ImageTinted2Gui.h */,
+				A6E3F4B41EF1F06A0075009B /* PanelGroupGui.cpp */,
+				A6E3F4B51EF1F06A0075009B /* PanelGroupGui.h */,
+				A6E3F4B61EF1F06A0075009B /* PlainImageGui.cpp */,
+				A6E3F4B71EF1F06A0075009B /* PlainImageGui.h */,
+				A6E3F4B81EF1F06A0075009B /* PopupMenuGui.cpp */,
+				A6E3F4B91EF1F06A0075009B /* PopupMenuGui.h */,
+				A6E3F4BA1EF1F06A0075009B /* RectangleGui.cpp */,
+				A6E3F4BB1EF1F06A0075009B /* RectangleGui.h */,
+				0CB820B21BC4EAE3000DF46B /* Image2GuiXp.cpp */,
+				0CB820B31BC4EAE3000DF46B /* Image2GuiXp.h */,
+				0C56D7461BB3887800C27F86 /* TextEntry4Gui.cpp */,
+				0C56D7471BB3887800C27F86 /* TextEntry4Gui.h */,
+				0C56D7431BB3886F00C27F86 /* ListEntry4Gui.cpp */,
+				0C56D7441BB3886F00C27F86 /* ListEntry4Gui.h */,
+				0C56D73E1BB3886500C27F86 /* JoystickImageGui.cpp */,
+				0C56D73F1BB3886500C27F86 /* JoystickImageGui.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		19C28FB6FE9D52B211CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D576316048677EA00EA77CD /* SubControlsXp.sem */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D5C87A4F17D6B11000ED3316 /* SDK */ = {
+			isa = PBXGroup;
+			children = (
+				A6E3F4C91EF1F63B0075009B /* FontCache.cpp */,
+				A6E3F4CA1EF1F63B0075009B /* FontCache.h */,
+				D5D432CA1C9B7706003A59D3 /* ImageCache.cpp */,
+				D5D432CB1C9B7706003A59D3 /* ImageCache.h */,
+				D5D432B81C9B6B40003A59D3 /* TimerManager.cpp */,
+				D5D432B91C9B6B40003A59D3 /* TimerManager.h */,
+				0C56D7551BB389E200C27F86 /* xplatform_modifier_keys.cpp */,
+				0C56D7561BB389E200C27F86 /* xplatform_modifier_keys.h */,
+				0C56D7521BB389CB00C27F86 /* it_enum_list.cpp */,
+				0C56D7531BB389CB00C27F86 /* it_enum_list.h */,
+				0C56D74F1BB389B100C27F86 /* ImageMetadata.cpp */,
+				0C56D7501BB389B100C27F86 /* ImageMetadata.h */,
+				0C56D7491BB3897000C27F86 /* mp_sdk_gui.cpp */,
+				0C56D74A1BB3897000C27F86 /* mp_sdk_gui.h */,
+				0C56D74B1BB3897000C27F86 /* mp_sdk_gui2.cpp */,
+				0C56D74C1BB3897000C27F86 /* mp_sdk_gui2.h */,
+				D5C87B1D17D6C83E00ED3316 /* mp_sdk_audio.cpp */,
+				D5C87B1E17D6C83E00ED3316 /* mp_sdk_audio.h */,
+				D5C87B2017D6C83E00ED3316 /* mp_sdk_common.cpp */,
+				D5C87B2117D6C83E00ED3316 /* mp_sdk_common.h */,
+			);
+			name = SDK;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D57630D048677EA00EA77CD /* SubControlsXp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "SubControlsXp" */;
+			buildPhases = (
+				8D57630F048677EA00EA77CD /* Resources */,
+				8D576311048677EA00EA77CD /* Sources */,
+				8D576313048677EA00EA77CD /* Frameworks */,
+				0CEB1F9C19B95CE40024780F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SubControlsXp;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = Untitled;
+			productReference = 8D576316048677EA00EA77CD /* SubControlsXp.sem */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "SubControlsXp" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* Untitled */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8D57630D048677EA00EA77CD /* SubControlsXp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D57630F048677EA00EA77CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D5B49A804867FD3000E48DA /* InfoPlist.strings in Resources */,
+				D5C87A4017D6B09100ED3316 /* PkgInfo in Resources */,
+				A67D38971F6B5FF700168770 /* SubControlsXp.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D576311048677EA00EA77CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A6E3F4C81EF1F0A40075009B /* TextSubcontrol.cpp in Sources */,
+				A6E3F4CB1EF1F63B0075009B /* FontCache.cpp in Sources */,
+				A6E3F4C21EF1F08F0075009B /* ImageTinted2Gui.cpp in Sources */,
+				A6E3F4BE1EF1F06A0075009B /* PopupMenuGui.cpp in Sources */,
+				0C56D7511BB389B100C27F86 /* ImageMetadata.cpp in Sources */,
+				D5C87B2217D6C83E00ED3316 /* mp_sdk_audio.cpp in Sources */,
+				A6B20AEC1F5636EF001190CA /* ImageBase.cpp in Sources */,
+				0C56D74D1BB3897000C27F86 /* mp_sdk_gui.cpp in Sources */,
+				D5D432BA1C9B6B40003A59D3 /* TimerManager.cpp in Sources */,
+				D5D432CC1C9B7706003A59D3 /* ImageCache.cpp in Sources */,
+				D5346A9F217967FE008091C5 /* VectorRingGui.cpp in Sources */,
+				A6E3F4BC1EF1F06A0075009B /* PanelGroupGui.cpp in Sources */,
+				D5346A9C217967F1008091C5 /* StructureGroupGui.cpp in Sources */,
+				0C56D7421BB3886500C27F86 /* JoystickImageGui.cpp in Sources */,
+				A6E3F4C51EF1F0990075009B /* GraphicsFrameRateGui.cpp in Sources */,
+				0C56D7481BB3887800C27F86 /* TextEntry4Gui.cpp in Sources */,
+				0C56D7451BB3886F00C27F86 /* ListEntry4Gui.cpp in Sources */,
+				0CB820B41BC4EAE3000DF46B /* Image2GuiXp.cpp in Sources */,
+				D5C87B2417D6C83E00ED3316 /* mp_sdk_common.cpp in Sources */,
+				D5346AA0217967FE008091C5 /* VectorBarGui.cpp in Sources */,
+				0C56D74E1BB3897000C27F86 /* mp_sdk_gui2.cpp in Sources */,
+				0C56D7571BB389E200C27F86 /* xplatform_modifier_keys.cpp in Sources */,
+				A6E3F4BF1EF1F06A0075009B /* RectangleGui.cpp in Sources */,
+				D5346AA22179682D008091C5 /* MenuCombinerGui.cpp in Sources */,
+				A6E3F4BD1EF1F06A0075009B /* PlainImageGui.cpp in Sources */,
+				0C56D7541BB389CB00C27F86 /* it_enum_list.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		8D5B49A704867FD3000E48DA /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C167EFE841241C02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB911B08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = _DEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Debug;
+		};
+		1DEB911C08733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(PROJECT_NAME)";
+				SDKROOT = macosx;
+				VALID_ARCHS = x86_64;
+				WRAPPER_EXTENSION = sem;
+			};
+			name = Release;
+		};
+		1DEB911F08733D790010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+				USER_HEADER_SEARCH_PATHS = "\"/SE/My Projects/SE_DSP_CORE/se_sdk3\"";
+			};
+			name = Debug;
+		};
+		1DEB912008733D790010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+				USER_HEADER_SEARCH_PATHS = "\"/SE/My Projects/SE_DSP_CORE/se_sdk3\"";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB911A08733D790010E9CD /* Build configuration list for PBXNativeTarget "SubControlsXp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911B08733D790010E9CD /* Debug */,
+				1DEB911C08733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB911E08733D790010E9CD /* Build configuration list for PBXProject "SubControlsXp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB911F08733D790010E9CD /* Debug */,
+				1DEB912008733D790010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}
