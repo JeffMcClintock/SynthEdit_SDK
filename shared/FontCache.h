@@ -2,28 +2,50 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <map>
+#include <tuple>
+
 #include "../se_sdk3/mp_sdk_gui2.h"
 #include "../shared/ImageMetadata.h"
 /* 
 #include "../shared/FontCache.h"
 */
 
+/*
+struct FontDescription
+{
+	GmpiDrawing::WordWrapping wordWrapping = GmpiDrawing::WordWrapping::NoWrap;
+	GmpiDrawing::TextAlignment textAlignment = GmpiDrawing::TextAlignment::Leading;
+	GmpiDrawing::ParagraphAlignment paragraphAlignment = GmpiDrawing::ParagraphAlignment::Near;
+};
+*/
+
+// for use by fontcache only.
 struct TypefaceData
 {
-	TypefaceData(GmpiDrawing_API::IMpFactory* pfactory, std::string pskinId, std::string pstyle, GmpiDrawing::TextFormat ptextFormat, const FontMetadata* pmetadata) :
-		factory(pfactory)
-		, style(pstyle)
-		, skinId(pskinId)
-		, textFormat(ptextFormat)
+	TypefaceData() {}
+
+	TypefaceData(GmpiDrawing::TextFormat ptextFormat, const FontMetadata* pmetadata) :
+		textFormat(ptextFormat)
 	{
-		metadata = std::make_unique<FontMetadata>(*pmetadata);
+		legacy_metadata = std::make_unique<FontMetadata>(*pmetadata); // takes a copy.
 	}
 
-	GmpiDrawing_API::IMpFactory* factory; // differentiates between GDI and D2D bitmaps.
-	std::string skinId;
-	std::string style;
 	GmpiDrawing::TextFormat textFormat;
-	std::unique_ptr<FontMetadata> metadata;
+
+	std::unique_ptr<FontMetadata> legacy_metadata; // held by pointer so not invalidated when this object copied/moved by container.
+};
+
+struct fontKey
+{
+	GmpiDrawing_API::IMpFactory* factory;
+	std::string style;
+	std::string skin;
+
+	bool operator < (const fontKey& other) const
+    {
+       return std::tie(factory, style, skin) < std::tie(other.factory, other.style, other.skin); 
+    }
 };
 
 class FontCache
@@ -31,7 +53,7 @@ class FontCache
 	friend class FontCacheClient;
 	FontCache();
 
-	std::vector<TypefaceData> fonts_;
+	std::map<fontKey, TypefaceData> fonts_;
 	std::vector<SkinMetadata> skins_;
 
 	int clientCount_;
@@ -45,9 +67,44 @@ protected:
 
 public:
 	static FontCache* instance();
+	SkinMetadata const * getSkin(gmpi::IMpUserInterfaceHost2* host, std::string skinName);
+	SkinMetadata* getSkin(gmpi::IMpUserInterfaceHost2* host);
 
-	GmpiDrawing::TextFormat GetTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** metadata = 0);
-	void RegisterCustomTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, const FontMetadata* metadata );
+	GmpiDrawing::TextFormat_readonly TextFormatExists(
+		gmpi::IMpUserInterfaceHost2* host,
+		gmpi_gui::IMpGraphicsHost* guiHost,
+		std::string style,
+		FontMetadata** returnMetadata = nullptr
+	);
+
+	GmpiDrawing::TextFormat_readonly GetTextFormat(
+		gmpi::IMpUserInterfaceHost2* host,
+		gmpi_gui::IMpGraphicsHost* guiHost,
+		std::string style,
+		FontMetadata** metadata = 0
+	);
+
+	GmpiDrawing::TextFormat_readonly CreateTextFormatAndCache(
+		gmpi::IMpUserInterfaceHost2* host,
+		gmpi_gui::IMpGraphicsHost* guiHost,
+		const FontMetadata* fontmetadata,
+		FontMetadata** returnMetadata
+	);
+
+	GmpiDrawing::TextFormat AddCustomTextFormat(
+		gmpi::IMpUserInterfaceHost2* host,
+		gmpi_gui::IMpGraphicsHost* guiHost,
+		std::string style,
+		const FontMetadata* fontmetadata
+	);
+
+	GmpiDrawing::TextFormat_readonly GetCustomTextFormat(
+		gmpi::IMpUserInterfaceHost2* host,
+		gmpi_gui::IMpGraphicsHost* guiHost,
+		std::string customStyleName,
+		std::string basedOnStyle,
+		std::function<void(FontMetadata* customFont)> customizeFontCallback,
+		FontMetadata** returnMetadata = 0);
 };
 
 
@@ -63,16 +120,21 @@ public:
 		FontCache::instance()->RemoveClient();
 	}
 
-	GmpiDrawing::TextFormat GetTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** metadata = 0)
+	bool TextFormatExists(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style)
+	{
+		return !FontCache::instance()->TextFormatExists(host, guiHost, style).isNull();
+	}
+
+	GmpiDrawing::TextFormat_readonly GetTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** metadata = 0)
 	{
 		return FontCache::instance()->GetTextFormat(host, guiHost, style, metadata);
 	}
 
-	void RegisterCustomTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, const FontMetadata* metadata)
+	GmpiDrawing::TextFormat AddCustomTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, const FontMetadata* fontmetadata)
 	{
-		return FontCache::instance()->RegisterCustomTextFormat(host, guiHost, style, metadata);
+		return FontCache::instance()->AddCustomTextFormat(host, guiHost, style, fontmetadata);
 	}
 
-	GmpiDrawing::TextFormat GetTextFormat(std::string style);
-	FontMetadata* GetFontMetatdata(std::string style);
+	GmpiDrawing::TextFormat_readonly GetTextFormat(std::string style);
+	const FontMetadata* GetFontMetatdata(std::string style);
 };

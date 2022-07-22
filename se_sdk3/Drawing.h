@@ -26,6 +26,11 @@
 CONTRIBUTORS:
 Jeff McClintock
 Lee Louque
+Sasha Radojevic
+
+   TODO
+   * Draw bitmap with blending modes (e.g. additive)
+   * Consider supporting text underline (would require support for DrawGlyphRun)
 */
 
 /*
@@ -33,19 +38,25 @@ Lee Louque
 using namespace GmpiDrawing;
 */
 
-#pragma warning(disable : 4100)
-
+#pragma once
 #ifndef GMPI_GRAPHICS2_H_INCLUDED
 #define GMPI_GRAPHICS2_H_INCLUDED
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4100) // "unreferenced formal parameter"
+#pragma warning(disable : 4996) // "codecvt deprecated in C++17"
+#endif
+
 #include "Drawing_API.h"
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <codecvt>
 #include <locale>
 #include "mp_interface_wrapper.h"
 #include "../shared/unicode_conversion2.h"
 #include "../shared/fast_gamma.h"
+#include "MpString.h"
 
 // Perhaps should be Gmpi::Drawing
 namespace GmpiDrawing
@@ -98,14 +109,18 @@ namespace GmpiDrawing
 	{
 		Leading = GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING		// Left
 		, Trailing = GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING	// Right
-		, Center = GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER
+		, Center = GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER		// Centered
+		, Left = Leading
+		, Right = Trailing
 	};
 
 	enum class ParagraphAlignment
 	{
-		Near = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_NEAR
-		, Far = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_FAR
-		, Center = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_CENTER
+		Near = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_NEAR		// Top
+		, Far = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_FAR		// Bottom
+		, Center = GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT_CENTER	// Centered
+		, Top = Near
+		, Bottom = Far
 	};
 
 	enum class WordWrapping
@@ -488,55 +503,66 @@ namespace GmpiDrawing
 			this->bottom += dy;
 		}
 
-		inline void Inflate(T inset)
-		{
-			this->left -= inset;
-			this->right += inset;
-			this->top -= inset;
-			this->bottom += inset;
-		}
 		inline void Inflate(T dx, T dy)
 		{
+			dx = (std::max)(dx, -0.5f * getWidth());
+			dy = (std::max)(dy, -0.5f * getHeight());
+
 			this->left -= dx;
 			this->right += dx;
 			this->top -= dy;
 			this->bottom += dy;
 		}
 
-		inline void Deflate(T inset)
+		inline void Inflate(T inset)
 		{
-			this->left += inset;
-			this->right -= inset;
-			this->top += inset;
-			this->bottom -= inset;
+			Inflate(inset, inset);
 		}
+
 		inline void Deflate(T dx, T dy)
 		{
-			this->left += dx;
-			this->right -= dx;
-			this->top += dy;
-			this->bottom -= dy;
+			Inflate(-dx, -dy);
 		}
 
-		inline void Intersect(typename Rect_traits<T>::BASE_TYPE r)
+		inline void Deflate(T inset)
 		{
-			this->left = (std::max)(this->left, r.left);
-			this->top = (std::max)(this->top, r.top);
-			this->right = (std::min)(this->right, r.right);
-			this->bottom = (std::min)(this->bottom, r.bottom);
+			Deflate(inset, inset);
 		}
 
-		inline void Union(typename Rect_traits<T>::BASE_TYPE r)
+		inline void Intersect(typename Rect_traits<T>::BASE_TYPE rect)
 		{
-			this->left = (std::min)(this->left, r.left);
-			this->top = (std::min)(this->top, r.top);
-			this->right = (std::max)(this->right, r.right);
-			this->bottom = (std::max)(this->bottom, r.bottom);
+			this->left   = (std::max)(this->left,   (std::min)(this->right,  rect.left));
+			this->top    = (std::max)(this->top,    (std::min)(this->bottom, rect.top));
+			this->right  = (std::min)(this->right,  (std::max)(this->left,   rect.right));
+			this->bottom = (std::min)(this->bottom, (std::max)(this->top,    rect.bottom));
+		}
+
+		inline void Union(typename Rect_traits<T>::BASE_TYPE rect)
+		{
+			this->left = (std::min)(this->left, rect.left);
+			this->top = (std::min)(this->top, rect.top);
+			this->right = (std::max)(this->right, rect.right);
+			this->bottom = (std::max)(this->bottom, rect.bottom);
 		}
 
 		inline Point getTopLeft() const
 		{
 			return Point(this->left, this->top);
+		}
+
+		inline Point getTopRight() const
+		{
+			return Point(this->right, this->top);
+		}
+
+		inline Point getBottomLeft() const
+		{
+			return Point(this->left, this->bottom);
+		}
+
+		inline Point getBottomRight() const
+		{
+			return Point(this->right, this->bottom);
 		}
 
 		inline bool ContainsPoint(PointBase<T> point) const
@@ -546,7 +572,7 @@ namespace GmpiDrawing
 
 		inline bool empty() const
 		{
-			return getWidth() == 0.0f || getHeight() == 0.0f;
+			return getWidth() <= (T)0 || getHeight() <= (T)0;
 		}
 	};
 
@@ -556,121 +582,45 @@ namespace GmpiDrawing
 	// Rect = Rect - Size
 	template<class T> RectBase<T> operator-(const RectBase<T>& L, const SizeBase<T>& R) { return RectBase<T>(L.left - R.width, L.top - R.height, L.right - R.width, L.bottom - R.height); }
 
-	template<class T> RectBase<T> Intersect(RectBase<T> a, RectBase<T> b)
+	template<class T> RectBase<T> Intersect(const RectBase<T>& a, const RectBase<T>& b)
 	{
 		RectBase<T> result(a);
 		result.left = (std::max)(a.left, b.left);
 		result.top = (std::max)(a.top, b.top);
 		result.right = (std::min)(a.right, b.right);
 		result.bottom = (std::min)(a.bottom, b.bottom);
-		// fix negative dimensions.
+
+		// clamp negative dimensions to zero.
 		result.right = (std::max)(result.left, result.right);
 		result.bottom = (std::max)(result.top, result.bottom);
 		return result;
 	}
 
+	template<class T> RectBase<T> Union(const RectBase<T>& a, const RectBase<T>& b)
+	{
+		RectBase<T> result(a);
+
+		result.top = (std::min)(a.top, b.top);
+		result.left = (std::min)(a.left, b.left);
+		result.right = (std::max)(a.right, b.right);
+		result.bottom = (std::max)(a.bottom, b.bottom);
+
+		return result;
+	}
+
+	template<class T> bool isOverlapped(const RectBase<T>& a, const RectBase<T>& b)
+	{
+		return (std::max)(a.left, b.left) < (std::min)(a.right, b.right)
+			&& (std::max)(a.top, b.top) < (std::min)(a.bottom, b.bottom);
+	}
+
+	template<class T> PointBase<T> CenterPoint(const RectBase<T>& r)
+	{
+		return PointBase<T>(0.5f * (r.left + r.right), 0.5f * (r.top + r.bottom));
+	}
+
 	typedef RectBase<float> Rect;
 	typedef RectBase<int32_t> RectL;
-
-	/*
-	class RectU : public GmpiDrawing_API::MP1_RECT_U
-	{
-	public:
-		inline RectU(GmpiDrawing_API::MP1_RECT_U native) :
-			GmpiDrawing_API::MP1_RECT_U(native)
-		{
-		}
-
-		RectU(uint32_t pleft = 0, uint32_t ptop = 0, uint32_t pright = 0, uint32_t pbottom = 0)
-		{
-			left = pleft;
-			top = ptop;
-			right = pright;
-			bottom = pbottom;
-		}
-		bool operator==(const MP1_RECT_U& other) const
-		{
-			return
-				left == other.left
-				&& top == other.top
-				&& right == other.right
-				&& bottom == other.bottom;
-		}
-		bool operator!=(const MP1_RECT_U& other) const
-		{
-			return
-				left != other.left
-				|| top != other.top
-				|| right != other.right
-				|| bottom != other.bottom;
-		}
-	};
-	*/
-/*
-	class RectL : public GmpiDrawing_API::MP1_RECT_L
-	{
-	public:
-		inline RectL(GmpiDrawing_API::MP1_RECT_L native) :
-			GmpiDrawing_API::MP1_RECT_L(native)
-		{
-		}
-
-		RectL()
-		{
-			left = top = right = bottom = 0;
-		}
-
-		RectL(int32_t pleft, int32_t ptop, int32_t pright, int32_t pbottom)
-		{
-			left = pleft;
-			top = ptop;
-			right = pright;
-			bottom = pbottom;
-		}
-		bool operator==(const MP1_RECT_L& other) const
-		{
-			return
-				left == other.left
-				&& top == other.top
-				&& right == other.right
-				&& bottom == other.bottom;
-		}
-		bool operator!=(const MP1_RECT_L& other) const
-		{
-			return
-				left != other.left
-				|| top != other.top
-				|| right != other.right
-				|| bottom != other.bottom;
-		}
-
-		inline int32_t getWidth() const
-		{
-			return right - left;
-		}
-
-		inline int32_t getHeight() const
-		{
-			return bottom - top;
-		}
-
-		inline void Offset(GmpiDrawing_API::MP1_SIZE_U offset)
-		{
-			left += offset.width;
-			right += offset.width;
-			top += offset.height;
-			bottom += offset.height;
-		}
-
-		inline void Offset(int32_t dx, int32_t dy)
-		{
-			left += dx;
-			right += dx;
-			top += dy;
-			bottom += dy;
-		}
-	};
-	*/
 
 	class Matrix3x2 : public GmpiDrawing_API::MP1_MATRIX_3X2
 	{
@@ -783,15 +733,25 @@ namespace GmpiDrawing
 		}
 
 		static inline Matrix3x2 Rotation(
-			float angle,
-			Point center = Point()
+			float angleRadians,
+			Point center = {}
 		)
 		{
-			Matrix3x2 rotation;
-			assert(false); // TODO
-						   //MP1MakeRotateMatrix(angle, center, &rotation);
+			// https://www.ques10.com/p/11014/derive-the-matrix-for-2d-rotation-about-an-arbitra/
+			const auto cosR = cosf(angleRadians);
+			const auto sinR = sinf(angleRadians);
+			const auto& Xm = center.x;
+			const auto& Ym = center.y;
 
-			return rotation;
+			return
+			{
+				cosR,
+				sinR,
+				-sinR,
+				cosR,
+				-Xm * cosR + Ym * sinR + Xm,
+				-Xm * sinR - Ym * cosR + Ym
+			};
 		}
 
 		static inline Matrix3x2 Skew(
@@ -1171,25 +1131,12 @@ namespace GmpiDrawing
 			g = se_sdk::FastGamma::sRGB_to_float(pGreen);
 			b = se_sdk::FastGamma::sRGB_to_float(pBlue);
 
-			/* Direct 2D Colors seem to be SRGB
-
-			const float oneOver255 = 1.0f / 255.0f;
-			r = pRed * oneOver255;
-			g = pGreen * oneOver255;
-			b = pBlue * oneOver255;
-			// DIrect2d appears to expect SRGB Colors.
-			r = se_sdk::FastGamma::RGB_to_SRGBf(pRed);
-			g = se_sdk::FastGamma::RGB_to_SRGBf(pGreen);
-			b = se_sdk::FastGamma::RGB_to_SRGBf(pBlue);
-			*/
-
-
 			a = pAlpha;
 		}
 
 		Color(float pRed = 1.0f, float pGreen = 1.0f, float pBlue = 1.0f, float pAlpha = 1.0f)
 		{
-			assert(pRed < 2.f && pGreen < 2.f && pBlue < 2.f); // for 0-255 use Color::FromBytes(200,200,200)
+			assert(pRed < 50.f && pGreen < 50.f && pBlue < 50.f); // for 0-255 use Color::FromBytes(200,200,200)
 
 			r = pRed;
 			g = pGreen;
@@ -1234,14 +1181,20 @@ namespace GmpiDrawing
 			static_cast<uint8_t>((argb & sc_alphaMask) >> sc_alphaShift));
 		}
 
-		static Color FromRgb(uint32_t argb)
+		static Color FromRgb(uint32_t rgb)
 		{
 			return FromBytes(
-				static_cast<uint8_t>((argb & sc_redMask)   >> sc_redShift),
-				static_cast<uint8_t>((argb & sc_greenMask) >> sc_greenShift),
-				static_cast<uint8_t>((argb & sc_blueMask)  >> sc_blueShift), 0xFF);
+				static_cast<uint8_t>((rgb & sc_redMask)   >> sc_redShift),
+				static_cast<uint8_t>((rgb & sc_greenMask) >> sc_greenShift),
+				static_cast<uint8_t>((rgb & sc_blueMask)  >> sc_blueShift), 0xFF);
 		}
 
+		/*
+		FromHexString: Converts a hexadecimal color to a Color object.
+		If you pass a 3-byte color, e.g. “000000” (black) we assume it’s a solid color (same as “FF000000”).
+		This makes it convenient to specify RGB without any alpha.
+		However if you pass a specific alpha, e.g. "77000000" (transparent black) we use the alpha "77".
+		*/
 		static Color FromHexString(const std::wstring &s)
 		{
 			wchar_t* stopString;
@@ -1255,9 +1208,22 @@ namespace GmpiDrawing
 
 			return FromArgb(hex);
 		}
+		static Color FromHexStringU(const std::string& s)
+		{
+			std::size_t stopString;
+			uint32_t hex = static_cast<uint32_t>(stoul(s, &stopString, 16));
+
+			// If Alpha not specified, default to 1.0
+			if (s.size() <= 6)
+			{
+				hex |= 0xff000000;
+			}
+
+			return FromArgb(hex);
+		}
 	};
 
-	inline Color interpolateColor(Color a , Color b , float fraction)
+	inline Color interpolateColor(Color a, Color b, float fraction)
 	{
 		return Color(
 			a.r + (b.r - a.r) * fraction,
@@ -1267,6 +1233,25 @@ namespace GmpiDrawing
 			);
 	}
 
+	inline Color AddColorComponents(Color const& lhs, Color const& rhs)
+	{
+		return Color{
+			lhs.r + rhs.r,
+			lhs.g + rhs.g,
+			lhs.b + rhs.b,
+			lhs.a,			// alpha left as-is
+		};
+	}
+
+	inline Color MultiplyBrightness(Color const& lhs, float rhs)
+	{
+		return Color{
+			lhs.r * rhs,
+			lhs.g * rhs,
+			lhs.b * rhs,
+			lhs.a,			// alpha left as-is
+		};
+	}
 
 	class GradientStop //: public GmpiDrawing_API::MP1_GRADIENT_STOP
 	{
@@ -1312,9 +1297,16 @@ namespace GmpiDrawing
 			GmpiDrawing_API::MP1_BRUSH_PROPERTIES(native)
 		{
 		}
-		inline BrushProperties()
+
+		BrushProperties()
 		{
 			opacity = 1.0f;
+			transform = (GmpiDrawing_API::MP1_MATRIX_3X2) Matrix3x2::Identity();
+		}
+
+		BrushProperties(float pOpacity)
+		{
+			opacity = pOpacity;
 			transform = (GmpiDrawing_API::MP1_MATRIX_3X2) Matrix3x2::Identity();
 		}
 	};
@@ -1322,11 +1314,17 @@ namespace GmpiDrawing
 	class BitmapBrushProperties : public GmpiDrawing_API::MP1_BITMAP_BRUSH_PROPERTIES
 	{
 	public:
-		inline BitmapBrushProperties(GmpiDrawing_API::MP1_BITMAP_BRUSH_PROPERTIES native) :
+		BitmapBrushProperties(GmpiDrawing_API::MP1_BITMAP_BRUSH_PROPERTIES native) :
 			GmpiDrawing_API::MP1_BITMAP_BRUSH_PROPERTIES(native)
 		{
 		}
 
+		BitmapBrushProperties()
+		{
+			extendModeX = GmpiDrawing_API::MP1_EXTEND_MODE_WRAP;
+			extendModeY = GmpiDrawing_API::MP1_EXTEND_MODE_WRAP;
+			interpolationMode = GmpiDrawing_API::MP1_BITMAP_INTERPOLATION_MODE_LINEAR;
+		}
 	};
 
 	class LinearGradientBrushProperties : public GmpiDrawing_API::MP1_LINEAR_GRADIENT_BRUSH_PROPERTIES
@@ -1344,12 +1342,45 @@ namespace GmpiDrawing
 		}
 	};
 
-	class RadialGradientBrushProperties : public GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES
+	class RadialGradientBrushProperties // : public GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES
 	{
 	public:
-		inline RadialGradientBrushProperties(GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES native) :
-			GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES(native)
+		// Must be identical layout to GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES
+		Point center;
+		Point gradientOriginOffset;
+		float radiusX;
+		float radiusY;
+
+		RadialGradientBrushProperties(GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES native) :
+			center(native.center),
+			gradientOriginOffset(native.gradientOriginOffset),
+			radiusX(native.radiusX),
+			radiusY(native.radiusY)
 		{
+		}
+
+		RadialGradientBrushProperties(
+			GmpiDrawing_API::MP1_POINT pCenter,
+			GmpiDrawing_API::MP1_POINT pGradientOriginOffset,
+			float pRadiusX,
+			float pRadiusY
+		) :
+			center(pCenter),
+			gradientOriginOffset(pGradientOriginOffset),
+			radiusX(pRadiusX),
+			radiusY(pRadiusY)
+		{
+		}
+
+		RadialGradientBrushProperties(
+			GmpiDrawing_API::MP1_POINT pCenter,
+			float pRadius,
+			GmpiDrawing_API::MP1_POINT pGradientOriginOffset = {}
+		)
+		{
+			center = pCenter;
+			gradientOriginOffset = pGradientOriginOffset;
+			radiusX = radiusY = pRadius;
 		}
 	};
 
@@ -1441,6 +1472,11 @@ namespace GmpiDrawing
 		{
 		}
 
+		QuadraticBezierSegment(GmpiDrawing_API::MP1_POINT pPoint1, GmpiDrawing_API::MP1_POINT pPoint2)
+		{
+			point1 = pPoint1;
+			point2 = pPoint2;
+		}
 	};
 
 	class Ellipse : public GmpiDrawing_API::MP1_ELLIPSE
@@ -1473,40 +1509,53 @@ namespace GmpiDrawing
 		{
 		}
 
+		inline RoundedRect(GmpiDrawing_API::MP1_RECT pRect, float pRadiusX, float pRadiusY)
+		{
+			rect = pRect;
+			radiusX = pRadiusX;
+			radiusY = pRadiusY;
+		}
+
+		inline RoundedRect(GmpiDrawing_API::MP1_RECT pRect, float pRadius)
+		{
+			rect = pRect;
+			radiusX = radiusY = pRadius;
+		}
+
+		inline RoundedRect(GmpiDrawing_API::MP1_POINT pPoint1, GmpiDrawing_API::MP1_POINT pPoint2, float pRadius)
+		{
+			rect = GmpiDrawing_API::MP1_RECT{ pPoint1.x, pPoint1.y, pPoint2.x, pPoint2.y };
+			radiusX = radiusY = pRadius;
+		}
+
+		inline RoundedRect(float pLeft, float pTop, float pRight, float pBottom, float pRadius)
+		{
+			rect = GmpiDrawing_API::MP1_RECT{ pLeft, pTop, pRight, pBottom };
+			radiusX = radiusY = pRadius;
+		}
 	};
 
 	// Wrap interfaces in friendly classes.
-	class Factory;
+	// class Factory;
+	/*
+	struct TextFormatProperties
+	{
+		float size{ 12 };
+		std::string familyName{ "Sans Serif" };
+		FontWeight weight{ FontWeight::Normal };
+		FontStyle style{ GmpiDrawing::FontStyle::Normal };
+		FontStretch stretch{ GmpiDrawing::FontStretch::Normal };
 
-	class TextFormat : public GmpiSdk::Internal::Object
+		GmpiDrawing::TextAlignment textAlignment;
+		GmpiDrawing::TextAlignment paragraphAlignment;
+		GmpiDrawing::WordWrapping wordWrapping;
+	};
+	*/
+
+	class TextFormat_readonly : public GmpiSdk::Internal::Object
 	{
 	public:
-		GMPIGUISDK_DEFINE_CLASS(TextFormat, GmpiSdk::Internal::Object, GmpiDrawing_API::IMpTextFormat);
-
-		inline int32_t SetTextAlignment(TextAlignment textAlignment)
-		{
-			return Get()->SetTextAlignment((GmpiDrawing_API::MP1_TEXT_ALIGNMENT) textAlignment);
-		}
-
-		inline int32_t SetTextAlignment(GmpiDrawing_API::MP1_TEXT_ALIGNMENT textAlignment)
-		{
-			return Get()->SetTextAlignment(textAlignment);
-		}
-
-		inline int32_t SetParagraphAlignment(ParagraphAlignment paragraphAlignment)
-		{
-			return Get()->SetParagraphAlignment((GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT) paragraphAlignment);
-		}
-
-		inline int32_t SetWordWrapping(WordWrapping wordWrapping)
-		{
-			return Get()->SetWordWrapping((GmpiDrawing_API::MP1_WORD_WRAPPING) wordWrapping);
-		}
-
-		inline int32_t SetLineSpacing(float lineSpacing, float baseline)
-		{
-			return Get()->SetLineSpacing(lineSpacing, baseline);
-		}
+		GMPIGUISDK_DEFINE_CLASS(TextFormat_readonly, GmpiSdk::Internal::Object, GmpiDrawing_API::IMpTextFormat);
 
 		inline Size GetTextExtentU(const char* utf8String)
 		{
@@ -1532,7 +1581,7 @@ namespace GmpiDrawing
 		{
 			static std::wstring_convert<std::codecvt_utf8<wchar_t>> stringConverter;
 			auto utf8String = stringConverter.to_bytes(wString);
-//			auto utf8String = FastUnicode::WStringToUtf8(wString.c_str());
+			//			auto utf8String = FastUnicode::WStringToUtf8(wString.c_str());
 
 			Size s;
 			Get()->GetTextExtentU(utf8String.c_str(), (int32_t)utf8String.size(), &s);
@@ -1542,6 +1591,46 @@ namespace GmpiDrawing
 		inline void GetFontMetrics(GmpiDrawing_API::MP1_FONT_METRICS* returnFontMetrics)
 		{
 			Get()->GetFontMetrics(returnFontMetrics);
+		}
+		inline GmpiDrawing_API::MP1_FONT_METRICS GetFontMetrics()
+		{
+			GmpiDrawing_API::MP1_FONT_METRICS returnFontMetrics;
+			Get()->GetFontMetrics(&returnFontMetrics);
+			return returnFontMetrics;
+		}
+	};
+
+	class TextFormat : public TextFormat_readonly
+	{
+	public:
+		inline int32_t SetTextAlignment(TextAlignment textAlignment)
+		{
+			return Get()->SetTextAlignment((GmpiDrawing_API::MP1_TEXT_ALIGNMENT) textAlignment);
+		}
+
+		inline int32_t SetTextAlignment(GmpiDrawing_API::MP1_TEXT_ALIGNMENT textAlignment)
+		{
+			return Get()->SetTextAlignment(textAlignment);
+		}
+
+		inline int32_t SetParagraphAlignment(ParagraphAlignment paragraphAlignment)
+		{
+			return Get()->SetParagraphAlignment((GmpiDrawing_API::MP1_PARAGRAPH_ALIGNMENT) paragraphAlignment);
+		}
+
+		inline int32_t SetWordWrapping(WordWrapping wordWrapping)
+		{
+			return Get()->SetWordWrapping((GmpiDrawing_API::MP1_WORD_WRAPPING) wordWrapping);
+		}
+
+		inline int32_t SetLineSpacing(float lineSpacing, float baseline)
+		{
+			return Get()->SetLineSpacing(lineSpacing, baseline);
+		}
+
+		inline int32_t SetImprovedVerticalBaselineSnapping()
+		{
+			return Get()->SetLineSpacing(GmpiDrawing_API::IMpTextFormat::ImprovedVerticalBaselineSnapping, 0.0f);
 		}
 	};
 
@@ -1646,6 +1735,44 @@ namespace GmpiDrawing
 			return temp;
 		}
 
+		/*
+			LockPixels - Gives access to the raw pixels of a bitmap. The pixel format is 8-bit per channel ARGB premultiplied, sRGB color-space.
+			             If you are used to colors in 'normal' non-premultiplied ARGB format, the following routine will convert to pre-multiplied for you.
+						 You get the pixelformat by calling BitmapPixels::getPixelFormat().
+
+		   inline uint32_t toNative(uint32_t colorSrgb8, int32_t pixelFormat)
+		   {
+				  uint32_t result{};
+
+				  const unsigned char* sourcePixels = reinterpret_cast<unsigned char*>(&colorSrgb8);
+				  unsigned char* destPixels = reinterpret_cast<unsigned char*>(&result);
+
+				  int alpha = sourcePixels[3];
+
+				  // apply pre-multiplied alpha.
+				  for (int i = 0; i < 3; ++i)
+				  {
+						 if (pixelFormat == GmpiDrawing_API::IMpBitmapPixels::kBGRA_SRGB)
+						 {
+							   constexpr float inv255 = 1.0f / 255.0f;
+
+							   // This method will be chosen on Win10 with SRGB support.
+							   const float cf2 = se_sdk::FastGamma::RGB_to_float(sourcePixels[i]);
+							   destPixels[i] = se_sdk::FastGamma::float_to_sRGB(cf2 * alpha * inv255);
+						 }
+						 else
+						 {
+							   // This method will be chosen on Mac and Win7 because they use (inferior) linear gamma.
+							   const int r2 = sourcePixels[i] * alpha + 127;
+							   destPixels[i] = (r2 + 1 + (r2 >> 8)) >> 8; // fast way to divide by 255
+						 }
+				  }
+				  destPixels[3] = alpha;
+
+				  return result;
+		   }
+		*/
+
 		inline BitmapPixels lockPixels(int32_t flags = GmpiDrawing_API::MP1_BITMAP_LOCK_READ)
 		{
 			BitmapPixels temp;
@@ -1653,66 +1780,10 @@ namespace GmpiDrawing
 			return temp;
 		}
 
+		// Deprecated.
 		void ApplyAlphaCorrection()
 		{
 			Get()->ApplyAlphaCorrection();
-/*
-			auto pixelsSource = lockPixels(true);
-			auto imageSize = GetSize();
-			int totalPixels = (int)imageSize.height * pixelsSource.getBytesPerRow() / sizeof(uint32_t);
-
-			uint8_t* sourcePixels = pixelsSource.getAddress();
-			const float gamma = 2.2f;
-			for (int i = 0; i < totalPixels; ++i)
-			{
-				int alpha = sourcePixels[3];
-
-				if (alpha != 0 && alpha != 255)
-				{
-					float bitmapAlpha = alpha / 255.0f;
-
-					// Calc pixel lumination (linear).
-					float components[3];
-					float foreground = 0.0f;
-					for (int c = 0; c < 3; ++c)
-					{
-						float pixel = sourcePixels[c] / 255.0f;
-						pixel /= bitmapAlpha; // un-premultiply
-						pixel = powf(pixel, gamma);
-						components[c] = pixel;
-//						foreground += pixel;
-//						foreground = (std::max)(foreground, pixel);
-					}
-//					foreground /= 3.0f; // average pixels.
-//					foreground = 0.2126 * components[2] + 0.7152 * components[1] + 0.0722 * components[0]; // Luminance.
-					foreground = 0.3333f * components[2] + 0.3333f * components[1] + 0.3333f * components[0]; // Average. Much the same as Luminance, better on Blue.
-
-					float blackAlpha = 1.0f - powf(1.0f - bitmapAlpha, 1.0 / gamma);
-					float whiteAlpha = powf(bitmapAlpha, 1.0f / gamma);
-
-					float mix = powf(foreground, 1.0f / gamma);
-
-					float bitmapAlphaCorrected = blackAlpha * (1.0f - mix) + whiteAlpha * mix;
-
-					for (int c = 0; c < 3; ++c)
-					{
-						float pixel = components[c];
-
-						// Alpha is calculated on average forground intensity, need to tweak components that are brighter than average to prevent themgetting too dim.
-						//float IntensityError = pixel / foreground;
-						//pixel *= IntensityError;
-
-						pixel = powf(pixel, 1.0f / gamma); // linear -> sRGB space.
-						pixel *= bitmapAlphaCorrected; // premultiply
-						sourcePixels[c] = (std::min)( 255, (int)(pixel * 255.0f + 0.5f));
-					}
-
-					int alphaVal = (int)(bitmapAlphaCorrected * 255.0f + 0.5f);
-					sourcePixels[3] = alphaVal;
-				}
-				sourcePixels += sizeof(uint32_t);
-			}
-			*/
 		}
 	};
 
@@ -1731,11 +1802,6 @@ namespace GmpiDrawing
 	{
 	public:
 		GMPIGUISDK_DEFINE_CLASS(Brush, Resource, GmpiDrawing_API::IMpBrush);
-
-		inline void SetOpacity(float opacity)
-		{
-//			Get()->SetOpacity(opacity);
-		}
 	};
 
 	class BitmapBrush : public Brush
@@ -1751,6 +1817,11 @@ namespace GmpiDrawing
 		inline void SetExtendModeY(ExtendMode extendModeY)
 		{
 			Get()->SetExtendModeY((GmpiDrawing_API::MP1_EXTEND_MODE) extendModeY);
+		}
+
+		inline void SetInterpolationMode(BitmapInterpolationMode interpolationMode)
+		{
+			Get()->SetInterpolationMode((GmpiDrawing_API::MP1_BITMAP_INTERPOLATION_MODE) interpolationMode);
 		}
 	};
 
@@ -1926,10 +1997,10 @@ namespace GmpiDrawing
 		GMPIGUISDK_DEFINE_CLASS(StrokeStyle, Resource, GmpiDrawing_API::IMpStrokeStyle);
 	};
 
-	class PathGeometry : public Resource //Geometry
+	class PathGeometry : public Resource
 	{
 	public:
-		GMPIGUISDK_DEFINE_CLASS(PathGeometry, Resource/*Geometry*/, GmpiDrawing_API::IMpPathGeometry);
+		GMPIGUISDK_DEFINE_CLASS(PathGeometry, Resource, GmpiDrawing_API::IMpPathGeometry);
 
 		inline GeometrySink Open()
 		{
@@ -2002,28 +2073,11 @@ namespace GmpiDrawing
 		}
 	};
 
-	
-/*
-	class UpdateRegion : public GmpiSdk::Internal::Object
-	{
-	public:
-		GMPIGUISDK_DEFINE_CLASS(UpdateRegion, GmpiSdk::Internal::Object, GmpiDrawing_API::IUpdateRegion);
-
-		inline bool isVisible(GmpiDrawing_API::MP1_RECT* rect)
-		{
-			return Get()->isVisible(rect);
-		}
-		inline GmpiDrawing_API::MP1_RECT** getUpdateRects()
-		{
-			GmpiDrawing_API::MP1_RECT** rect;
-			Get()->getUpdateRects(&rect);
-			return rect;
-		}
-	};
-*/
-
 	class Factory : public GmpiSdk::Internal::Object
 	{
+		std::unordered_map<std::string, std::pair<float, float>> availableFonts; // font family name, body-size, cap-height.
+		gmpi_sdk::mp_shared_ptr<GmpiDrawing_API::IMpFactory2> factory2;
+
 	public:
 		GMPIGUISDK_DEFINE_CLASS(Factory, GmpiSdk::Internal::Object, GmpiDrawing_API::IMpFactory);
 
@@ -2034,17 +2088,165 @@ namespace GmpiDrawing
 			return temp;
 		}
 
-		inline TextFormat CreateTextFormat(float fontSize = 12, const char* TextFormatfontFamilyName = "Sans Serif", GmpiDrawing_API::MP1_FONT_WEIGHT fontWeight = GmpiDrawing_API::MP1_FONT_WEIGHT_NORMAL, GmpiDrawing_API::MP1_FONT_STYLE fontStyle = GmpiDrawing_API::MP1_FONT_STYLE_NORMAL, GmpiDrawing_API::MP1_FONT_STRETCH fontStretch = GmpiDrawing_API::MP1_FONT_STRETCH_NORMAL)
+		// CreateTextformat creates fonts of the size you specify (according to the font file).
+		// Note that this will result in different fonts having different bounding boxes and vertical alignment. See CreateTextformat2 for a solution to this.
+		// Dont forget to call TextFormat::SetImprovedVerticalBaselineSnapping() to get consistant results on macOS
+
+		inline TextFormat CreateTextFormat(float fontSize = 12, const char* TextFormatfontFamilyName = "Arial", GmpiDrawing_API::MP1_FONT_WEIGHT fontWeight = GmpiDrawing_API::MP1_FONT_WEIGHT_NORMAL, GmpiDrawing_API::MP1_FONT_STYLE fontStyle = GmpiDrawing_API::MP1_FONT_STYLE_NORMAL, GmpiDrawing_API::MP1_FONT_STRETCH fontStretch = GmpiDrawing_API::MP1_FONT_STRETCH_NORMAL)
 		{
 			TextFormat temp;
 			Get()->CreateTextFormat(TextFormatfontFamilyName, nullptr /* fontCollection */, fontWeight, fontStyle, fontStretch, fontSize, nullptr /* localeName */, temp.GetAddressOf());
 			return temp;
 		}
 
+		// Dont forget to call TextFormat::SetImprovedVerticalBaselineSnapping() to get consistant results on macOS
 		inline TextFormat CreateTextFormat(float fontSize, const char* TextFormatfontFamilyName, GmpiDrawing::FontWeight fontWeight, GmpiDrawing::FontStyle fontStyle = GmpiDrawing::FontStyle::Normal, GmpiDrawing::FontStretch fontStretch = GmpiDrawing::FontStretch::Normal)
 		{
 			TextFormat temp;
 			Get()->CreateTextFormat(TextFormatfontFamilyName, nullptr /* fontCollection */, (GmpiDrawing_API::MP1_FONT_WEIGHT) fontWeight, (GmpiDrawing_API::MP1_FONT_STYLE) fontStyle, (GmpiDrawing_API::MP1_FONT_STRETCH) fontStretch, fontSize, nullptr /* localeName */, temp.GetAddressOf());
+			return temp;
+		}
+
+		struct FontStack
+		{
+			std::vector<const char*> fontFamilies_;
+
+			FontStack(const char* fontFamily = "")
+			{
+				fontFamilies_.push_back(fontFamily);
+			}
+
+			FontStack(const std::vector<const char*> fontFamilies) :
+				fontFamilies_(fontFamilies)
+			{
+			}
+
+			FontStack(const std::vector<std::string>& fontFamilies)
+			{
+				for(const auto& fontFamilyName : fontFamilies)
+				{
+					fontFamilies_.push_back(fontFamilyName.c_str());
+				}
+			}
+		};
+
+		// CreateTextFormat2 scales the bounding box of the font, so that it is always the same height as Arial.
+		// This is useful if you’re drawing text in a box(e.g.a Text - Entry’ module). The text will always have nice vertical alignment,
+		// even when the font 'falls back' to a font with different metrics.
+		inline TextFormat CreateTextFormat2(
+			float bodyHeight = 12.0f,
+			FontStack fontStack = {},
+			GmpiDrawing::FontWeight fontWeight = GmpiDrawing::FontWeight::Regular,
+			GmpiDrawing::FontStyle fontStyle = GmpiDrawing::FontStyle::Normal,
+			GmpiDrawing::FontStretch fontStretch = GmpiDrawing::FontStretch::Normal,
+			bool digitsOnly = false
+		)
+		{
+			// "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif (test each)
+			const char* fallBackFontFamilyName = "Arial";
+
+			if (!factory2)
+			{
+				if (gmpi::MP_OK == Get()->queryInterface(GmpiDrawing_API::SE_IID_FACTORY2_MPGUI, factory2.asIMpUnknownPtr()))
+				{
+					assert(availableFonts.empty());
+
+					availableFonts.insert(std::make_pair(fallBackFontFamilyName, std::make_pair(0.0f, 0.0f)));
+
+					for (int32_t i = 0; true; ++i)
+					{
+						gmpi_sdk::MpString fontFamilyName;
+						if (gmpi::MP_OK != factory2->GetFontFamilyName(i, &fontFamilyName))
+						{
+							break;
+						}
+
+						if (fontFamilyName.str() != fallBackFontFamilyName)
+						{
+							availableFonts.insert(std::make_pair(fontFamilyName.str(), std::make_pair(0.0f, 0.0f)));
+						}
+					}
+				}
+				else
+				{
+					// Legacy SE. We don't know what fonts are available.
+					// Fake it by putting font name on list, even though we have no idea what actual font host will return.
+					// This will achieve same behaviour as before.
+					if(!fontStack.fontFamilies_.empty())
+					{
+						availableFonts.insert(std::make_pair(fontStack.fontFamilies_[0], std::make_pair(0.0f, 0.0f)));
+					}
+				}
+			}
+
+			const float referenceFontSize = 32.0f;
+
+			TextFormat temp;
+			for (const std::string& fontFamilyName : fontStack.fontFamilies_)
+			{
+				auto family_it = availableFonts.find(fontFamilyName);
+				if (family_it == availableFonts.end())
+				{
+					continue;
+				}
+
+				// Cache font scaling info.
+				if (family_it->second.first == 0.0f)
+				{
+					TextFormat referenceTextFormat;
+
+					Get()->CreateTextFormat(
+						fontFamilyName.c_str(),						// usually Arial
+						nullptr /* fontCollection */,
+						(GmpiDrawing_API::MP1_FONT_WEIGHT) fontWeight,
+						(GmpiDrawing_API::MP1_FONT_STYLE) fontStyle,
+						(GmpiDrawing_API::MP1_FONT_STRETCH) fontStretch,
+						referenceFontSize,
+						nullptr /* localeName */,
+						referenceTextFormat.GetAddressOf()
+					);
+
+					GmpiDrawing_API::MP1_FONT_METRICS referenceMetrics;
+					referenceTextFormat.GetFontMetrics(&referenceMetrics);
+
+					family_it->second.first = referenceFontSize / referenceMetrics.bodyHeight();
+					family_it->second.second = referenceFontSize / referenceMetrics.capHeight;
+				}
+
+				const float& bodyHeightScale = family_it->second.first;
+				const float& capHeightScale = family_it->second.second;
+
+				// Scale cell height according to meterics
+				const float fontSize = bodyHeight * (digitsOnly ? capHeightScale : bodyHeightScale);
+
+				// Create actual textformat.
+				assert(fontSize > 0.0f);
+				Get()->CreateTextFormat(
+					fontFamilyName.c_str(),
+					nullptr /* fontCollection */,
+					(GmpiDrawing_API::MP1_FONT_WEIGHT) fontWeight,
+					(GmpiDrawing_API::MP1_FONT_STYLE) fontStyle,
+					(GmpiDrawing_API::MP1_FONT_STRETCH) fontStretch,
+					fontSize,
+					nullptr /* localeName */,
+					temp.GetAddressOf()
+				);
+
+				if(temp.isNull()) // should never happen unless font size is 0 (rogue module or global.txt style)
+				{
+					return temp; // return null font. Else get into fallback recursion loop.
+				}
+
+				break;
+			}
+
+			// Failure for any reason results in fallback.
+			if (temp.isNull())
+			{
+				return CreateTextFormat2(bodyHeight, fallBackFontFamilyName, fontWeight, fontStyle, fontStretch, digitsOnly);
+			}
+
+			temp.SetImprovedVerticalBaselineSnapping();
 			return temp;
 		}
 
@@ -2075,10 +2277,10 @@ namespace GmpiDrawing
 			return LoadImageU(utf8Uri.c_str());
 		}
 
-		inline StrokeStyle CreateStrokeStyle(const GmpiDrawing_API::MP1_STROKE_STYLE_PROPERTIES strokeStyleProperties, float* dashes = nullptr, int32_t dashesCount = 0)
+		inline StrokeStyle CreateStrokeStyle(const GmpiDrawing_API::MP1_STROKE_STYLE_PROPERTIES strokeStyleProperties, const float* dashes = nullptr, int32_t dashesCount = 0)
 		{
 			StrokeStyle temp;
-			Get()->CreateStrokeStyle(&strokeStyleProperties, dashes, dashesCount, temp.GetAddressOf());
+			Get()->CreateStrokeStyle(&strokeStyleProperties, const_cast<float*>(dashes), dashesCount, temp.GetAddressOf());
 			return temp;
 		}
 
@@ -2115,8 +2317,11 @@ namespace GmpiDrawing
 		}
 */
 
-		inline BitmapBrush CreateBitmapBrush(Bitmap& bitmap, BitmapBrushProperties& bitmapBrushProperties, BrushProperties& brushProperties)
+		inline BitmapBrush CreateBitmapBrush(Bitmap& bitmap) // N/A on macOS: BitmapBrushProperties& bitmapBrushProperties, BrushProperties& brushProperties)
 		{
+			const BitmapBrushProperties bitmapBrushProperties;
+			const BrushProperties brushProperties;
+
 			BitmapBrush temp;
 			Get()->CreateBitmapBrush(bitmap.Get(), &bitmapBrushProperties, &brushProperties, temp.GetAddressOf());
 			return temp;
@@ -2234,6 +2439,61 @@ namespace GmpiDrawing
 			return temp;
 		}
 
+		inline RadialGradientBrush CreateRadialGradientBrush(GradientStopCollection gradientStopCollection, GmpiDrawing_API::MP1_POINT center, float radius)
+		{
+			BrushProperties brushProperties;
+			RadialGradientBrushProperties radialGradientBrushProperties(center, radius);
+
+			RadialGradientBrush temp;
+			Get()->CreateRadialGradientBrush((GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES*) &radialGradientBrushProperties, &brushProperties, gradientStopCollection.Get(), temp.GetAddressOf());
+			return temp;
+		}
+
+		template <int N>
+		inline RadialGradientBrush CreateRadialGradientBrush(GradientStop(&gradientStops)[N], GmpiDrawing_API::MP1_POINT center, float radius)
+		{
+			BrushProperties brushProperties;
+			RadialGradientBrushProperties radialGradientBrushProperties(center, radius);
+			auto gradientStopCollection = CreateGradientStopCollection(gradientStops);
+
+			RadialGradientBrush temp;
+			Get()->CreateRadialGradientBrush((GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES*) &radialGradientBrushProperties, &brushProperties, gradientStopCollection.Get(), temp.GetAddressOf());
+			return temp;
+		}
+
+		// Simple 2-color gradient.
+		inline RadialGradientBrush CreateRadialGradientBrush(GmpiDrawing_API::MP1_POINT center, float radius, GmpiDrawing_API::MP1_COLOR startColor, GmpiDrawing_API::MP1_COLOR endColor)
+		{
+			GradientStop gradientStops[2];
+			gradientStops[0].color = startColor;
+			gradientStops[0].position = 0.0f;
+			gradientStops[1].color = endColor;
+			gradientStops[1].position = 1.0f;
+
+			auto gradientStopCollection = CreateGradientStopCollection(gradientStops, 2);
+			RadialGradientBrushProperties rp(center, radius);
+			BrushProperties bp;
+			return CreateRadialGradientBrush(rp, bp, gradientStopCollection);
+		}
+
+		// Simple 2-color gradient.
+		inline RadialGradientBrush CreateRadialGradientBrush(Color color1, Color color2, Point center, float radius)
+		{
+			GradientStop gradientStops[2];
+			gradientStops[0].color = color1;
+			gradientStops[0].position = 0.0f;
+			gradientStops[1].color = color2;
+			gradientStops[1].position = 1.0f;
+
+			auto gradientStopCollection = CreateGradientStopCollection(gradientStops, 2);
+
+			RadialGradientBrushProperties radialGradientBrushProperties(center, radius);
+			BrushProperties brushproperties;
+
+			RadialGradientBrush temp;
+			Get()->CreateRadialGradientBrush((GmpiDrawing_API::MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES*) &radialGradientBrushProperties, &brushproperties, gradientStopCollection.Get(), temp.GetAddressOf());
+			return temp;
+		}
 		//inline Mesh CreateMesh()
 		//{
 		//	Mesh temp;
@@ -2271,7 +2531,7 @@ namespace GmpiDrawing
 			Get()->FillRectangle(&rect, brush.Get());
 		}
 
-		inline void FillRectangle(float top, float left, float right, float bottom, Brush& brush)
+		inline void FillRectangle(float top, float left, float right, float bottom, Brush& brush) // TODO!!! using references hinders the caller creating the brush in the function call.
 		{
 			Rect rect(top, left, right, bottom);
 			Get()->FillRectangle(&rect, brush.Get());
@@ -2393,36 +2653,37 @@ namespace GmpiDrawing
 			Get()->DrawBitmap(bitmap.Get(), &destinationRectangle, opacity, interpolationMode, &sourceRectangleF);
 		}
 
-		inline void DrawTextU(const char* utf8String, TextFormat textFormat, Rect layoutRect, Brush brush, DrawTextOptions options = DrawTextOptions::None)
+		inline void DrawTextU(const char* utf8String, TextFormat_readonly textFormat, Rect layoutRect, Brush brush, DrawTextOptions options = DrawTextOptions::None)
 		{
 			int32_t stringLength = (int32_t) strlen(utf8String);
 			Get()->DrawTextU(utf8String, stringLength, textFormat.Get(), &layoutRect, brush.Get(), (GmpiDrawing_API::MP1_DRAW_TEXT_OPTIONS) options/*, measuringMode*/);
 		}
-		inline void DrawTextU(std::string utf8String, TextFormat textFormat, Rect rect, Brush brush, int32_t flags = 0)
+		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags = 0)
 		{
 			Get()->DrawTextU(utf8String.c_str(), (int32_t)utf8String.size(), textFormat.Get(), &rect, brush.Get(), flags);
 		}
-		inline void DrawTextW(std::wstring wString, TextFormat textFormat, Rect rect, Brush brush, int32_t flags = 0)
+		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags = 0)
 		{
 			static std::wstring_convert<std::codecvt_utf8<wchar_t>> stringConverter;
-			auto utf8String = stringConverter.to_bytes(wString);
-
-//			auto utf8String = FastUnicode::WStringToUtf8(wString.c_str());
+			const auto utf8String = stringConverter.to_bytes(wString);
 			this->DrawTextU(utf8String, textFormat, rect, brush, flags);
 		}
-		// don't care about rect, only position.
-		inline void DrawTextU(std::string utf8String, TextFormat textFormat, float x, float y, Brush brush, DrawTextOptions options = DrawTextOptions::None)
+		// don't care about rect, only position. DEPRECATED, works only when text is left-aligned.
+		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, float x, float y, Brush brush, DrawTextOptions options = DrawTextOptions::None)
 		{
+#ifdef _RPT0
+			_RPT0(_CRT_WARN, "DrawTextU(std::string, TextFormat, float, float ...) DEPRECATED, works only when text is left-aligned.\n");
+#endif
 			const int32_t flags = static_cast<int32_t>(options);
 			Rect rect(x, y, x + 10000, y + 10000);
 			Get()->DrawTextU(utf8String.c_str(), (int32_t)utf8String.size(), (GmpiDrawing_API::IMpTextFormat*) textFormat.Get(), &rect, brush.Get(), flags);
 		}
 
-		inline void DrawTextW(std::wstring wString, TextFormat textFormat, float x, float y, Brush brush, DrawTextOptions options = DrawTextOptions::None)
+		// don't care about rect, only position. DEPRECATED, works only when text is left-aligned.
+		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, float x, float y, Brush brush, DrawTextOptions options = DrawTextOptions::None)
 		{
 			static std::wstring_convert<std::codecvt_utf8<wchar_t>> stringConverter;
 			auto utf8String = stringConverter.to_bytes(wString);
-//			auto utf8String = FastUnicode::WStringToUtf8(wString.c_str());
 
 			this->DrawTextU(utf8String, textFormat, x, y, brush, options);
 		}
@@ -2475,9 +2736,9 @@ namespace GmpiDrawing
 
 		inline int32_t EndDraw()
 		{
-			return 	Get()->EndDraw();
+			return Get()->EndDraw();
 		}
-/*
+		/*
 		inline UpdateRegion GetUpdateRegion()
 		{
 			UpdateRegion temp;
@@ -2591,7 +2852,7 @@ namespace GmpiDrawing
 	};
 
 	/*
-		Handy RIIA helper for clipping. Automatically restores original clip-rect on exit.
+		Handy RAII helper for clipping. Automatically restores original clip-rect on exit.
 		USEAGE:
 
 		Graphics g(drawingContext);

@@ -35,11 +35,16 @@ public:
 	{
 		platform_string filename;
 		platform_string fullPath;
-		bool isFolder;
+		bool isFolder = false;
+
+		bool isDots() const
+		{
+			return filename == _T(".") || filename == _T("..");
+		}
 	};
 
 #if defined(_WIN32)
-    FileFinder(const TCHAR* folderPath);
+    FileFinder(const wchar_t* folderPath);
     FileFinder& operator=(const TCHAR* folderPath)
     {
         first(folderPath);
@@ -48,7 +53,7 @@ public:
 #endif
 
     FileFinder(const char* folderPath);
-	~FileFinder(void);
+	~FileFinder();
 
 	FileFinder& operator++()
 	{
@@ -66,7 +71,7 @@ public:
 	{
 		return current_;
 	}
-	FileFinderItem& currentItem(void)
+	FileFinderItem& currentItem()
 	{
 		return current_;
 	}
@@ -77,15 +82,14 @@ private:
     WIN32_FIND_DATA fdata;
 #else
 	DIR* directoryHandle;
-    dirent* entry;
+    dirent* entry = nullptr;
 #endif
 
 	FileFinderItem current_;
 	platform_string searchPath;
     bool done_;
-#if defined(_WIN32)
     bool last_;
-#else
+#if !defined(_WIN32)
 	platform_string extension;
 #endif
 };

@@ -43,7 +43,7 @@ namespace GmpiSdk
 		class GmpiIWrapper
 		{
 		protected:
-			gmpi_sdk::mp_shared_ptr<InterfaceClass> m_ptr;
+			mutable gmpi_sdk::mp_shared_ptr<InterfaceClass> m_ptr;
 
 			GmpiIWrapper() {}
 			GmpiIWrapper(GmpiIWrapper const & other) : m_ptr(other.m_ptr) {}
@@ -52,11 +52,11 @@ namespace GmpiSdk
 			void Move(GmpiIWrapper && other) { m_ptr = std::move(other.m_ptr); }
 
 		public:
-			GmpiIWrapper(gmpi::IMpUnknown* other) : m_ptr(nullptr)
+			GmpiIWrapper(gmpi::IMpUnknown* /*other*/) : m_ptr(nullptr)
             {
             }
 
-            inline InterfaceClass* Get()
+            inline InterfaceClass* Get() const
 			{
 				return m_ptr.get();
 			}
@@ -92,18 +92,22 @@ namespace GmpiSdk
 			Object() {}
 			Object(gmpi::IMpUnknown* other) : m_ptr(other) {}
 			Object(Object const & other) : m_ptr(other.m_ptr) {}
-			Object(Object && other) : m_ptr(std::move(other.m_ptr)) {}
+			Object(Object && other) noexcept : m_ptr(std::move(other.m_ptr)) {}
 			//void Copy(Object const & other) { m_ptr = other.m_ptr; }
 			void Copy(gmpi::IMpUnknown* other) { m_ptr = other; }
 			void Move(Object && other) { m_ptr = std::move(other.m_ptr); }
 
 		public:
-
-			//		operator Details::BoolType() const { return nullptr != m_ptr ? &Details::BoolStruct::Member : nullptr; }
-			//		auto Unknown() const -> const gmpi::IMpUnknown*&{ return m_ptr.get(); };
-			//		void Reset() { m_ptr.reset(); }
+			inline explicit operator bool()
+			{
+				return (!isNull());
+			}
 			gmpi::IMpUnknown*& Unknown() { return m_ptr.get(); };
-			inline bool isNull() { return m_ptr == nullptr; }
+			inline bool isNull() const
+			{
+				auto nonConstThis = const_cast<Object*>(this);
+				return nonConstThis->m_ptr == nullptr;
+			}
 			void setNull() { m_ptr = nullptr; }
 		};
 	}

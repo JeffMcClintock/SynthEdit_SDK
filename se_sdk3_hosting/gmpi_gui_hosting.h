@@ -8,19 +8,9 @@ using namespace GmpiGuiHosting;
 #include <vector>
 #include <string>
 
-#ifdef _WIN32
-
-//#include "c:\Program Files (x86)\Windows Kits\8.1\Include\shared\winapifamily.h"
-
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
-#include "../../conversion.h"
-#endif
-#else
-//#include "my_edit_box_Mac_Cocoa.h"
-#endif
-
 #include "../se_sdk3/mp_sdk_gui2.h"
 #include "../se_sdk3/mp_gui.h"
+#include "../shared/unicode_conversion.h"
 
 namespace GmpiGuiHosting
 {
@@ -102,7 +92,7 @@ namespace GmpiGuiHosting
 	class GgFactory : public GmpiDrawing_API::IMpFactory
 	{
 	public:
-		static GgFactory* GetInstance(void);
+		static GgFactory* GetInstance();
 
 		virtual int32_t MP_STDCALL CreatePathGeometry(GmpiDrawing_API::IMpPathGeometry **pathGeometry) override;
 		virtual int32_t MP_STDCALL CreateTextFormat(const char* fontFamilyName, void* unused / * fontCollection * /, GmpiDrawing_API::MP1_FONT_WEIGHT fontWeight, GmpiDrawing_API::MP1_FONT_STYLE fontStyle, GmpiDrawing_API::MP1_FONT_STRETCH fontStretch, float fontSize, void* unused2 / * localeName * /, GmpiDrawing_API::IMpTextFormat** textFormat) override
@@ -302,27 +292,102 @@ namespace GmpiGuiHosting
 
 #ifdef _WIN32
 
-// This code is for Win32 desktop apps
-//#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
+	// This code is for Win32 desktop apps
 
 	class UpdateRegionWinGdi
 	{
-		HRGN hRegion;
+		HRGN hRegion = 0;
+		std::string regionDataBuffer;
 		std::vector<GmpiDrawing::RectL> rects;
+		GmpiDrawing::RectL bounds;
 
 	public:
-		UpdateRegionWinGdi(HWND window);
+		UpdateRegionWinGdi();
 		~UpdateRegionWinGdi();
 
+		void copyDirtyRects(HWND window, GmpiDrawing::SizeL swapChainSize);
 		void optimizeRects();
 
-		inline const std::vector<GmpiDrawing::RectL>& getUpdateRects()
+		inline std::vector<GmpiDrawing::RectL>& getUpdateRects()
 		{
 			return rects;
 		}
+		inline GmpiDrawing::RectL& getBoundingRect()
+		{
+			return bounds;
+		}
 	};
+/*
+	// generic GMPI update region
+	class UpdateRegion : public GmpiDrawing_API::IUpdateRegion
+	{
+		std::vector<GmpiDrawing::Rect> rects;
+		GmpiDrawing::Rect overallRect;
 
+	public:
+		// Construct from Win32 rects, apply DPI and convert to float.
+		UpdateRegion(const std::vector<GmpiDrawing::RectL>& rects_native, const GmpiDrawing::Matrix3x2& WindowToDips)
+		{
+			for (auto& r : rects_native)
+			{
+				auto r2 = WindowToDips.TransformRect(GmpiDrawing::Rect(static_cast<float>(r.left), static_cast<float>(r.top), static_cast<float>(r.right), static_cast<float>(r.bottom)));
+
+				rects.push_back(
+					GmpiDrawing::Rect(
+						static_cast<float>(FastRealToIntTruncateTowardZero(r2.left)),
+						static_cast<float>(FastRealToIntTruncateTowardZero(r2.top)),
+						static_cast<float>(FastRealToIntTruncateTowardZero(r2.right) + 1),
+						static_cast<float>(FastRealToIntTruncateTowardZero(r2.bottom) + 1)
+				)
+				);
+			}
+
+			assert(!rects.empty());
+			overallRect = rects[0];
+			for (int i = 1; i < rects.size(); ++i)
+			{
+				overallRect.Union(rects[i]);
+			}
+		}
+
+		// Construct from parent region, but apply transform to child.
+		UpdateRegion(const UpdateRegion* parent, const GmpiDrawing::Matrix3x2& transform)
+		{
+			for (auto& r : parent->rects)
+			{
+				rects.push_back( transform.TransformRect(r) );
+			}
+
+			overallRect = transform.TransformRect(parent->overallRect);
+		}
+
+		const GmpiDrawing::Rect& getOverallRect()
+		{
+			return overallRect;
+		}
+
+		int32_t MP_STDCALL getUpdateRects(const GmpiDrawing_API::MP1_RECT** returnRects) override
+		{
+			*returnRects = rects.data();
+			return static_cast<int32_t>(rects.size());
+		}
+
+		bool MP_STDCALL isVisible(const GmpiDrawing_API::MP1_RECT* rect) override
+		{
+			for (auto& r : rects)
+			{
+				auto objectRect = *reinterpret_cast<const GmpiDrawing::Rect*>(rect);
+				if (!GmpiDrawing::Intersect(r, objectRect).empty())
+					return true;
+			}
+
+			return false;
+		}
+
+		GMPI_QUERYINTERFACE1(GmpiDrawing_API::SE_IID_UPDATE_REGION_MPGUI, GmpiDrawing_API::IUpdateRegion);
+		GMPI_REFCOUNT;
+	};
+*/
 	class PGCC_PlatformTextEntry : public gmpi_gui::IMpPlatformText
 	{
 		HWND hWndEdit;
@@ -334,6 +399,7 @@ namespace GmpiGuiHosting
 
 	public:
 		std::string text_;
+		bool multiline_ = false;
 
 		PGCC_PlatformTextEntry(void* pParentWnd, GmpiDrawing_API::MP1_RECT* editrect, float dpi) : hWndEdit(0)
 			, parentWnd( (HWND) pParentWnd )
@@ -349,7 +415,7 @@ namespace GmpiGuiHosting
 			text_ = text;
 			if( hWndEdit )
 			{
-				::SetWindowTextW(hWndEdit, Utf8ToWstring(text_).c_str());
+				::SetWindowTextW(hWndEdit, JmUnicodeConversions::Utf8ToWstring(text_).c_str());
 			}
 			return gmpi::MP_OK;
 		}
@@ -371,21 +437,16 @@ namespace GmpiGuiHosting
 
 		virtual int32_t MP_STDCALL SetAlignment(int32_t alignment)
 		{
-			switch( alignment )
-			{
-			case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Left:
-				align = TPM_LEFTALIGN;
-				break;
-			case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Center:
-				align = TPM_CENTERALIGN;
-				break;
-			case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Right:
-			default:
-				align = TPM_RIGHTALIGN;
-				break;
-			}
+			align = (alignment & 0x03);
+			multiline_ = (alignment >> 16) == 1;
 			return gmpi::MP_OK;
 		}
+
+		int32_t getAlignment()
+		{
+			return align;
+		}
+
 		virtual int32_t MP_STDCALL SetTextSize(float height)
 		{
 			textHeight = height;
@@ -449,9 +510,8 @@ namespace GmpiGuiHosting
 			{
 				if ((flags & gmpi_gui::MP_PLATFORM_SUB_MENU_BEGIN) != 0)
 				{
-					// TODO. see ContextMenuBuilder::TrackPopupMenu
 					auto submenu = CreatePopupMenu();
-					AppendMenu(hmenus.back(), nativeFlags | MF_POPUP, (UINT_PTR) submenu, Utf8ToWstring(text).c_str());
+					AppendMenu(hmenus.back(), nativeFlags | MF_POPUP, (UINT_PTR) submenu, JmUnicodeConversions::Utf8ToWstring(text).c_str());
 					hmenus.push_back(submenu);
 				}
 				if ((flags & gmpi_gui::MP_PLATFORM_SUB_MENU_END) != 0)
@@ -462,7 +522,7 @@ namespace GmpiGuiHosting
 			else
 			{
 				menuIds.push_back(id);
-				AppendMenu(hmenus.back(), nativeFlags, menuIds.size(), Utf8ToWstring(text).c_str());
+				AppendMenu(hmenus.back(), nativeFlags, menuIds.size(), JmUnicodeConversions::Utf8ToWstring(text).c_str());
 			}
 
 			return gmpi::MP_OK;
@@ -554,12 +614,12 @@ namespace GmpiGuiHosting
 		}
 		virtual int32_t MP_STDCALL SetInitialFilename(const char* text) override
 		{
-			initial_filename = Utf8ToWstring( text );
+			initial_filename = JmUnicodeConversions::Utf8ToWstring( text );
 			return gmpi::MP_OK;
 		}
 		virtual int32_t MP_STDCALL setInitialDirectory(const char* text) override
 		{
-			initial_folder = Utf8ToWstring(text);
+			initial_folder = JmUnicodeConversions::Utf8ToWstring(text);
 			return gmpi::MP_OK;
 		}
 
@@ -589,12 +649,12 @@ namespace GmpiGuiHosting
 
 		virtual int32_t MP_STDCALL SetTitle(const char* ptext) override
 		{
-			title = Utf8ToWstring(ptext);
+			title = JmUnicodeConversions::Utf8ToWstring(ptext);
 			return gmpi::MP_OK;
 		}
 		virtual int32_t MP_STDCALL SetText(const char* ptext) override
 		{
-			text = Utf8ToWstring(ptext);
+			text = JmUnicodeConversions::Utf8ToWstring(ptext);
 			return gmpi::MP_OK;
 		}
 
@@ -603,7 +663,6 @@ namespace GmpiGuiHosting
 		GMPI_QUERYINTERFACE1(gmpi_gui::SE_IID_GRAPHICS_OK_CANCEL_DIALOG, gmpi_gui::IMpOkCancelDialog);
 		GMPI_REFCOUNT;
 	};
-#endif
 
 
 #else

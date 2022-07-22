@@ -1,16 +1,13 @@
-//#include "pch.h"
 #include "./gmpi_gui_hosting.h"
 #include "../shared/it_enum_list.h"
 #include "../shared/xp_dynamic_linking.h"
 
 #ifdef _WIN32
 
-//#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
-#include "..\..\..\SynthEdit\resource.h"
-#endif
-#include <Commdlg.h>
+//#include <Commdlg.h>
 #include "../shared/xp_simd.h"
+
+#define IDC_EDIT1 1044
 
 #endif
 
@@ -136,34 +133,15 @@ namespace GmpiGuiHosting
 
 	const bool dd = PrintSrgbCurves();
 #endif
-/*
-	GgFactory* GgFactory::GetInstance(void)
-	{
-		static GgFactory singleton;
-		return &singleton;
-	}
-*/
 }
-
-
-
-
-//int32_t GgFactory::CreatePathGeometry(GmpiDrawing_API::IMpPathGeometry **pathGeometry)
-//{
-//	assert(false);
-////	*pathGeometry = new PathGeometry();
-//	return gmpi::MP_OK;
-//}
-
 
 // WIN32 Edit box dialog.
 #ifdef _WIN32
 
-//#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
-
-UpdateRegionWinGdi::UpdateRegionWinGdi(HWND window)
+void UpdateRegionWinGdi::copyDirtyRects(HWND window, GmpiDrawing::SizeL swapChainSize)
 {
+	rects.clear();
+
 	/*
 	#define ERROR               0
 	#define NULLREGION          1
@@ -172,10 +150,12 @@ UpdateRegionWinGdi::UpdateRegionWinGdi(HWND window)
 	#define RGN_ERROR ERROR
 	*/
 
-	RECT clientRect;
-	::GetClientRect(window, &clientRect);
-
-	hRegion = ::CreateRectRgn(0, 0, 1, 1);
+	static bool once = true;
+	if (once)
+	{
+		once = false;
+//	_RPT2(_CRT_WARN, "W[%d,%d]\n", clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
+	}
 
 	auto regionType = GetUpdateRgn(
 		window,
@@ -183,23 +163,26 @@ UpdateRegionWinGdi::UpdateRegionWinGdi(HWND window)
 		FALSE
 	);
 
-	if (regionType == NULLREGION)
-	{
-		DeleteObject(hRegion);
-		hRegion = NULL;
-	}
-	else
-	{
-		int size = GetRegionData(hRegion, 0, NULL);
-		int rectcount = 0;
+	assert(regionType != RGN_ERROR);
 
+	if (regionType != NULLREGION)
+	{
+		int size = GetRegionData(hRegion, 0, NULL); // query size of region data.
 		if (size)
 		{
-			RGNDATA* pRegion = (RGNDATA *) new char[size];
+			regionDataBuffer.resize(size);
+			RGNDATA* pRegion = (RGNDATA *)regionDataBuffer.data();
+
 			GetRegionData(hRegion, size, pRegion);
 
-			const RECT* pRect = (const RECT *)& pRegion->Buffer;
-			rectcount = pRegion->rdh.nCount;
+			// Overall bounding rect
+			{
+				auto& r = pRegion->rdh.rcBound;
+				bounds = GmpiDrawing::RectL(r.left, r.top, r.right, r.bottom);
+			}
+
+			const RECT* pRect = (const RECT*)& pRegion->Buffer;
+//			auto rectcount = pRegion->rdh.nCount;
 
 			for (unsigned i = 0; i < pRegion->rdh.nCount; i++)
 			{
@@ -207,25 +190,15 @@ UpdateRegionWinGdi::UpdateRegionWinGdi(HWND window)
 
 //				_RPTW4(_CRT_WARN, L"rect %d, %d, %d, %d\n", r.left, r.top, r.right,r.bottom);
 
-				// Direct 2D will fail if any rect outside client area.
-				r.left = (std::max)(r.left, 0);
-				r.top = (std::max)(r.top, 0);
-				r.right = (std::min)(r.right, (int32_t) clientRect.right);
-				r.bottom = (std::min)(r.bottom, (int32_t) clientRect.bottom);
+				// Direct 2D will fail if any rect outside swapchain bitmap area.
+				r.Intersect(GmpiDrawing::RectL(0, 0, swapChainSize.width, swapChainSize.height));
 
-				rects.push_back(r);
+				if (!r.empty())
+				{
+					rects.push_back(r);
+				}
 			}
-
-			delete[](char *) pRegion;
 		}
-	}
-
-	if (rects.empty())
-	{
-//		rects.push_back(GmpiDrawing::RectL(0.0f, 0.f, clientRect.right - clientRect.left, clientRect.bottom - clientRect.top));
-	}
-	else
-	{
 		optimizeRects();
 	}
 
@@ -268,45 +241,23 @@ void UpdateRegionWinGdi::optimizeRects()
 //	_RPTW1(_CRT_WARN, L"overlaps %d\n", overlaps);
 }
 
+UpdateRegionWinGdi::UpdateRegionWinGdi()
+{
+	hRegion = ::CreateRectRgn(0, 0, 0, 0);
+}
 
 UpdateRegionWinGdi::~UpdateRegionWinGdi()
 {
 	if (hRegion)
-	{
 		DeleteObject(hRegion);
-		hRegion = NULL;
-	}
-}
-/*
-bool UpdateRegionWinGdi::isVisible(GmpiDrawing_API::MP1_RECT* r)
-{
-	if (!hRegion) // null region indicates entire window visible.
-		return true;
-
-	RECT rnative;
-	rnative.left = FastRealToIntTruncateTowardZero(r->left);
-	rnative.right = FastRealToIntTruncateTowardZero(r->right) + 1;
-	rnative.top = FastRealToIntTruncateTowardZero(r->top);
-	rnative.bottom = FastRealToIntTruncateTowardZero(r->bottom) + 1;
-
-	return TRUE == RectInRegion(hRegion, &rnative);
 }
 
-int32_t UpdateRegionWinGdi::getUpdateRects(GmpiDrawing_API::MP1_RECT*** rect)
-{
-	*rect = rectPtrs.data();
-	return gmpi::MP_OK;
-}
-
-*/
-
-
-wchar_t dialogEditText[1000];
 int dialogX;
 int dialogY;
 int dialogW;
 int dialogH;
 HFONT dialogFont;
+PGCC_PlatformTextEntry* currentPlatformTextEntry = nullptr; // alternative idea.
 
 BOOL CALLBACK dialogEditBox(HWND hwndDlg,
 	UINT message,
@@ -333,14 +284,16 @@ BOOL CALLBACK dialogEditBox(HWND hwndDlg,
 	{
 		SendMessage(child,      // Handle of edit control
 			WM_SETFONT,         // Message to change the font
-			(WPARAM)dialogFont,      // handle of the font
+			(WPARAM)dialogFont, // handle of the font
 			MAKELPARAM(TRUE, 0) // Redraw text
 			);
 
 		::SetWindowPos(hwndDlg, 0, dialogX, dialogY, dialogW, dialogH, SWP_NOZORDER);
 		::SetWindowPos(child, 0, 0, 0, dialogW, dialogH, SWP_NOZORDER);
-		::SetWindowText(child, dialogEditText);
+		const auto ws = JmUnicodeConversions::Utf8ToWstring(currentPlatformTextEntry->text_);
+		::SetWindowText(child, ws.c_str());
 		::SetFocus(child);
+
 		// Select all.
 #ifdef WIN32
 		SendMessage(child, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
@@ -365,58 +318,222 @@ BOOL CALLBACK dialogEditBox(HWND hwndDlg,
 	return FALSE;
 
 we_re_done:
-	if( !GetDlgItemText(hwndDlg, IDC_EDIT1, dialogEditText, sizeof(dialogEditText) / sizeof(dialogEditText[0])) )
-		*dialogEditText = 0;
+
+	{
+		std::wstring dialogReturnText;
+		const size_t textLengthIncludingNull = 1 + GetWindowTextLength(child);
+		dialogReturnText.resize(textLengthIncludingNull);
+
+		GetDlgItemText(hwndDlg, IDC_EDIT1, (LPWSTR)dialogReturnText.data(), static_cast<int32_t>(textLengthIncludingNull));
+		if(!dialogReturnText.empty() && dialogReturnText.back() == 0)
+		{
+			dialogReturnText.pop_back();
+		}
+		currentPlatformTextEntry->text_ = JmUnicodeConversions::WStringToUtf8(dialogReturnText);
+	}
 
 	EndDialog(hwndDlg, TRUE);
 
 	return TRUE;
 }
 
+// helper to align memory to DWORD (32-bit).
+LPWORD lpwAlign(LPWORD lpIn)
+{
+	auto ptr = ((uintptr_t)lpIn + 3) & ~ (uintptr_t)0x03;
+	return (LPWORD)ptr;
+}
+
 int32_t PGCC_PlatformTextEntry::ShowAsync(gmpi_gui::ICompletionCallback* returnCompletionHandler)
 {
-#if !defined( SE_TARGET_VST3 )
-	AFX_MANAGE_STATE(AfxGetStaticModuleState());
-#endif
-
-	//gmpi_gui::ICompletionCallback* callback;
-	//if (MP_OK != returnCompletionHandler->queryInterface(gmpi_gui::SE_IID_COMPLETION_CALLBACK, reinterpret_cast<void**>( &callback)))
-	//{
-	//	return gmpi::MP_NOSUPPORT;
-	//}
+	currentPlatformTextEntry = this;
 
 	// find parents absolute location(so we know where to draw edit box)
 	POINT clientOffset;
 	clientOffset.x = clientOffset.y = 0;
 	ClientToScreen(parentWnd, &clientOffset);
 
-	int flags = align | TPM_NONOTIFY | TPM_RETURNCMD;
+	dialogX = clientOffset.x + FastRealToIntFloor(0.5f + editrect_s.left);
+	dialogY = clientOffset.y + FastRealToIntFloor(0.5f + editrect_s.top);
+	dialogW = FastRealToIntFloor(0.5f + editrect_s.getWidth());
+	dialogH = FastRealToIntFloor(0.5f + editrect_s.getHeight());
 
-	dialogX = clientOffset.x + (int) (editrect_s.left);
-	dialogY = clientOffset.y + (int)(editrect_s.top);
-	dialogW = (int)(editrect_s.getWidth());
-	dialogH = (int)(editrect_s.getHeight());
-
-	dialogFont = CreateFont((int)(dpiScale * textHeight), 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, 0, 0, 0, 0, 0, NULL);
-
-	auto ws = Utf8ToWstring(this->text_);
-	wcscpy(dialogEditText, ws.c_str());
+	const int gdiFontSize = -FastRealToIntFloor(0.5f + dpiScale * textHeight); // for height in pixels, pass negative value.
+	dialogFont = CreateFont(gdiFontSize, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, 0, 0, 0, 0, 0, NULL);
 
 	// Get my HInstance
 	gmpi_dynamic_linking::DLL_HANDLE hmodule = 0;
 	gmpi_dynamic_linking::MP_GetDllHandle(&hmodule);
 
-	auto dr = ::DialogBox((HMODULE) hmodule, MAKEINTRESOURCE(IDD_SOLO_EDIT_BOX), parentWnd, (DLGPROC)dialogEditBox );
+#if 0
+	// method 1 - Diag from resource file.
+
+		HRSRC rsrc = FindResource((HMODULE) hmodule, MAKEINTRESOURCE(IDD_SOLO_EDIT_BOX), RT_DIALOG);
+		HGLOBAL hRes = LoadResource(
+		  (HMODULE) hmodule,
+		  rsrc
+		);
+
+		auto lpResLock = (unsigned char*) LockResource(hRes);
+		auto s = SizeofResource((HMODULE)hmodule, rsrc);
+/*
+		_RPT0(_CRT_WARN, "\n=============================================\n");
+		for(int i = 0; i < s; ++i)
+		{
+			_RPT1(_CRT_WARN, "%02x ", lpResLock[i]);
+		}
+		_RPT0(_CRT_WARN, "\n=============================================\n");
+		for(int i = 0; i < s; ++i)
+		{
+			_RPT1(_CRT_WARN, "  %c", lpResLock[i]);
+		}
+		_RPT0(_CRT_WARN, "\n=============================================\n");
+*/
+		uint16_t* control_type = (uint16_t*)(lpResLock + 90); // ff ff
+		assert(control_type[0] == 0x81); //EDIT class
+		assert(control_type[-1] == 0xffff);
+
+		auto hgbl = GlobalAlloc(GMEM_ZEROINIT, s);
+		if(!hgbl)
+			return -1;
+
+		auto lpdt = (LPDLGTEMPLATE)GlobalLock(hgbl);
+
+		// Copy
+		memcpy(lpdt, lpResLock, s);
+
+		UnlockResource(hRes);
+		FreeResource(hRes);
+
+		// modify
+		uint16_t* style = (uint16_t*)(((char*)lpdt) + 72);
+
+		assert(*style == (ES_AUTOHSCROLL | ES_WANTRETURN)); // else dialog template has been modified.
+
+		if(multiline_)
+		{
+			*style = ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN; // ES_WANTRETURN allows <enter> to work in box, else <enter> exits.
+		}
+		else
+		{
+			*style = ES_AUTOHSCROLL;
+		}
+
+		switch( align )
+		{
+		case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING:
+			*style |= ES_LEFT;
+			break;
+		case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER:
+			*style |= ES_CENTER;
+			break;
+		case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING:
+			*style |= ES_RIGHT;
+			break;
+		default:
+			break;
+		}
+
+		auto dr = DialogBoxIndirect((HMODULE) hmodule,
+			(LPDLGTEMPLATE)lpdt,
+			parentWnd,
+			(DLGPROC)dialogEditBox);
+
+		GlobalUnlock(hgbl);
+		GlobalFree(hgbl);
+#else
+	// Method 2. Construct dialog template in-memory.
+
+	HGLOBAL hgbl;
+	LPDLGTEMPLATE lpdt;
+	LPDLGITEMTEMPLATE lpdit;
+	LPWORD lpw;
+	LPWSTR lpwsz;
+	int nchar;
+
+	hgbl = GlobalAlloc(GMEM_ZEROINIT, 1024);
+	if (!hgbl)
+		return -1;
+
+	lpdt = (LPDLGTEMPLATE)GlobalLock(hgbl);
+
+	// Define a dialog box.
+
+	lpdt->style = DS_FIXEDSYS | WS_POPUP;
+	lpdt->cdit = 1;         // Number of controls
+	lpdt->x = 10;  lpdt->y = 10;
+	lpdt->cx = 100; lpdt->cy = 100;
+
+	lpw = (LPWORD)(lpdt + 1);
+	*lpw++ = 0;             // No menu
+	*lpw++ = 0;             // Predefined dialog box class (by default)
+
+	lpwsz = (LPWSTR)0;
+	nchar = 0; // title. N/A
+	lpw += nchar;
+
+	//-----------------------
+	// Define a edit control.
+	//-----------------------
+	lpw = lpwAlign(lpw);    // Align DLGITEMTEMPLATE on DWORD boundary
+	lpdit = (LPDLGITEMTEMPLATE)lpw;
+	lpdit->x = 10; lpdit->y = 10;
+	lpdit->cx = 40; lpdit->cy = 20;
+	lpdit->id = IDC_EDIT1;    // Text identifier
+	lpdit->dwExtendedStyle = WS_EX_CLIENTEDGE;
+	lpdit->style = WS_CHILD | WS_VISIBLE;
+
+	if (multiline_)
+	{
+		lpdit->style |= (ES_MULTILINE | ES_AUTOVSCROLL);
+	}
+	else
+	{
+		lpdit->style |= ES_AUTOHSCROLL;
+	}
+
+	switch (align)
+	{
+	case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Right:
+		lpdit->style |= SS_RIGHT;
+		break;
+
+	case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Center:
+		lpdit->style |= SS_CENTER;
+		break;
+
+	case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING:
+	default:
+		lpdit->style |= SS_LEFT;
+		break;
+	}
+
+	lpw = (LPWORD)(lpdit + 1);
+	*lpw++ = 0xFFFF;
+	*lpw++ = 0x0081;        // Edit class
+
+	// skip setting text here (done in dialog proc)
+	//for (lpwsz = (LPWSTR)lpw; *lpwsz++ = (WCHAR)*lpszMessage++;);
+	//lpw = (LPWORD) lpwsz; // string len
+
+	*lpw++ = 0;             // No creation data
+
+	GlobalUnlock(hgbl);
+
+	const auto dr = DialogBoxIndirect((HINSTANCE) hmodule,
+		(LPDLGTEMPLATE)hgbl,
+		parentWnd,
+		(DLGPROC)dialogEditBox);
+
+	GlobalFree(hgbl);
+
+#endif
 
 	DeleteObject(dialogFont);
 
-// should be OK either way. reportedly buggy on some systems	if (dr == TRUE)
-	{
-		text_ = WStringToUtf8(dialogEditText);
-	}
-
 	returnCompletionHandler->OnComplete(dr == TRUE ? gmpi::MP_OK : gmpi::MP_CANCEL);
 
+	currentPlatformTextEntry = nullptr;
 	return gmpi::MP_OK;
 }
 
@@ -442,11 +559,11 @@ int32_t Gmpi_Win_FileDialog::ShowAsync(gmpi_gui::ICompletionCallback* returnComp
 	std::wstring filterString;
 	for( auto e : extensions )
 	{
-		filterString += Utf8ToWstring(e.second);	// "Image Files"
+		filterString += JmUnicodeConversions::Utf8ToWstring(e.second);	// "Image Files"
 		filterString += L" (";						// "Image Files ("
 
 		// Add file extensions.
-		it_enum_list it2( Utf8ToWstring( e.first ));
+		it_enum_list it2(JmUnicodeConversions::Utf8ToWstring( e.first ));
 		bool first = true;
 		for( it2.First(); !it2.IsDone(); ++it2 )
 		{
@@ -456,7 +573,9 @@ int32_t Gmpi_Win_FileDialog::ShowAsync(gmpi_gui::ICompletionCallback* returnComp
 			}
 			else
 			{
-				primary_extension = ( *it2 )->text;
+				// primary_extension is first extension of first list
+				if(primary_extension.empty())
+					primary_extension = ( *it2 )->text;
 			}
 
 			filterString += L"*.";
@@ -513,7 +632,7 @@ int32_t Gmpi_Win_FileDialog::ShowAsync(gmpi_gui::ICompletionCallback* returnComp
 
 	if( sucess )
 	{
-		selectedFilename = WStringToUtf8(filename_buf);
+		selectedFilename = JmUnicodeConversions::WStringToUtf8(filename_buf);
 
 		returnCompletionHandler->OnComplete(gmpi::MP_OK);
 	}
@@ -531,7 +650,7 @@ int32_t Gmpi_Win_OkCancelDialog::ShowAsync(gmpi_gui::ICompletionCallback* return
 
 	auto r = MessageBox(parentWnd, text.c_str(), title.c_str(), buttons);
 
-	auto result = r == 0 ? gmpi::MP_OK : gmpi::MP_CANCEL;
+	auto result = r == IDOK ? gmpi::MP_OK : gmpi::MP_CANCEL;
 
 	returnCompletionHandler->OnComplete(result);
 
@@ -539,31 +658,3 @@ int32_t Gmpi_Win_OkCancelDialog::ShowAsync(gmpi_gui::ICompletionCallback* return
 }
 
 #endif // desktop
-
-#else //WIN32
-
-//int32_t PGCC_PlatformTextEntry::Show(float x, float y, float w, float h, IMpUnknown* returnString)
-int32_t PGCC_PlatformTextEntry::ShowAsync(IMpUgmpi_gui::ICompletionCallbacknknown* returnCompletionHandler)
-{
-	gmpi_gui::ICompletionCallback* callback;
-	if (MP_OK != returnCompletionHandler->queryInterface(gmpi_gui::SE_IID_COMPLETION_CALLBACK, reinterpret_cast<void**>( &callback)) )
-	{
-		return gmpi::MP_NOSUPPORT;
-	}
-
-	int out_dismissedKey;
-//	ActivateTextBoxV(parentWnd, offsetX + x, offsetY + y, w, h, text_, &out_dismissedKey);
-	ActivateTextBoxV(parentWnd, offsetX + editrect.left, offsetY + editrect.top, editrect.getWidth(), editrect.getHeight(), text_, &out_dismissedKey);
-
-	bool canceled = false; // out_dismissedKey == ??
-//	if (!canceled)
-//	{
-//		text_ = WStringToUtf8(dialogEditText);
-//	}
-
-	callback->OnComplete(!canceled ? gmpi::MP_OK : gmpi::MP_CANCEL);
-
-	return gmpi::MP_OK;
-}
-
-#endif

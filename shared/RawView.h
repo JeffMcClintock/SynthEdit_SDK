@@ -16,43 +16,36 @@ public:
 
 	RawData(const void* data, size_t size)
 	{
-        auto text = (char*)data;
-		value.reset (new std::string(text, size));
+		value = std::make_shared<std::string>(reinterpret_cast<const char*>(data), size);
 	}
 
 	template <typename T> RawData(const T& v)
 	{
-        auto data = (const char*)&v;
-        auto size = sizeof(v);
+        const auto data = (const char*)&v;
+        const auto size = sizeof(v);
         
-        value.reset(new std::string (data, size));
+		value = std::make_shared<std::string>(data, size);
 	}
 
 	RawData(struct RawView v);
 
 	RawData(std::string v)
     {
-        value.reset(new std::string(v));
+		value = std::make_shared<std::string>(v);
     }
                     
 	RawData(std::wstring v)
 	{
-        auto size = v.size() * sizeof(v[0]);
-        auto data = (const char*)v.data();
+        const auto size = v.size() * sizeof(v[0]);
+        const auto data = (const char*)v.data();
         
-        value.reset (new std::string(data, size));
+		value = std::make_shared<std::string>(data, size);
     }
     
 	RawData(const char* v)
 	{
-        value.reset(new std::string(v));
+		value = std::make_shared<std::string>(v);
 	}
-	/*
-	RawView toRawView()
-	{
-	return RawView((const void*)value.data(), value.size());
-	}
-	*/
 	const void* data() const
 	{
 		return value->data();
@@ -68,11 +61,11 @@ public:
 struct RawView
 {
 private:
-	const void* data_;
-	size_t size_;
+	const void* data_ = {};
+	size_t size_ = 0;
 
 public:
-	RawView() : data_(nullptr), size_(0) {}
+	RawView(){}
 	RawView(const void* data, size_t size) : data_(data), size_(size) {}
 
 	template <typename T>
@@ -109,25 +102,16 @@ public:
 
 inline RawData::RawData(RawView v)
 {
-	value.reset(new std::string(reinterpret_cast<const char*>(v.data()), v.size()));
+	value = std::make_shared<std::string>(reinterpret_cast<const char*>(v.data()), v.size());
 }
-
 
 // Equality operators
 inline bool operator==(const RawView& lhs, const RawData& rhs)
 {
 	return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), rhs.size()) == 0;
 }
-//inline bool operator==(const RawData& lhs, const RawView& rhs)
-//{
-//	return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), rhs.size()) == 0;
-//}
+
 inline bool operator!=(const RawView& lhs, const RawData& rhs)
 {
 	return !(lhs == rhs);
 }
-//inline bool operator!=(const RawData& lhs, const RawView& rhs)
-//{
-//	return !(lhs == rhs);
-//}
-

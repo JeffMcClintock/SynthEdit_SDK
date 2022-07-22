@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2007,2013,2018 SynthEdit Ltd
+/* Copyright (c) 2007-2021 SynthEdit Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -9,7 +9,7 @@
 *     * Redistributions in binary form must reproduce the above copyright
 *       notice, this list of conditions and the following disclaimer in the
 *       documentation and/or other materials provided with the distribution.
-*     * Neither the name SEM, nor 'Music Plugin Interface' nor the
+*     * Neither the name SEM, nor SynthEdit, nor 'Music Plugin Interface' nor the
 *       names of its contributors may be used to endorse or promote products
 *       derived from this software without specific prior written permission.
 *
@@ -42,7 +42,7 @@
 // To simplify plugin development. All the headers for the GMPI/SEM
 // API and SDK are inlined together here. You need only include this one header to make a plugin.
 #include <assert.h>
-#include <string.h> // for memcpy()
+//#include <string.h> // for memcpy()
 #include <string>	// for std::wstring
 
 //==== cross-platform integer datatypes =====
@@ -50,7 +50,7 @@
 #define MP_SDK_STDINT_H_INCLUDED
 
 // Detect C99 support (i.e. specified integer sizes)
-#if __STDC_VERSION__ >= 199901L
+#if (__STDC_VERSION__ >= 199901L) || (__cplusplus >= 201103L)
 #include <stdint.h>
 #else
 // else replicate it.
@@ -122,7 +122,7 @@ namespace gmpi
 #if defined(_WIN32)
 #include "windows.h"
 #define MP_PLATFORM_WIN32	1
-#define MP_STDCALL		_stdcall
+#define MP_STDCALL		__stdcall
 #endif
 
 
@@ -159,7 +159,7 @@ namespace gmpi
 
 // Handy macro to save typing.
 #define GMPI_QUERYINTERFACE1( INTERFACE_IID, CLASS_NAME ) \
-	virtual int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override \
+	int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override \
 { \
 	*returnInterface = 0; \
 	if (iid == INTERFACE_IID || iid == gmpi::MP_IID_UNKNOWN ) \
@@ -172,11 +172,11 @@ namespace gmpi
 }
 
 #define GMPI_REFCOUNT gmpi_sdk::selfInitializingInt refCount2_; \
-	virtual int32_t MP_STDCALL addRef(void) override \
+	int32_t MP_STDCALL addRef() override \
 { \
 	return ++refCount2_.value_; \
 } \
-	virtual int32_t MP_STDCALL release(void) override \
+	int32_t MP_STDCALL release() override \
 { \
 	if (--refCount2_.value_ == 0) \
 	{ \
@@ -187,17 +187,17 @@ namespace gmpi
 } \
 
 #define GMPI_REFCOUNT_NO_DELETE	\
-	virtual int32_t MP_STDCALL addRef(void) override \
+	int32_t MP_STDCALL addRef() override \
 { \
 	return 1; \
 } \
-	virtual int32_t MP_STDCALL release(void) override \
+	int32_t MP_STDCALL release() override \
 { \
 	return 1; \
 } \
 
 #define GMPI_QUERYINTERFACE2( INTERFACE_IID, CLASS_NAME, BASE_CLASS ) \
-	virtual int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override \
+	int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override \
 { \
 	*returnInterface = 0; \
 	if (iid == INTERFACE_IID ) \
@@ -255,10 +255,10 @@ public:
 	virtual int32_t MP_STDCALL queryInterface( const MpGuid& iid, void** returnInterface ) = 0;
 
 	// Increment the reference count of an object.
-	virtual int32_t MP_STDCALL addRef(void) = 0;
+	virtual int32_t MP_STDCALL addRef() = 0;
 
 	// Decrement the reference count of an object and possibly destroy.
-	virtual int32_t MP_STDCALL release(void) = 0;
+	virtual int32_t MP_STDCALL release() = 0;
 };
 
 // GUID for IMpUnknown - {00000000-0000-C000-0000-000000000046}
@@ -302,10 +302,20 @@ public:
 	virtual int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, void* messageData ) = 0;
 };
 
-
 // GUID for IMpPlugin  - {2B0DFC7E-A539-49cd-B72D-32FF9DF0D9E4}
 static const MpGuid MP_IID_PLUGIN =
 { 0x2b0dfc7e, 0xa539, 0x49cd, { 0xb7, 0x2d, 0x32, 0xff, 0x9d, 0xf0, 0xd9, 0xe4 } };
+
+// Helper for old hosts calling new-style plugins and vica-versa.
+class IMpLegacyInitialization : public IMpUnknown
+{
+public:
+	virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) = 0;
+};
+
+// GUID for IMpLegacyInitialization  - {0B471002-5627-4D46-984E-C0DC79D0AD35}
+static const MpGuid MP_IID_LEGACY_INITIALIZATION =
+{ 0xb471002, 0x5627, 0x4d46, { 0x98, 0x4e, 0xc0, 0xdc, 0x79, 0xd0, 0xad, 0x35 } };
 
 // IMpPlugin2
 // Music plugin audio processing interface V2. 2-stage construction.
@@ -334,11 +344,28 @@ static const MpGuid MP_IID_PLUGIN2 =
 // {1E07E3E8-8118-457F-A63C-D4F282A0F519}
 { 0x1e07e3e8, 0x8118, 0x457f, { 0xa6, 0x3c, 0xd4, 0xf2, 0x82, 0xa0, 0xf5, 0x19 } };
 
+// Music plugin audio processing interface. simplified.
+class IMpAudioPlugin : public IMpUnknown
+{
+public:
+	// Establish connection to host.
+	virtual int32_t setHost(IMpUnknown* host) = 0;
+
+	// Processing about to start.  Allocate resources here.
+	virtual int32_t open() = 0;
+
+	// Notify plugin of audio buffer address, one pin at a time. Address may change between process() calls.
+	virtual int32_t setBuffer(int32_t pinId, float* buffer) = 0;
+
+	// Process a time slice. No Return code, must always succeed.
+	virtual void process(int32_t count, const MpEvent* events) = 0;
+};
+
 // IMpHost - The audio host interface.
 
 enum MP_PinDirection{ MP_IN, MP_OUT };
 
-enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10 };
+enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10, MP_STRING_UTF8=12 };
 
 // SynthEdit imbedded file.
 class IProtectedFile
@@ -346,7 +373,8 @@ class IProtectedFile
 public:
 	virtual int32_t MP_STDCALL close() = 0;
 
-	virtual int32_t MP_STDCALL getSize( int32_t& returnValue ) = 0;
+//	virtual int32_t MP_STDCALL getSize( int32_t& returnValue ) = 0;
+	virtual int32_t MP_STDCALL getSize32( int32_t& returnValue ) = 0;
 
 	virtual int32_t MP_STDCALL read( char* buffer, int32_t size ) = 0;
 };
@@ -439,7 +467,7 @@ public:
 	// SynthEdit-specific.  Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
 	virtual int32_t MP_STDCALL resolveFilename( const wchar_t* shortFilename, int32_t maxChars, wchar_t* returnFullFilename ) = 0;
 
-	// SynthEdit-specific.  Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	// DEPRECATED ref IEmbeddedFileSupport
 	virtual int32_t MP_STDCALL openProtectedFile( const wchar_t* shortFilename, IProtectedFile **file ) = 0;
 };
 
@@ -447,6 +475,55 @@ public:
 // {4F1B532F-3C46-4927-A498-614867425BE7}
 static const MpGuid MP_IID_HOST =
 { 0x4f1b532f, 0x3c46, 0x4927, { 0xa4, 0x98, 0x61, 0x48, 0x67, 0x42, 0x5b, 0xe7 } };
+
+class IGmpiHost : public IMpUnknown
+{
+public:
+	// Plugin sending out control data.
+	virtual int32_t MP_STDCALL setPin( int32_t blockRelativeTimestamp, int32_t pinId, int32_t size, const void* data ) = 0;
+
+	// Plugin audio output start/stop (silence detection).
+	virtual int32_t MP_STDCALL setPinStreaming( int32_t blockRelativeTimestamp, int32_t pinId, bool isStreaming ) = 0;
+
+	// PDC (Plugin Delay Compensation) support.
+	virtual int32_t MP_STDCALL setLatency( int32_t latency ) = 0;
+
+	// Plugin indicates no processing needed until input state changes.
+	virtual int32_t MP_STDCALL sleep() = 0;
+
+	// Query audio buffer size.
+	virtual int32_t MP_STDCALL getBlockSize() = 0;
+
+	// Query sample-rate.
+	virtual float MP_STDCALL getSampleRate() = 0;
+
+	// Each plugin instance has a host-assigned unique handle shared by UI and Audio class.
+	virtual int32_t MP_STDCALL getHandle() = 0;
+};
+
+// GUID for IGmpiHost.
+// {87CCD426-71D7-414E-A9A6-5ADCA81C7420}
+static const MpGuid MP_IID_PROCESSOR_HOST =
+{ 0x87ccd426, 0x71d7, 0x414e, { 0xa9, 0xa6, 0x5a, 0xdc, 0xa8, 0x1c, 0x74, 0x20 } };
+
+
+// SynthEdit-specific.
+// extension to GMPI to provide support for loading files from the plugins resources (be they embedded or file-based).
+// Corrects error in IMpHost that there is a memory leak, due to having no way to free the file object, and no way to query file object for updated interfaces.
+class IEmbeddedFileSupport : public IMpUnknown
+{
+public:
+	// Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	virtual int32_t MP_STDCALL resolveFilename(const char* fileName, gmpi::IString* returnFullUri) = 0;
+
+	// open a file, usually returns a IProtectedFile2 interface.
+	virtual int32_t MP_STDCALL openUri(const char* fullUri, gmpi::IMpUnknown** returnStream) = 0;
+};
+
+// GUID for IEmbeddedFileSupport.
+// {B486F4DE-9010-4AA0-9D0C-DCD9F8879257}
+static const MpGuid MP_IID_HOST_EMBEDDED_FILE_SUPPORT =
+{ 0xb486f4de, 0x9010, 0x4aa0, { 0x9d, 0xc, 0xdc, 0xd9, 0xf8, 0x87, 0x92, 0x57 } };
 
 
 // GUI PLUGIN
@@ -632,7 +709,7 @@ public:
 	virtual int32_t MP_STDCALL FindResourceU(const char* resourceName, const char* resourceType, gmpi::IString* returnString) = 0;
 
 	// Added 19/10/18 (SE 1.4 B271)
-	virtual int32_t MP_STDCALL LoadPresetFile(const char* presetFilePath) = 0;
+	virtual int32_t MP_STDCALL LoadPresetFile_DEPRECATED(const char* presetFilePath) = 0;
 };
 
 // GUID for IMpUserInterfaceHost2
@@ -937,7 +1014,12 @@ int32_t RegisterPluginXml( const char* xmlFile );
 #define PASTE_FUNC(x,y) PASTE_FUNC1(x,y,__LINE__)
 
 // Old way using Macro. macros are evil.
-#define GMPI_REGISTER( plugintype, className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(void){ return static_cast<gmpi::IMpUnknown*> (new className()); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( plugintype, pluginId, &PASTE_FUNC(create,className) );}
+#define GMPI_REGISTER( plugintype, className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(){ return static_cast<gmpi::IMpUnknown*> (new className()); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( plugintype, pluginId, &PASTE_FUNC(create,className) );}
+
+// Ensure linker includes file in static-library. See also INIT_STATIC_FILE in UgDatabase.cpp
+#ifndef SE_DECLARE_INIT_STATIC_FILE
+#define SE_DECLARE_INIT_STATIC_FILE(filename) void se_static_library_init_##filename(){}
+#endif
 
 // Helper class to make registering concise.
 /* e.g.
@@ -964,19 +1046,19 @@ class Register
 	//{
 	//	return gmpi::MP_SUB_TYPE_GUI2;
 	//}
-	inline static int subType(gmpi::IMpUserInterface* unused)
+	inline static int subType(gmpi::IMpUserInterface* /*unused*/)
 	{
 		return gmpi::MP_SUB_TYPE_GUI;
 	}
-	inline static int subType(gmpi::IMpUserInterface2* unused)
+	inline static int subType(gmpi::IMpUserInterface2* /*unused*/)
 	{
 		return gmpi::MP_SUB_TYPE_GUI2;
 	}
-	inline static int subType(gmpi::IMpController* unused)
+	inline static int subType(gmpi::IMpController* /*unused*/)
 	{
 		return gmpi::MP_SUB_TYPE_CONTROLLER;
 	}
-	inline static int subType(gmpi::IMpPlugin2* unused)
+	inline static int subType(gmpi::IMpPlugin2* /*unused*/)
 	{
 		return gmpi::MP_SUB_TYPE_AUDIO;
 	}
@@ -999,7 +1081,7 @@ public:
 	static bool withId(const wchar_t* moduleIdentifier)
 	{
 		RegisterPlugin(subType((moduleClass*) nullptr), moduleIdentifier,
-			[](void) -> gmpi::IMpUnknown* { return toUnknown(new moduleClass()); }
+			[]() -> gmpi::IMpUnknown* { return toUnknown(new moduleClass()); }
 		);
 
 		return false; // value not used, but required.
@@ -1008,7 +1090,7 @@ public:
 	static bool withXml(const char* xml)
 	{
 		RegisterPluginWithXml(subType((moduleClass*) nullptr), xml,
-			[](void) -> gmpi::IMpUnknown* { return toUnknown(new moduleClass()); }
+			[]() -> gmpi::IMpUnknown* { return toUnknown(new moduleClass()); }
 		);
 
 		return false;
@@ -1017,7 +1099,7 @@ public:
 
 } // namespace
 
-// Helper for old hosts calling new-style plugins.
+// Helper for old hosts calling new-style plugins. Deprecated, use IMpLegacyInitialization instead.
 class IoldSchoolInitialisation
 {
 public:
@@ -1106,6 +1188,10 @@ private:
 	{
 		enum { result = gmpi::MP_STRING };
 	};
+	template<int N> struct PinDataTypeTraits<std::string,N>
+	{
+		enum { result = gmpi::MP_STRING_UTF8 };
+	};
 	template<int N> struct PinDataTypeTraits<MpBlob,N>
 	{
 		enum { result = gmpi::MP_BLOB };
@@ -1118,7 +1204,7 @@ public:
 
 // Get size of variable's data.
 template <typename T>
-inline int variableRawSize( const T &value )
+inline int variableRawSize( const T& /*value*/ )
 {
 	return sizeof(T);
 }
@@ -1127,6 +1213,12 @@ template<>
 inline int variableRawSize<std::wstring>( const std::wstring& value )
 {
 	return (int) sizeof(wchar_t) * (int) value.length();
+}
+
+template<>
+inline int variableRawSize<std::string>( const std::string& value )
+{
+	return static_cast<int>(value.size());
 }
 
 template<>
@@ -1149,6 +1241,12 @@ inline void* variableRawData<std::wstring>( const std::wstring& value )
 }
 
 template<>
+inline void* variableRawData<std::string>( const std::string& value )
+{
+	return (void*) value.data();
+}
+
+template<>
 inline void* variableRawData<MpBlob>( const MpBlob& value )
 {
 	return (void*) value.getData();
@@ -1160,31 +1258,6 @@ template <typename T>
 inline bool variablesAreEqual( const T& a, const T& b )
 {
 	return a == b;
-}
-
-template <>
-inline bool variablesAreEqual<std::wstring>( const std::wstring& a, const std::wstring& b )
-{
-//	return a.compare(b) == 0;
-	return a == b;
-}
-
-template <typename T>
-inline void setVariableToDefault( T& value )
-{
-	value = (T) 0;
-}
-
-template <>
-inline void setVariableToDefault<std::wstring>( std::wstring& value )
-{
-	value = L"";
-}
-
-template <>
-inline void setVariableToDefault<struct MpBlob>( struct MpBlob& value )
-{
-	value.setValueRaw( 0, 0 );
 }
 
 // De-serialize type.
@@ -1222,6 +1295,12 @@ inline void VariableFromRaw<std::wstring>( int size, const void* data, std::wstr
 	returnValue.assign( (wchar_t* ) data, size / sizeof(wchar_t) );
 }
 
+template <>
+inline void VariableFromRaw<std::string>( int size, const void* data, std::string& returnValue )
+{
+	returnValue.assign( (const char*)data, (size_t) size );
+}
+
 // Specializations of above for various types.
 
 #endif	// MP_SDK_PIN_TYPES_H_INCLUDED
@@ -1253,7 +1332,7 @@ struct MpRect
 	int32_t right;
 };
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_INC_WINDOWS)
 
 class IMpGraphicsWinGdi : public gmpi::IMpUnknown
 {
@@ -1298,7 +1377,7 @@ static const gmpi::MpGuid MP_IID_GRAPHICS_HOST_WIN_GDI =
 // MPI supports multiple graphics APIs through optional interfaces.
 
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_INC_WINDOWS)
 
 // SynthEdit Graphics API, plugin-side. Based on Windows GDI.
 struct MpFontInfo
@@ -1310,20 +1389,6 @@ struct MpFontInfo
 	int fontHeight;
 	char future [100];
 };
-
-/*
-// new, Native Window type.
-class ISeGraphics : public IMpGraphicsWinGdi
-{
-public:
-};
-
-// GUID for IMpGraphicsSynthEdit
-// {0157347B-3FD3-4cee-947E-88F694349254}
-static const gmpi::MpGuid SE_IID_GRAPHICS =
-{ 0x157347b, 0x3fd3, 0x4cee, { 0x94, 0x7e, 0x88, 0xf6, 0x94, 0x34, 0x92, 0x54 } };
-*/
-
 
 // Old-style composited (draw-on-window) graphics.
 class ISeGraphicsComposited : public gmpi::IMpUnknown
@@ -1414,12 +1479,10 @@ namespace gmpi_sdk
 	template<class wrappedObjT>
 	class mp_shared_ptr
 	{
-		wrappedObjT* obj;
+		mutable wrappedObjT* obj = {};
 
 	public:
-		mp_shared_ptr() : obj(0)
-		{
-		}
+		mp_shared_ptr(){}
 
 		explicit mp_shared_ptr(wrappedObjT* newobj) : obj(0)
 		{
@@ -1462,11 +1525,11 @@ namespace gmpi_sdk
 			Assign(value.get());
 			return *this;
 		}
-		bool operator==( const wrappedObjT* other )
+		bool operator==( const wrappedObjT* other ) const
 		{
 			return obj == other;
 		}
-		bool operator==( const mp_shared_ptr<wrappedObjT>& other )
+		bool operator==( const mp_shared_ptr<wrappedObjT>& other ) const
 		{
 			return obj == other.obj;
 		}
@@ -1493,7 +1556,7 @@ namespace gmpi_sdk
 
 		bool isNull()
 		{
-			return obj == 0;
+			return obj == nullptr;
 		}
 
 	private:

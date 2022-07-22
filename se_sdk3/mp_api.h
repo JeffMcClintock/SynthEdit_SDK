@@ -34,14 +34,8 @@
 // Platform specific definitions.
 #if defined(_WIN32)
 
-#if defined(SE_SUPPORT_MFC) // SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) 
-#include "afx.h"
-#else
-#include "windows.h"
-#endif
-
 #define MP_PLATFORM_WIN32	1
-#define MP_STDCALL		_stdcall
+#define MP_STDCALL		__stdcall
 #endif
 
 
@@ -85,11 +79,11 @@
 }
 
 #define GMPI_REFCOUNT gmpi_sdk::selfInitializingInt refCount2_; \
-	virtual int32_t MP_STDCALL addRef(void) override \
+	virtual int32_t MP_STDCALL addRef() override \
 { \
 	return ++refCount2_.value_; \
 } \
-	virtual int32_t MP_STDCALL release(void) override \
+	virtual int32_t MP_STDCALL release() override \
 { \
 	if (--refCount2_.value_ == 0) \
 	{ \
@@ -100,11 +94,11 @@
 } \
 
 #define GMPI_REFCOUNT_NO_DELETE	\
-	virtual int32_t MP_STDCALL addRef(void) override \
+	virtual int32_t MP_STDCALL addRef() override \
 { \
 	return 1; \
 } \
-	virtual int32_t MP_STDCALL release(void) override \
+	virtual int32_t MP_STDCALL release() override \
 { \
 	return 1; \
 } \
@@ -135,11 +129,11 @@ return BASE_CLASS::queryInterface(iid, returnInterface); \
 } \
 	return gmpi::MP_NOSUPPORT; \
 } \
-	virtual int32_t MP_STDCALL addRef(void) \
+	virtual int32_t MP_STDCALL addRef() \
 { \
 	return 1; \
 } \
-	virtual int32_t MP_STDCALL release(void) \
+	virtual int32_t MP_STDCALL release() \
 { \
 	return 1; \
 } \
@@ -184,10 +178,19 @@ namespace gmpi
 	static const struct MpGuid MP_IID_PLUGIN =
 	{ 0x2b0dfc7e, 0xa539, 0x49cd, { 0xb7, 0x2d, 0x32, 0xff, 0x9d, 0xf0, 0xd9, 0xe4 } };
 
+	// GUID for IMpLegacyInitialization  - {0B471002-5627-4D46-984E-C0DC79D0AD35}
+	static const MpGuid MP_IID_LEGACY_INITIALIZATION =
+	{ 0xb471002, 0x5627, 0x4d46, { 0x98, 0x4e, 0xc0, 0xdc, 0x79, 0xd0, 0xad, 0x35 } };
+
 	// GUID for IMpPlugin2
 	static const MpGuid MP_IID_PLUGIN2 =
 		// {1E07E3E8-8118-457F-A63C-D4F282A0F519}
 	{ 0x1e07e3e8, 0x8118, 0x457f, { 0xa6, 0x3c, 0xd4, 0xf2, 0x82, 0xa0, 0xf5, 0x19 } };
+
+	// GUID for IMpAudioPlugin
+	// {23835D7E-DCEB-4B08-A9E7-B43F8465939E}
+	static const MpGuid MP_IID_AUDIO_PLUGIN = // MP_IID_PLUGIN2 =
+	{ 0x23835d7e, 0xdceb, 0x4b08, { 0xa9, 0xe7, 0xb4, 0x3f, 0x84, 0x65, 0x93, 0x9e } };
 
 	// GUID for Host.
 	// {4F1B532F-3C46-4927-A498-614867425BE7}
@@ -322,6 +325,7 @@ struct IMpHost
 	int32_t(MP_STDCALL *resolveFilename)(struct IMpHost**, const wchar_t* shortFilename, int32_t maxChars, wchar_t* returnFullFilename);
 
 	// SynthEdit-specific.  Open file depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	// DEPRECATED: see IMpUserInterfaceHost2
 	int32_t(MP_STDCALL *openProtectedFile)(struct IMpHost**, const wchar_t* shortFilename, struct IProtectedFile **file);
 };
 
@@ -348,10 +352,10 @@ public:
 	virtual int32_t MP_STDCALL queryInterface( const MpGuid& iid, void** returnInterface ) = 0;
 
 	// Increment the reference count of an object.
-	virtual int32_t MP_STDCALL addRef(void) = 0;
+	virtual int32_t MP_STDCALL addRef() = 0;
 
 	// Decrement the reference count of an object and possibly destroy.
-	virtual int32_t MP_STDCALL release(void) = 0;
+	virtual int32_t MP_STDCALL release() = 0;
 };
 
 
@@ -388,6 +392,12 @@ public:
 	virtual int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, void* messageData ) = 0;
 };
 
+// Helper for old hosts calling new-style plugins and vica-versa.
+class IMpLegacyInitialization : public IMpUnknown
+{
+public:
+	virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) = 0;
+};
 
 // IMpPlugin2
 // Music plugin audio processing interface V2. 2-stage construction.
@@ -410,12 +420,28 @@ public:
 	virtual int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, const void* messageData ) = 0;
 };
 
+// Music plugin audio processing interface. simplified.
+class IMpAudioPlugin : public IMpUnknown
+{
+public:
+	// Establish connection to host.
+	virtual int32_t setHost(IMpUnknown* host) = 0;
+
+	// Processing about to start.  Allocate resources here.
+	virtual int32_t open() = 0;
+
+	// Notify plugin of audio buffer address, one pin at a time. Address may change between process() calls.
+	virtual int32_t setBuffer(int32_t pinId, float* buffer) = 0;
+
+	// Process a time slice. No Return code, must always succeed.
+	virtual void process(int32_t count, const MpEvent* events) = 0;
+};
 
 // IMpHost - The audio host interface. 
 
 enum MP_PinDirection{ MP_IN, MP_OUT };
 
-enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10 };
+enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10, MP_STRING_UTF8=12 };
 
 // SynthEdit imbedded file.
 class IProtectedFile
@@ -423,7 +449,8 @@ class IProtectedFile
 public:
 	virtual int32_t MP_STDCALL close() = 0;
 
-	virtual int32_t MP_STDCALL getSize( int32_t& returnValue ) = 0;
+//	virtual int32_t MP_STDCALL getSize( int32_t& returnValue ) = 0;
+	virtual int32_t MP_STDCALL getSize32( int32_t& returnValue ) = 0;
 
 	virtual int32_t MP_STDCALL read( char* buffer, int32_t size ) = 0;
 };
@@ -512,8 +539,58 @@ public:
 	virtual int32_t MP_STDCALL resolveFilename( const wchar_t* shortFilename, int32_t maxChars, wchar_t* returnFullFilename ) = 0;
 
 	// SynthEdit-specific.  Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	// DEPRECATED: see IEmbeddedFileSupport
 	virtual int32_t MP_STDCALL openProtectedFile( const wchar_t* shortFilename, IProtectedFile **file ) = 0;
 };
+
+class IGmpiHost : public IMpUnknown
+{
+public:
+	// Plugin sending out control data.
+	virtual int32_t MP_STDCALL setPin( int32_t blockRelativeTimestamp, int32_t pinId, int32_t size, const void* data ) = 0;
+
+	// Plugin audio output start/stop (silence detection).
+	virtual int32_t MP_STDCALL setPinStreaming( int32_t blockRelativeTimestamp, int32_t pinId, bool isStreaming ) = 0;
+
+	// PDC (Plugin Delay Compensation) support.
+	virtual int32_t MP_STDCALL setLatency( int32_t latency ) = 0;
+
+	// Plugin indicates no processing needed until input state changes.
+	virtual int32_t MP_STDCALL sleep() = 0;
+
+	// Query audio buffer size.
+	virtual int32_t MP_STDCALL getBlockSize() = 0;
+
+	// Query sample-rate.
+	virtual float MP_STDCALL getSampleRate() = 0;
+
+	// Each plugin instance has a host-assigned unique handle shared by UI and Audio class.
+	virtual int32_t MP_STDCALL getHandle() = 0;
+};
+
+// GUID for IGmpiHost.
+// {87CCD426-71D7-414E-A9A6-5ADCA81C7420}
+static const MpGuid MP_IID_PROCESSOR_HOST =
+{ 0x87ccd426, 0x71d7, 0x414e, { 0xa9, 0xa6, 0x5a, 0xdc, 0xa8, 0x1c, 0x74, 0x20 } };
+
+
+// SynthEdit-specific.
+// extension to GMPI to provide support for loading files from the plugins resources (be they embedded or file-based).
+// Corrects error in IMpHost that there is a memory leak, due to having no way to free the file object, and no way to query file object for updated interfaces.
+class IEmbeddedFileSupport : public IMpUnknown
+{
+public:
+	// Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	virtual int32_t MP_STDCALL resolveFilename(const char* fileName, gmpi::IString* returnFullUri) = 0;
+
+	// open a file, usually returns a IProtectedFile2 interface.
+	virtual int32_t MP_STDCALL openUri(const char* fullUri, gmpi::IMpUnknown** returnStream ) = 0;
+};
+
+// GUID for IEmbeddedFileSupport.
+// {B486F4DE-9010-4AA0-9D0C-DCD9F8879257}
+static const MpGuid MP_IID_HOST_EMBEDDED_FILE_SUPPORT =
+{ 0xb486f4de, 0x9010, 0x4aa0, { 0x9d, 0xc, 0xdc, 0xd9, 0xf8, 0x87, 0x92, 0x57 } };
 
 
 // GUI PLUGIN
@@ -652,6 +729,7 @@ public:
 	virtual int32_t MP_STDCALL getPinCount( int32_t& returnCount ) = 0;
 
 	// SynthEdit-specific.  Determine file's location depending on host application's conventions. // e.g. "bell.wav" -> "C:/My Documents/bell.wav"
+	// DEPRECATED: see IMpUserInterfaceHost2
 	virtual int32_t MP_STDCALL openProtectedFile( const wchar_t* shortFilename, IProtectedFile **file ) = 0;
 };
 
@@ -691,7 +769,7 @@ public:
 	virtual int32_t MP_STDCALL FindResourceU(const char* resourceName, const char* resourceType, gmpi::IString* returnString) = 0;
 
 	// Added 19/10/18 (SE 1.4 B271)
-	virtual int32_t MP_STDCALL LoadPresetFile(const char* presetFilePath) = 0;
+	virtual int32_t MP_STDCALL LoadPresetFile_DEPRECATED(const char* presetFilePath) = 0;
 };
 
 // GUID for IMpUserInterfaceHost2
@@ -841,6 +919,15 @@ public:
 	virtual int32_t MP_STDCALL getPluginInformation(const wchar_t* iid, IMpUnknown* iReturnXml) = 0;		// Full pin details.
 };
 
+// adapted from GMPI SDK, keep in sync.
+struct DECLSPEC_NOVTABLE GMPI_IPluginFactory : public IMpUnknown
+{
+	virtual int32_t createInstance(const char* id, int32_t subtype, void** returnInterface) = 0;
+	virtual int32_t getPluginInformation(int32_t index, IString* returnXml) = 0;
+
+	inline static const MpGuid guid = // {066C55EB-0EA8-4D73-A6F3-06D948D9E232}
+	{ 0x66c55eb, 0xea8, 0x4d73, { 0xa6, 0xf3, 0x6, 0xd9, 0x48, 0xd9, 0xe2, 0x32 } };
+};
 
 // The DLL entrypoint signature.
 typedef int32_t (MP_STDCALL *MP_DllEntry)(void**);

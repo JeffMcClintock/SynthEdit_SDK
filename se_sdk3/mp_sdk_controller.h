@@ -56,24 +56,7 @@ namespace Gmpi
 		public:
 			Pin()
 			{
-				setVariableToDefault(value_);
 			}
-			/*
-			void initialize(IPinTransmitter* plugin, int p_id)
-			{
-			MpGuiPinBase::initialize(static_cast<GuiPinOwner*>(plugin), p_id);
-			}
-
-			void initialize(IPinTransmitter* plugin, int p_id, MpGuiBaseMemberPtr handler)
-			{
-			MpGuiPinBase::initialize(static_cast<GuiPinOwner*>(plugin), p_id, new IGuiPinCallback<gmpi::IMpUserInterface>(static_cast<gmpi::IMpUserInterface*>(plugin), handler));
-			}
-
-			void initialize(MpGuiBase* plugin, int pinId, MpGuiBaseMemberIndexedPtr handler)
-			{
-			assert(false && "pin not polyphonic. wrong type of handler");
-			}
-			*/
 			void sendPinUpdate()
 			{
 				assert(plugin != nullptr && "Don't forget initializePin() on each pin in your constructor.");
@@ -149,7 +132,7 @@ namespace Gmpi
 		protected:
 			// These members intended only for internal use by SDK.
 			// accept new value into module. Return true if value changed.
-			virtual bool set(int32_t voice, int64_t size, const void* data) override
+			bool set(int32_t voice, int64_t size, const void* data) override
 			{
 				assert(voice == 0 && "Not a polyphonic pin");
 				/*
@@ -173,7 +156,7 @@ namespace Gmpi
 				return true;
 			}
 
-			T value_;
+			T value_ = {};
 		};
 
 
@@ -224,7 +207,7 @@ namespace Gmpi
 				initializePin(id, pin, callback);
 			}
 
-			virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) override
+			int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) override
 			{
 				host->queryInterface(gmpi::MP_IID_CONTROLLER_HOST, reinterpret_cast<void **>(&host_));
 
@@ -234,26 +217,26 @@ namespace Gmpi
 					return gmpi::MP_OK;
 			}
 
-			virtual int32_t MP_STDCALL setParameter(int32_t parameterHandle, int32_t fieldId, int32_t voice, const void* data, int32_t size) override
+			int32_t MP_STDCALL setParameter(int32_t parameterHandle, int32_t fieldId, int32_t voice, const void* data, int32_t size) override
 			{
 				return gmpi::MP_OK;
 			}
 
-			virtual int32_t MP_STDCALL preSaveState() override
+			int32_t MP_STDCALL preSaveState() override
 			{
 				return gmpi::MP_OK;
 			}
 
-			virtual int32_t MP_STDCALL open() override
+			int32_t MP_STDCALL open() override
 			{
 				return gmpi::MP_OK;
 			}
 
-			virtual int32_t MP_STDCALL setPinDefault(int32_t pinType, int32_t pinId, const char* defaultValue) override
+			int32_t MP_STDCALL setPinDefault(int32_t pinType, int32_t pinId, const char* defaultValue) override
 			{
 				return gmpi::MP_OK;
 			}
-			virtual int32_t MP_STDCALL setPin(int32_t pinId, int32_t voice, int64_t size, const void* data) override
+			int32_t MP_STDCALL setPin(int32_t pinId, int32_t voice, int64_t size, const void* data) override
 			{
 				auto it = pins.find(pinId);
 				if (it != pins.end())
@@ -264,7 +247,7 @@ namespace Gmpi
 
 				return gmpi::MP_FAIL;
 			}
-			virtual int32_t MP_STDCALL notifyPin(int32_t pinId, int32_t voice) override
+			int32_t MP_STDCALL notifyPin(int32_t pinId, int32_t voice) override
 			{
 				auto it = pins.find(pinId);
 				if (it != pins.end())
@@ -281,7 +264,7 @@ namespace Gmpi
 				return gmpi::MP_OK;
 			}
 
-			virtual void pinTransmit(int32_t pinId, int32_t voice, size_t size, const void* data) override
+			void pinTransmit(int32_t pinId, int32_t voice, size_t size, const void* data) override
 			{
 				getHost()->pinTransmit(pinId, voice, static_cast<int32_t>( size ), data);
 			}

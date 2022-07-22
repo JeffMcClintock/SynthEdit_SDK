@@ -3,22 +3,8 @@
 #include <vector>
 #include <list>
 
-//#ifndef _WIN32
-//#import <CoreFoundation/CoreFoundation.h>
-//#endif
-
-#if defined(_WIN64)
- typedef unsigned __int64 UINT_PTR;
-#else
- typedef unsigned int UINT_PTR;
-#endif
-
-
 /*
 This class provides a programmable timer for creating animation effects.
-This is needed for GUI Modules based on SeGuiCompositedGfxBase, these can't easily use regular WM_TIMER
-because they don't have a native Window Handle(HWND).
-
 NOTE: all instances of the module share the same timer, and therefore the same timer interval.
 */
 
@@ -42,10 +28,10 @@ typedef std::vector<class TimerClient*> clientContainer_t;
 namespace se_sdk_timers
 {
 #ifdef _WIN32
-    typedef UINT_PTR timer_id_t;
+	typedef unsigned __int64 timer_id_t;
 #else
     typedef void* timer_id_t;
- #endif
+#endif
     
 class Timer
 {
@@ -61,6 +47,7 @@ public:
 	void Start();
 	void Stop();
 	void OnTimer();
+    bool isRunning();
 };
 
 }
@@ -71,7 +58,7 @@ class TimerManager
 	std::list< se_sdk_timers::Timer > timers;
 
 public:
-	TimerManager(void);
+	TimerManager();
 	static TimerManager* Instance();
 	void RegisterClient(TimerClient* client, int periodMilliSeconds);
 
@@ -81,7 +68,7 @@ public:
 	}
 	void UnRegisterClient( TimerClient* client );
 	void SetInterval( int intervalMs );
-	~TimerManager(void);
+	~TimerManager();
     void OnTimer(se_sdk_timers::timer_id_t timerId);
 
 private:

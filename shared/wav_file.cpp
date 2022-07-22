@@ -1,3 +1,4 @@
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS 1
 #include "wav_file.h"
 
 #include <algorithm>
@@ -321,74 +322,105 @@ void WavFile::readWavData( const std::string & filename, int maxChannels, int ex
 	rate_ = waveheader.nSamplesPerSec;
 	numFrames_ = wave_data_bytes / waveheader.nBlockAlign;
 	numchans_ = std::min(maxChannels, (int)waveheader.nChannels);
-	int channelsIgnored = waveheader.nChannels - numchans_;
+//	int channelsIgnored = waveheader.nChannels - numchans_;
 
 	int totalSamples = numchans_ * (numFrames_ + extraInterpolationSamples * 2);
 
 	samples_.assign(totalSamples, 0.0);
 
-	int channel = 0;
 	float* dest = samples_.data();
 	{
-		for (unsigned int c = 0; c < numchans_; ++c)
+		for (unsigned int channel = 0; channel < numchans_; ++channel)
 		{
 			for (int i = 0; i < extraInterpolationSamples; ++i)
 			{
 				*dest++ = 0.0f;
 			}
 
-			int j = c;
-
 			switch (waveheader.wFormatTag)
 			{
 			case WAVE_FORMAT_PCM:
 			{
-				// 24 bit samples promoted to 32bit during conversion.
-				int multBits = waveheader.wBitsPerSample >= 24 ? 32 : waveheader.wBitsPerSample;
-				float multiplier = 1.0f / (float)(1u << (multBits - 1));
-
 				switch (waveheader.wBitsPerSample)
 				{
 				case 8:
 				{
+					//for (int i = 0; i < numFrames_; ++i)
+					//{
+					//	*dest++ = multiplier * (((unsigned char*)wave_data)[j] - 128.0f);
+					//	j += waveheader.nChannels;
+					//}
+
+					constexpr float toFloatMultiplier = 1.f / (1 << 7);
+
+					auto i8 = ((unsigned char*)wave_data) + channel;
 					for (int i = 0; i < numFrames_; ++i)
 					{
-						*dest++ = multiplier * (((unsigned char*)wave_data)[j] - 128.0f);
-						j += waveheader.nChannels;
+						int32_t s = *i8 - 0x80;
+						*dest++ = toFloatMultiplier * s;
+						i8 += waveheader.nChannels;
 					}
 				}
 				break;
 
 				case 16:
 				{
+					//for (int i = 0; i < numFrames_; ++i)
+					//{
+					//	*dest++ = multiplier * ((short*)wave_data)[j];
+					//	j += waveheader.nChannels;
+					//}
+
+					constexpr float toFloatMultiplier = 1.f / (1 << 15);
+
+					auto i16 = ((int16_t*)wave_data) + channel;
 					for (int i = 0; i < numFrames_; ++i)
 					{
-						*dest++ = multiplier * ((short*)wave_data)[j];
-						j += waveheader.nChannels;
+						*dest++ = toFloatMultiplier * *i16;
+						i16 += waveheader.nChannels;
 					}
 				}
 				break;
 
 				case 24:
 				{
-					const int sampleBytes = 3;
-					unsigned char* src = (unsigned char*)wave_data + sampleBytes * channel;
+					constexpr int sampleBytes = 3;
+					//unsigned char* src = (unsigned char*)wave_data + sampleBytes * channel;
 
+					//for (int i = 0; i < numFrames_; ++i)
+					//{
+					//	int intSample = (src[0] << 8) + (src[1] << 16) + (src[2] << 24);
+					//	*dest++ = multiplier * intSample;
+					//	src += sampleBytes * waveheader.nChannels;
+					//}
+
+					constexpr float toFloatMultiplier = 1.f / (1 << 31);
+
+					auto i24 = ((unsigned char*)wave_data) + sampleBytes * channel;
 					for (int i = 0; i < numFrames_; ++i)
 					{
-						int intSample = (src[0] << 8) + (src[1] << 16) + (src[2] << 24);
-						*dest++ = multiplier * intSample;
-						src += sampleBytes * waveheader.nChannels;
+						const int32_t t = (i24[0] << 8) + (i24[1] << 16) + (i24[2] << 24);
+						*dest++ = toFloatMultiplier * t;
+						i24 += sampleBytes * waveheader.nChannels;
 					}
 				}
 				break;
 
 				case 32:
 				{
+					//for (int i = 0; i < numFrames_; ++i)
+					//{
+					//	*dest++ = multiplier * ((int32_t*)wave_data)[j];
+					//	j += waveheader.nChannels;
+					//}
+
+					constexpr float toFloatMultiplier = 1.f / (1 << 31);
+
+					auto i32 = ((int32_t*)wave_data) + channel;
 					for (int i = 0; i < numFrames_; ++i)
 					{
-						*dest++ = multiplier * ((int32_t*)wave_data)[j];
-						j += waveheader.nChannels;
+						*dest++ = toFloatMultiplier * *i32;
+						i32 += waveheader.nChannels;
 					}
 				}
 				break;
@@ -406,10 +438,17 @@ void WavFile::readWavData( const std::string & filename, int maxChannels, int ex
 			case 03: // WAVE_FORMAT_IEEE_FLOAT:
 				if (waveheader.wBitsPerSample == 32)
 				{
+					//for (int i = 0; i < numFrames_; ++i)
+					//{
+					//	*dest++ = ((float*)wave_data)[j];
+					//	j += waveheader.nChannels;
+					//}
+
+					auto f32 = ((float*)wave_data) + channel;
 					for (int i = 0; i < numFrames_; ++i)
 					{
-						*dest++ = ((float*)wave_data)[j];
-						j += waveheader.nChannels;
+						*dest++ = *f32;
+						f32 += waveheader.nChannels;
 					}
 				}
 				break;
@@ -586,12 +625,12 @@ void WavFileCursor::DiskSamplesToBuffer(MYWAVEFORMATEX& waveheader, int sampleRe
 			{
 			case 8:
 			{
-				constexpr float toFloatMultiplier = 1.f / 256.f;
+				constexpr float toFloatMultiplier = 1.f / (1 << 7);
 
-				auto i8 = (char*)source;
+				auto i8 = (unsigned char*)source;
 				while (c-- > 0)
 				{
-					char s = *i8++ - 127;
+					int32_t s = *i8++ - 0x80;
 					*dest++ = toFloatMultiplier * s;
 				}
 			}
@@ -599,9 +638,9 @@ void WavFileCursor::DiskSamplesToBuffer(MYWAVEFORMATEX& waveheader, int sampleRe
 
 			case 16:
 			{
-				constexpr float toFloatMultiplier = 1.f / 0x8000;
+				constexpr float toFloatMultiplier = 1.f / (1 << 15);
 
-				auto i16 = (short*)source;
+				auto i16 = (int16_t*)source;
 				while (c-- > 0)
 				{
 					*dest++ = toFloatMultiplier * *i16++;
@@ -611,12 +650,12 @@ void WavFileCursor::DiskSamplesToBuffer(MYWAVEFORMATEX& waveheader, int sampleRe
 
 			case 24:
 			{
-				constexpr float toFloatMultiplier = 1.f / 0x7f000000;
+				constexpr float toFloatMultiplier = 1.f / (1 << 31);
 
-				auto i24 = (char*)source;
+				auto i24 = (unsigned char*)source;
 				while (c-- > 0)
 				{
-					int t = (i24[0] << 8) + (i24[1] << 16) + (i24[2] << 24);
+					const int32_t t = (i24[0] << 8) + (i24[1] << 16) + (i24[2] << 24);
 					*dest++ = toFloatMultiplier * t;
 					i24 += 3;
 				}
@@ -625,7 +664,7 @@ void WavFileCursor::DiskSamplesToBuffer(MYWAVEFORMATEX& waveheader, int sampleRe
 
 			case 32:
 			{
-				constexpr float toFloatMultiplier = 1.f / 0x80000000;
+				constexpr float toFloatMultiplier = 1.f / (1 << 31);
 
 				auto i32 = (int32_t*)source;
 				while (c-- > 0)
@@ -651,6 +690,7 @@ void WavFileCursor::DiskSamplesToBuffer(MYWAVEFORMATEX& waveheader, int sampleRe
 	}
 }
 
+// !! buggy with looping, results in a few zero samples at loop point. ref 'Sine Looped (hard)_8bit_mono.wav'
 std::tuple<const float*, int> WavFileCursor::GetMoreSamples(bool gate)
 {
 	// copy overlap from last buffer.
@@ -705,22 +745,21 @@ std::tuple<const float*, int> WavFileCursor::GetMoreSamples(bool gate)
 	int64_t returnSamplesCount = sampleReadCount - (overlapSamplesTotal - bufferWriteStart);
 
 	// have we gone "off end" of sample? pad with zeros.
-	int64_t zeroPadding = sampleReadCount - (sampleData->totalSamples() - filePosition);
-	if (zeroPadding > 0)
-	{
-		sampleReadCount -= zeroPadding;  // 0 -> 4 frames.
+    const int64_t remainingDiskSamples = sampleData->totalSamples() - filePosition;
+    const int64_t zeroPadding = (std::max)((int64_t)0, sampleReadCount - remainingDiskSamples);
+ 
+    sampleReadCount -= zeroPadding;  // 0 -> 4 frames.
 
-		for (int i = 0; i < zeroPadding; ++i)
-			buffer[bufferWriteStart + sampleReadCount + i] = 0.f;
-	}
-
-	const auto waveheader = sampleData->waveheader;
-
-	// Read samples off disk.
-	auto dest = buffer.data() + bufferWriteStart;
-	// _RPT1(_CRT_WARN, "DiskSamplesToBuffer %d\n", static_cast<int>(sampleReadCount));
-	DiskSamplesToBuffer(sampleData->waveheader, static_cast<int>(sampleReadCount), dest);
-
+    for (int i = 0; i < zeroPadding; ++i)
+        buffer[bufferWriteStart + sampleReadCount + i] = 0.f;
+    
+    if(sampleReadCount > 0)
+    {
+        // Read samples off disk.
+        auto dest = buffer.data() + bufferWriteStart;
+        // _RPT1(_CRT_WARN, "DiskSamplesToBuffer %d\n", static_cast<int>(sampleReadCount));
+        DiskSamplesToBuffer(sampleData->waveheader, static_cast<int>(sampleReadCount), dest);
+    }
 	auto returnData = buffer.data() + overlapSamples;
 	int returnSamples = static_cast<int>(returnSamplesCount);
 	lastSentSampleIndex = returnSamplesCount;

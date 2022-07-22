@@ -27,9 +27,14 @@
 #define	GMPI_GUI_SDK_REVISION 10000 // 1.00
 /* Version History
 	11/09/2014 - V1.00 : Official release.
+
+   TODO
+   * Choose Folder Dialog
 */
 
+#ifdef _MSC_VER
 #pragma warning(disable : 4100) // "unreferenced formal parameter"
+#endif
 
 //===== mp_sdk_gui2.h =====
 #ifndef GMPI_SDK_GUI2_H_INCLUDED
@@ -106,7 +111,7 @@ namespace gmpi_gui_api
 	class DECLSPEC_NOVTABLE IMpGraphics2 : public IMpGraphics
 	{
 	public:
-		virtual int32_t MP_STDCALL hitTest(MP1_POINT point) = 0;
+		virtual int32_t MP_STDCALL hitTest(MP1_POINT point) = 0; // TODO!!! include mouse flags (for Patch Cables)
 		virtual int32_t MP_STDCALL getToolTip(MP1_POINT point, gmpi::IString *returnString) = 0;
 	};
 
@@ -242,18 +247,15 @@ namespace gmpi_gui
 		virtual void MP_STDCALL invalidateRect(const GmpiDrawing_API::MP1_RECT* invalidRect) = 0;
 		virtual void MP_STDCALL invalidateMeasure() = 0;
 
-		virtual int32_t MP_STDCALL setCapture(void) = 0;
+		virtual int32_t MP_STDCALL setCapture() = 0;
 		virtual int32_t MP_STDCALL getCapture(int32_t& returnValue) = 0;
-		virtual int32_t MP_STDCALL releaseCapture(void) = 0;
+		virtual int32_t MP_STDCALL releaseCapture() = 0;
 
 		virtual int32_t MP_STDCALL createPlatformMenu(/* shouldbe const */ GmpiDrawing_API::MP1_RECT* rect, gmpi_gui::IMpPlatformMenu** returnMenu) = 0;
 		virtual int32_t MP_STDCALL createPlatformTextEdit(/* shouldbe const */ GmpiDrawing_API::MP1_RECT* rect, gmpi_gui::IMpPlatformText** returnTextEdit) = 0;
 		// Ideally this would be in IMpGraphicsHostBase, but doing so would break ABI for existing modules.
 		virtual int32_t MP_STDCALL createOkCancelDialog(int32_t dialogType, gmpi_gui::IMpOkCancelDialog** returnDialog) = 0;
 
-        // TODO!! Should be able to have  agraphics object without paramter support. i.e. an independent setHost()
-        // virtual int32_t MP_STDCALL setHost( gmpi::IMpUnknown* host ) = 0;
-        
         static gmpi::MpGuid IID(){ return SE_IID_GRAPHICS_HOST; };
     };
 
@@ -268,6 +270,8 @@ namespace gmpi_gui
 	class MpGuiGfxBase :
 		public MpGuiBase2, public gmpi_gui_api::IMpGraphics2
 	{
+		using MpGuiBase2::getToolTip; // silence compiler warning. Allows user to call deprecated version of 'getToolTip'.
+
 	public:
 #ifdef _DEBUG
 		MpGuiGfxBase() :
@@ -351,7 +355,7 @@ namespace gmpi_gui
 		}
 		bool getCapture()
 		{
-			int32_t c;
+			int32_t c{};
 			getGuiHost()->getCapture(c);
 			return c != 0;
 		}
@@ -372,7 +376,7 @@ namespace gmpi_gui
 			return MpGuiBase2::setHost(host);
 		}
 
-		gmpi_gui::IMpGraphicsHost* getGuiHost(void) { return guiHost_; };
+		gmpi_gui::IMpGraphicsHost* getGuiHost() { return guiHost_; };
 
 		// !!! TODO: All host calls to have 'easy' wrapped versions !!!
 		// calling host.
@@ -437,12 +441,8 @@ namespace gmpi_gui
 			return temp;
 		}
 
-	private:
-		gmpi_sdk::mp_shared_ptr<gmpi_gui::IMpGraphicsHost> guiHost_;
-		GmpiDrawing::Rect rect_;
-
 		//GMPI_QUERYINTERFACE2(gmpi_gui_api::SE_IID_GRAPHICS_MPGUI, IMpGraphics, MpGuiBase2);
-		virtual int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override
+		int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override
 		{
 			*returnInterface = nullptr;
 
@@ -463,6 +463,10 @@ namespace gmpi_gui
 			return MpGuiBase2::queryInterface(iid, returnInterface);
 		}
 		GMPI_REFCOUNT;
+
+	private:
+		gmpi_sdk::mp_shared_ptr<gmpi_gui::IMpGraphicsHost> guiHost_;
+		GmpiDrawing::Rect rect_;
 	};
 
 	class MpCompletionHandler : public gmpi_gui::ICompletionCallback
@@ -484,6 +488,60 @@ namespace gmpi_gui
 
 		GMPI_QUERYINTERFACE1(gmpi_gui::SE_IID_COMPLETION_CALLBACK, gmpi_gui::ICompletionCallback);
 		GMPI_REFCOUNT;
+	};
+} //namespace
+
+namespace GmpiSdk
+{
+	class Controller : public gmpi::IMpController
+	{
+		gmpi_sdk::mp_shared_ptr<gmpi::IMpControllerHost> host;
+		int32_t handle = -1;
+
+	public:
+		virtual ~Controller(){}
+
+		// Establish connection to host.
+		virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* phost) override
+		{
+			phost->queryInterface(gmpi::MP_IID_CONTROLLER_HOST, host.asIMpUnknownPtr());
+
+			if (host.isNull())
+			{
+				return gmpi::MP_NOSUPPORT;
+			}
+
+			host->getHandle(handle);
+
+			return gmpi::MP_OK;
+		}
+
+		// Pins defaults.
+		virtual int32_t MP_STDCALL setPinDefault(int32_t pinType, int32_t pinId, const char* defaultValue) override
+		{
+			return gmpi::MP_OK;
+		}
+
+		// IMpParameterObserver
+		virtual int32_t MP_STDCALL setParameter(int32_t parameterHandle, int32_t fieldId, int32_t voice, const void* data, int32_t size) override
+		{
+			return gmpi::MP_OK;
+		}
+
+		virtual int32_t MP_STDCALL setPin(int32_t pinId, int32_t voice, int64_t size, const void* data) override { return gmpi::MP_OK; }
+		virtual int32_t MP_STDCALL notifyPin(int32_t pinId, int32_t voice) override { return gmpi::MP_OK; }
+		virtual int32_t MP_STDCALL onDelete() override { return gmpi::MP_OK; }
+		virtual int32_t MP_STDCALL preSaveState() override { return gmpi::MP_OK; }
+		virtual int32_t MP_STDCALL open() override { return gmpi::MP_OK; }
+
+
+		gmpi::IMpControllerHost* getHost()
+		{
+			return host.get();
+		}
+
+		GMPI_REFCOUNT;
+		GMPI_QUERYINTERFACE1(gmpi::MP_IID_CONTROLLER, gmpi::IMpController);
 	};
 
 } //namespace

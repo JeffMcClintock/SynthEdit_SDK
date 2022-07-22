@@ -4,6 +4,7 @@
 #define MP_SDK_AUDIO_H_INCLUDED
 
 #include <map>
+#include <vector>
 #include <algorithm>
 #include <assert.h>
 #include "mp_sdk_common.h"
@@ -20,9 +21,9 @@ typedef void ( MpBase2::* SubProcess_ptr2)(int sampleFrames);
 #define SET_PROCESS(func)	setSubProcess(static_cast <SubProcess_ptr> (func));
 #define SET_PROCESS2(func)	setSubProcess(static_cast <SubProcess_ptr2> (func));
 
-// Handy macros for registering plugin with factory.
-#define REGISTER_PLUGIN( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(void){ return static_cast<gmpi::IMpPlugin*> (new className(0)); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( gmpi::MP_SUB_TYPE_AUDIO, pluginId, &PASTE_FUNC(create,className) );}
-#define REGISTER_PLUGIN2( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(void){ return static_cast<gmpi::IMpPlugin2*> (new className()); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( gmpi::MP_SUB_TYPE_AUDIO, pluginId, &PASTE_FUNC(create,className) );}
+// Deprecated macros for registering plugin with factory. Prefer: 	auto r = gmpi::Register<MyClass>::withId(L"JM My Name");
+#define REGISTER_PLUGIN( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(){ return static_cast<gmpi::IMpPlugin*> (new className(0)); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( gmpi::MP_SUB_TYPE_AUDIO, pluginId, &PASTE_FUNC(create,className) );}
+#define REGISTER_PLUGIN2( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create,className)(){ return static_cast<gmpi::IMpPlugin2*> (new className()); }; int32_t PASTE_FUNC(r,className) = RegisterPlugin( gmpi::MP_SUB_TYPE_AUDIO, pluginId, &PASTE_FUNC(create,className) );}
 // Alias for consistancy with "GMPI_REGISTER_GUI"
 #define GMPI_REGISTER_PROCESSOR REGISTER_PLUGIN2
 
@@ -34,7 +35,14 @@ namespace GmpiSdk
 {
 	class ProcessorHost : public Internal::GmpiIWrapper<gmpi::IMpHost>
 	{
+		gmpi::IGmpiHost* host2 = {};
+
 	public:
+		int32_t Init(gmpi::IMpUnknown* phost)
+		{
+			return phost->queryInterface(gmpi::MP_IID_PROCESSOR_HOST, (void**) &host2);
+		}
+
 		// Plugin sending out control data.
 		inline int32_t setPin(int32_t blockRelativeTimestamp, int32_t pinId, int32_t size, const void* data)
 		{
@@ -58,11 +66,33 @@ namespace GmpiSdk
 				virtual int32_t MP_STDCALL sendMessageToGui(int32_t id, int32_t size, const void* messageData) = 0;
 		*/
 		// Query audio buffer size.
-		inline int32_t getBlockSize()
+		inline int32_t getBlockSize() const
 		{
-			int32_t s;
+			int32_t s{};
 			Get()->getBlockSize(s);
 			return s;
+		}
+
+		inline float getSampleRate() const
+		{
+			float s{};
+			Get()->getSampleRate(s);
+			return s;
+		}
+
+		inline int32_t getHandle() const
+		{
+			int32_t s{};
+			Get()->getHandle(s);
+			return s;
+		}
+
+		void SetLatency(int32_t latency)
+		{
+			if(host2)
+			{
+				host2->setLatency(latency);
+			}
 		}
 		/*
 
@@ -106,26 +136,83 @@ namespace GmpiSdk
 		}
 		*/
 	};
+
+	class ProcessorPins
+	{
+		struct pindata
+		{
+			int32_t id;
+			int32_t direction;
+			int32_t datatype;
+		};
+		gmpi_sdk::mp_shared_ptr<gmpi::IMpPinIterator> it;
+		std::vector<pindata> pins;
+
+	public:
+		using iterator = std::vector<pindata>::iterator;
+
+		ProcessorPins(gmpi::IMpHost* dspHost)
+		{
+			auto result = dspHost->createPinIterator(it.getAddressOf());
+			assert(gmpi::MP_OK == result);
+
+			if (gmpi::MP_OK == result)
+			{
+				const auto pincount = size();
+				pins.reserve(pincount);
+
+				it->first();
+				for (size_t i = 0; i < pincount; ++i)
+				{
+					pindata p{};
+					it->getPinDatatype(p.datatype);
+					it->getPinDirection(p.direction);
+					it->getPinId(p.id);
+
+					pins.push_back(p);
+
+					it->next();
+				}
+			}
+		}
+
+		size_t size()
+		{
+			int32_t count = 0;
+			it->getCount(count);
+			return static_cast<size_t>(count);
+		}
+
+		iterator begin()
+		{
+			return pins.begin();
+		}
+
+		iterator end()
+		{
+			return pins.end();
+		}
+	};
 }
 
 class MpPinBase
 {
 public:
-	MpPinBase() : id_(-1), plugin_(0), eventHandler_(0) {};
-	virtual ~MpPinBase(){};
+	MpPinBase() : id_(-1), plugin_(0), eventHandler_(0) {}
+	virtual ~MpPinBase() {}
 	void initialize( MpPluginBase* plugin, int PinId, MpBaseMemberPtr handler = 0 );
 
 	// overrides for audio pins_
 	virtual void setBuffer( float* buffer ) = 0;
-	virtual void preProcessEvent( const gmpi::MpEvent* ){};
+	virtual void preProcessEvent( const gmpi::MpEvent* ) {}
 
 	virtual void processEvent( const gmpi::MpEvent* e );
-	virtual void postProcessEvent( const gmpi::MpEvent* ){};
+	virtual void postProcessEvent( const gmpi::MpEvent* ) {}
 
-	int getId(void){return id_;};
-	virtual int getDatatype(void) const = 0;
-	virtual int getDirection(void) const = 0;
-	virtual MpBaseMemberPtr getDefaultEventHandler(void) = 0;
+	int getId(){return id_;};
+	virtual int getDatatype() const = 0;
+	virtual int getDirection() const = 0;
+	virtual MpBaseMemberPtr getDefaultEventHandler() = 0;
 	virtual void sendFirstUpdate() = 0;
 
 protected:
@@ -140,10 +227,8 @@ template
 class MpControlPinBase : public MpPinBase
 {
 public:
-	MpControlPinBase() : freshValue_( false )
+	MpControlPinBase()
 	{
-		// Ensure output pins don't send random garbage at startup.
-		setVariableToDefault( value_ );
 	}
 	MpControlPinBase( T initialValue ) :freshValue_(false), value_( initialValue )
 	{
@@ -152,11 +237,11 @@ public:
 	{
 		MpPinBase::sendPinUpdate( rawSize(), rawData(), blockPosition );
 	}
-	virtual void setBuffer( float* buffer )
+	virtual void setBuffer( float* /*buffer*/ ) override
 	{
 		assert(false && "Control-rate pins_ don't have a buffer");
 	}
-	const T& getValue(void) const
+	const T& getValue() const
 	{
 		assert( id_ != -1 && "remember initializePin() in constructor?" );
 		return value_;
@@ -198,19 +283,19 @@ public:
 	{
 		VariableFromRaw<T>(static_cast<int>(size), data, value_);
 	}
-	virtual int rawSize(void) const
+	virtual int rawSize() const
 	{
 		return variableRawSize<T>(value_);
 	}
-	virtual void* rawData(void)
+	virtual void* rawData()
 	{
 		return variableRawData<T>(value_);
 	}
-	virtual int getDatatype(void) const
+	virtual int getDatatype() const override
 	{
 		return pinDatatype; //MpTypeTraits<T>::PinDataType;
 	}
-	virtual void preProcessEvent( const gmpi::MpEvent* e )
+	virtual void preProcessEvent( const gmpi::MpEvent* e ) override
 	{
 		switch(e->eventType)
 		{
@@ -227,7 +312,7 @@ public:
 				break;
 		};
 	}
-	virtual void postProcessEvent( const gmpi::MpEvent* e )
+	virtual void postProcessEvent( const gmpi::MpEvent* e ) override
 	{
 		switch(e->eventType)
 		{
@@ -236,22 +321,22 @@ public:
 				break;
 		};
 	}
-	virtual MpBaseMemberPtr getDefaultEventHandler(void)
+	virtual MpBaseMemberPtr getDefaultEventHandler() override
 	{
 		return 0;
 	}
-	inline bool isUpdated(void) const
+	inline bool isUpdated() const
 	{
 		return freshValue_;
 	}
-	virtual void sendFirstUpdate()
+	virtual void sendFirstUpdate() override
 	{
 		sendPinUpdate();
 	}
 
 protected:
-	T value_;
-	bool freshValue_; // true = value_ has been updated by host on current sample_clock
+	T value_ = {};
+	bool freshValue_ = false; // true = value_ has been updated by host on current sample_clock
 };
 
 template
@@ -265,7 +350,7 @@ public:
 	MpControlPin( T initialValue ) : MpControlPinBase< T, pinDatatype >( initialValue )
 	{
 	}
-	virtual int getDirection(void) const
+	virtual int getDirection() const override
 	{
 		return pinDirection_;
 	}
@@ -288,11 +373,8 @@ public:
 class MpAudioPinBase : public MpPinBase
 {
 public:
-	MpAudioPinBase() :
-	    buffer_(nullptr),
-		isStreaming_(false)
-		{};
-	virtual void setBuffer( float* buffer )
+	MpAudioPinBase(){}
+	void setBuffer( float* buffer ) override
 	{
 		buffer_ = buffer;
 	}
@@ -309,33 +391,33 @@ public:
 	{
 		return other == getValue();
 	}
-	virtual void setValueRaw(int size, void*  data)
+	virtual void setValueRaw(int /*size*/, void* /*data*/)
 	{
 		assert(false && "Audio-rate pins_ don't support setValueRaw");
 	}
-	virtual int getDatatype(void) const
+	virtual int getDatatype() const override
 	{
 		return gmpi::MP_AUDIO;
 	}
-	virtual MpBaseMemberPtr getDefaultEventHandler(void)
+	MpBaseMemberPtr getDefaultEventHandler() override
 	{
 		return 0;
 	}
-	bool isStreaming(void)
+	bool isStreaming()
 	{
 		return isStreaming_;
 	}
 
 protected:
-	float* buffer_;
-	bool isStreaming_; // true = active audio, false = silence or constant input level
+	float* buffer_ = {};
+	bool isStreaming_ = false; // true = active audio, false = silence or constant input level
 };
 
 class AudioInPin : public MpAudioPinBase
 {
 public:
-	AudioInPin() : freshValue_(true){};
-	virtual int getDirection(void) const
+	AudioInPin() : freshValue_(true) {}
+	virtual int getDirection() const
 	{
 		return gmpi::MP_IN;
 	}
@@ -351,11 +433,11 @@ public:
 		};
 	}
 
-	bool isUpdated(void)
+	bool isUpdated()
 	{
 		return freshValue_;
 	}
-	virtual void sendFirstUpdate(){}; // N/A.
+	virtual void sendFirstUpdate() {} // N/A.
 
 private:
 	bool freshValue_; // true = value_ has been updated on current sample_clock
@@ -364,7 +446,7 @@ private:
 class AudioOutPin : public MpAudioPinBase
 {
 public:
-	virtual int getDirection(void) const
+	virtual int getDirection() const
 	{
 		return gmpi::MP_OUT;
 	}
@@ -409,21 +491,21 @@ public:
 class MidiInPin : public MpPinBase
 {
 public:
-	virtual int getDatatype(void) const
+	virtual int getDatatype() const
 	{
 		return gmpi::MP_MIDI;
 	}
-	virtual int getDirection(void) const
+	virtual int getDirection() const
 	{
 		return gmpi::MP_IN;
 	}
 
 	// These members not needed for MIDI.
-	virtual void setBuffer(float* buffer)
+	virtual void setBuffer(float* /*buffer*/)
 	{
 		assert( false && "MIDI pins_ don't have a buffer" );
 	}
-	virtual MpBaseMemberPtr getDefaultEventHandler(void);
+	virtual MpBaseMemberPtr getDefaultEventHandler();
 	virtual void sendFirstUpdate()
 	{
 	}
@@ -432,44 +514,51 @@ public:
 class MidiOutPin : public MidiInPin
 {
 public:
-	virtual int getDirection(void) const
+	virtual int getDirection() const
 	{
 		return gmpi::MP_OUT;
 	}
-	virtual MpBaseMemberPtr getDefaultEventHandler(void)
+	virtual MpBaseMemberPtr getDefaultEventHandler()
 	{
 		assert( false && "output pins don't need event handler" );
 		return 0;
 	}
 
 	virtual void send(const unsigned char* data, int size, int blockPosition = -1);
+
+	// convenience method (pass uint8_t array, deduce size). can't pass block position, else compiler chooses other overload.
+	template <int N>
+	void send(const uint8_t(&data)[N]) //, int blockPosition = -1)
+	{
+		send((const unsigned char*)&data, static_cast<int>(N));// , blockPosition);
+	}
 };
 
 /*
 template<>
-MpBaseMemberPtr MpPinMidi<gmpi::MP_IN>::getDefaultEventHandler(void);
+MpBaseMemberPtr MpPinMidi<gmpi::MP_IN>::getDefaultEventHandler();
 template<>
-MpBaseMemberPtr MpPinMidi<gmpi::MP_OUT>::getDefaultEventHandler(void);
+MpBaseMemberPtr MpPinMidi<gmpi::MP_OUT>::getDefaultEventHandler();
 */
 
 typedef	std::map<int, MpPinBase*> Pins_t;
 
-class MpPluginBase : public gmpi::IMpPlugin, public gmpi::IMpPlugin2, public IoldSchoolInitialisation
+class MpPluginBase : public gmpi::IMpPlugin, public gmpi::IMpPlugin2, public IoldSchoolInitialisation, public gmpi::IMpLegacyInitialization
 {
 	friend class TempBlockPositionSetter;
 
 public:
 	MpPluginBase();
-	virtual ~MpPluginBase(void){};
+	virtual ~MpPluginBase() {}
 
 	// IMpUnknown methods
-	virtual int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override;
+	int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override;
 	GMPI_REFCOUNT
 
-	virtual int32_t MP_STDCALL open() override;
+	int32_t MP_STDCALL open() override;
 
 	// IMpPlugin methods, forwarded to IMpPlugin2 equivalent.
-	virtual int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, void* messageData ) override
+	int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, void* messageData ) override
 	{
 		int32_t r = gmpi::MP_OK;
 		if( !recursionFix )
@@ -482,17 +571,17 @@ public:
 		return r;
 	}
 
-	virtual void MP_STDCALL process( int32_t count, gmpi::MpEvent* events ) override
+	void MP_STDCALL process( int32_t count, gmpi::MpEvent* events ) override
 	{
 		// When hosted as IMpPlugin, forward call to IMpPlugin2 version.
 		process(count, ( const gmpi::MpEvent* ) events);
 	}
 
 	// IMpPlugin2 methods
-	virtual int32_t MP_STDCALL setHost(IMpUnknown* host) override;
-	virtual int32_t MP_STDCALL setBuffer(int32_t pinId, float* buffer) override;
+	int32_t MP_STDCALL setHost(IMpUnknown* host) override;
+	int32_t MP_STDCALL setBuffer(int32_t pinId, float* buffer) override;
 	virtual void MP_STDCALL process( int32_t count, const gmpi::MpEvent* events ) override = 0;
-	virtual int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, const void* messageData ) override
+	int32_t MP_STDCALL receiveMessageFromGui( int32_t id, int32_t size, const void* messageData ) override
 	{
 		int32_t r = gmpi::MP_OK;
 		if( !recursionFix )
@@ -505,7 +594,7 @@ public:
 		return r;
 	}
 	// Methods
-	void sendEvent(){};
+	void sendEvent(){}
 	void initializePin( int PinId, MpPinBase& pin, MpBaseMemberPtr handler = 0 );
 	void initializePin( MpPinBase &pin, MpBaseMemberPtr handler = 0 )
 	{
@@ -521,7 +610,7 @@ public:
 		initializePin(idx, pin, handler); // Automatic indexing.
 	}
 
-	inline int getBlockPosition(void)
+	inline int getBlockPosition()
 	{
 		return blockPos_;
 	}
@@ -532,27 +621,23 @@ public:
     {
         onMidiMessage( pin, ( unsigned char*) midiMessage, size ); // cope seamlessly with older plugins.
     }
-    virtual void onMidiMessage( int pin, unsigned char* midiMessage, int size ){}; // deprecated, non-const correct version of above.
-	virtual void onSetPins(void){}  // one or more pins_ updated.  Check pin update flags to determine which ones.
+    virtual void onMidiMessage( int /*pin*/, unsigned char* /*midiMessage*/, int /*size*/ ){} // deprecated, non-const correct version of above.
+	virtual void onSetPins(){}  // one or more pins_ updated.  Check pin update flags to determine which ones.
 	virtual void OnPinStreamingChange( bool isStreaming ) = 0;
-	inline gmpi::IMpHost* getHost( void )
+	inline gmpi::IMpHost* getHost( void ) const
 	{
 		assert(host.Get() != nullptr); // Please don't call host from contructor. Use initialize() instead.
 		return host.Get();
 	}
 
 	void midiHelper( const gmpi::MpEvent* e );
-	int getBlockSize(void)
+	int getBlockSize() const
 	{
-		int returnValue;
-		getHost()->getBlockSize(returnValue);
-		return returnValue;
+		return host.getBlockSize();
 	}
-	float getSampleRate(void)
+	float getSampleRate() const
 	{
-		float returnValue;
-		getHost()->getSampleRate(returnValue);
-		return returnValue;
+		return host.getSampleRate();
 	}
 	void resetSleepCounter();
 	void nudgeSleepCounter()
@@ -562,7 +647,6 @@ public:
 	virtual void onGraphStart();	// called on very first sample.
 
 protected:
-//	gmpi_sdk::mp_shared_ptr<gmpi::IMpHost> host_;
 	GmpiSdk::ProcessorHost host;
 	Pins_t pins_;
 
@@ -575,9 +659,9 @@ protected:
 
 public:
 #if defined(_DEBUG)
-	bool debugIsOpen_;
-	bool blockPosExact_;
-	bool debugGraphStartCalled_;
+	bool debugIsOpen_ = false;
+	bool blockPosExact_ = true;
+	bool debugGraphStartCalled_ = false;
 #endif
 };
 
@@ -615,7 +699,7 @@ public:
 class MpBase: public MpPluginBase
 {
 public:
-	MpBase(gmpi::IMpUnknown *unused) : MpPluginBase()
+	MpBase(gmpi::IMpUnknown* /*unused*/) : MpPluginBase()
 	,curSubProcess_( &MpBase::subProcessPreSleep )
 	,saveSubProcess_( &MpBase::subProcessNothing )
 	{
@@ -623,11 +707,11 @@ public:
 
 	virtual void MP_STDCALL process(int32_t count, const gmpi::MpEvent* events);
 	void setSubProcess(SubProcess_ptr func);
-	inline int blockPosition(void) // wrong coding standard, retained for backward compatibility. Use getBlockPosition() instead.
+	inline int blockPosition() // wrong coding standard, retained for backward compatibility. Use getBlockPosition() instead.
 	{
 		return blockPos_;
 	}
-	SubProcess_ptr getSubProcess(void)
+	SubProcess_ptr getSubProcess()
 	{
 		return saveSubProcess_;
 	}
@@ -636,7 +720,7 @@ public:
 
 protected:
 	// the default routine, if none set by module.
-	void subProcessNothing(int bufferOffset, int sampleFrames){};
+	void subProcessNothing(int /*bufferOffset*/, int /*sampleFrames*/) {}
 	void subProcessPreSleep(int bufferOffset, int sampleFrames);
 
 private:
@@ -644,7 +728,7 @@ private:
 	SubProcess_ptr saveSubProcess_; // saves curSubProcess_ while sleeping
 };
 
-// Experimental advanced plugin base-class with simplified sub_process method.
+// Advanced plugin base-class with simplified sub_process method.
 /*
  To upgrade:
  * Replace references to MpBase with MpBase2
@@ -678,8 +762,8 @@ public:
 		return blockPos_ + pin.getBuffer();
 	}
 
-	template <typename PointerToMemeber>
-	void setSubProcess(PointerToMemeber functionPointer)
+	template <typename PointerToMember>
+	void setSubProcess(PointerToMember functionPointer)
 	{
 		// under normal use, curSubProcess_ and saveSubProcess_ are the same.
 		if (curSubProcess_ == saveSubProcess_)
@@ -693,7 +777,7 @@ public:
 		}
 	}
 
-	inline SubProcess_ptr2 getSubProcess(void)
+	inline SubProcess_ptr2 getSubProcess()
 	{
 		return saveSubProcess_;
 	}
@@ -701,7 +785,7 @@ public:
 	void OnPinStreamingChange( bool isStreaming );
 
 	// the default routine, if none set by module.
-	void subProcessNothing(int sampleFrames){};
+	void subProcessNothing(int /*sampleFrames*/){}
 	void subProcessPreSleep(int sampleFrames);
 
 	SubProcess_ptr2 curSubProcess_;

@@ -127,9 +127,10 @@ namespace GmpiGui
 		{
 			Get()->SetAlignment(alignment);
 		}
-		inline void SetAlignment(GmpiDrawing::TextAlignment alignment)
+		inline void SetAlignment(GmpiDrawing::TextAlignment alignment, GmpiDrawing::WordWrapping wordWrapping = GmpiDrawing::WordWrapping::NoWrap)
 		{
-			Get()->SetAlignment((int32_t)alignment);
+			const int32_t inverseWordWrapping = ((~(int32_t)wordWrapping) & 1) << 16;
+			Get()->SetAlignment((int32_t)alignment | inverseWordWrapping);
 		}
 		inline void SetText(std::string text)
 		{
@@ -212,11 +213,13 @@ namespace GmpiGui
 		{
 			Get()->setInitialDirectory(text.c_str());
 		}
+
 		// set filename and folder. e.g. C:\samples\moose.wav
 		inline void SetInitialFullPath(std::string fullPath)
 		{
-			SetInitialFilename(StripPath(fullPath));
-			setInitialDirectory(StripFilename(fullPath));
+			const auto nativePath = ToNativeSlashes(fullPath);
+			SetInitialFilename(StripPath(nativePath));
+			setInitialDirectory(StripFilename(nativePath));
 		}
 
 		inline std::string GetSelectedFilename()
@@ -290,7 +293,7 @@ namespace GmpiGui
 		{
 			Get()->invalidateMeasure();
 		}
-		inline void setCapture(void)
+		inline void setCapture()
 		{
 			/* auto r = */ Get()->setCapture();
 		}
@@ -300,7 +303,7 @@ namespace GmpiGui
 			/* auto r = */ Get()->getCapture(returnValue);
 			return returnValue != 0;
 		}
-		inline void releaseCapture(void)
+		inline void releaseCapture()
 		{
 			/* auto r = */ Get()->releaseCapture();
 		}

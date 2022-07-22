@@ -1,4 +1,3 @@
-#pragma once
 #include "PatchCables.h"
 #include "../tinyXml2/tinyxml2.h"
 
@@ -29,12 +28,14 @@ namespace SynthEdit2
 			int tm = -1;
 			int fp = -1;
 			int tp = -1;
+			int col = 0;
 			c->QueryIntAttribute("fm", &fm);
 			c->QueryIntAttribute("tm", &tm);
 			c->QueryIntAttribute("fp", &fp);
 			c->QueryIntAttribute("tp", &tp);
+			c->QueryIntAttribute("c", &col);
 
-			push_back(fm, fp, tm, tp);
+			push_back(fm, fp, tm, tp, col);
 		}
 	}
 
@@ -56,12 +57,13 @@ namespace SynthEdit2
 			cable_xml->SetAttribute("tm", c.toUgHandle);
 			cable_xml->SetAttribute("fp", c.fromUgPin);
 			cable_xml->SetAttribute("tp", c.toUgPin);
+			cable_xml->SetAttribute("c", c.colorIndex);
 		}
 
 		XMLPrinter printer;
 		xml.Accept(&printer);
 
-		std::string s(printer.CStr(), printer.CStrSize());
+		const std::string s(printer.CStr(), printer.CStrSize());
 		return RawData(s);
 	}
 }

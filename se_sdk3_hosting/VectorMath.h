@@ -5,11 +5,11 @@
 using namespace VectorMath;
  */
 
-#if SE_TARGET_SEM
+//#if SE_TARGET_SEM
 #include "../se_sdk3/Drawing.h"
-#else
-#include "../InstrumentsCommon/Code/Native/modules/se_sdk3/Drawing.h"
-#endif
+//#else
+//#include "../InstrumentsCommon/Code/Native/modules/se_sdk3/Drawing.h"
+//#endif
 
 
 namespace VectorMath

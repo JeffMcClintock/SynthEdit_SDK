@@ -1,26 +1,22 @@
+#ifdef _WIN32 // skip compilation on macOS
+
 #include <sstream>
-#include "DirectXGfx.h"
-#include "modules\shared\xplatform.h"
-#include "modules/shared/xp_simd.h"
-#include "modules/se_sdk3_hosting/gmpi_gui_hosting.h"
-#include "modules/shared/fast_gamma.h"
+#include "./DirectXGfx.h"
+#include "../shared\xplatform.h"
+#include "../shared/xp_simd.h"
+#include "../se_sdk3_hosting/gmpi_gui_hosting.h"
+#include "../shared/fast_gamma.h"
+#include "BundleInfo.h"
+#include "d2d1helper.h"
 
 using namespace GmpiGuiHosting;
-
-#if defined(SE_SUPPORT_MFC) 
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-#endif
 
 namespace gmpi
 {
 	namespace directx
 	{
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> Factory::stringConverter;
+
 		int32_t Geometry::Open(GmpiDrawing_API::IMpGeometrySink** geometrySink)
 		{
 			ID2D1GeometrySink* sink = nullptr;
@@ -33,40 +29,17 @@ namespace gmpi
 				b2.Attach(new gmpi::directx::GeometrySink(sink));
 
 				b2->queryInterface(GmpiDrawing_API::SE_IID_GEOMETRYSINK_MPGUI, reinterpret_cast<void**>(geometrySink));
+
+#ifdef LOG_DIRECTX_CALLS
+				_RPT1(_CRT_WARN, "ID2D1GeometrySink* sink%x = nullptr;\n", (int)* geometrySink);
+				_RPT0(_CRT_WARN, "{\n");
+				_RPT2(_CRT_WARN, "geometry%x->Open(&sink%x);\n", (int) this, (int)* geometrySink);
+				_RPT0(_CRT_WARN, "}\n");
+#endif
+
 			}
 
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
-		}
-
-		LinearGradientBrush_win7::LinearGradientBrush_win7(GmpiDrawing_API::IMpFactory* factory, ID2D1RenderTarget* context,
-		                                                   const GmpiDrawing_API::MP1_LINEAR_GRADIENT_BRUSH_PROPERTIES*
-		                                                   linearGradientBrushProperties,
-		                                                   const GmpiDrawing_API::MP1_BRUSH_PROPERTIES* brushProperties,
-		                                                   const GmpiDrawing_API::IMpGradientStopCollection*
-		                                                   gradientStopCollection): Brush(nullptr, factory)
-		{
-			auto nativegsc = ((GradientStopCollection*)gradientStopCollection)->native();
-
-			std::vector<GmpiDrawing_API::MP1_GRADIENT_STOP> stops;
-			stops.assign(nativegsc->GetGradientStopCount(), GmpiDrawing_API::MP1_GRADIENT_STOP());
-			nativegsc->GetGradientStops((D2D1_GRADIENT_STOP*) stops.data(), nativegsc->GetGradientStopCount());
-
-			for( auto&s : stops )
-			{
-				s.color.r = se_sdk::FastGamma::pixelToNormalised(se_sdk::FastGamma::float_to_sRGB(s.color.r));
-				s.color.g = se_sdk::FastGamma::pixelToNormalised(se_sdk::FastGamma::float_to_sRGB(s.color.g));
-				s.color.b = se_sdk::FastGamma::pixelToNormalised(se_sdk::FastGamma::float_to_sRGB(s.color.b));
-			}
-
-			ID2D1GradientStopCollection* gradientStopsCorrected;
-			context->CreateGradientStopCollection((D2D1_GRADIENT_STOP *) stops.data(), (UINT32) stops.size(), &gradientStopsCorrected);
-
-			HRESULT hr = context->CreateLinearGradientBrush(
-				(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES*)linearGradientBrushProperties, (D2D1_BRUSH_PROPERTIES*)brushProperties,
-				gradientStopsCorrected, (ID2D1LinearGradientBrush **)&native_);
-			assert(hr == 0);
-
-			gradientStopsCorrected->Release();
 		}
 
 		int32_t TextFormat::GetFontMetrics(GmpiDrawing_API::MP1_FONT_METRICS* returnFontMetrics)
@@ -131,7 +104,6 @@ namespace gmpi
 
 		void TextFormat::GetTextExtentU(const char* utf8String, int32_t stringLength, GmpiDrawing_API::MP1_SIZE* returnSize)
 		{
-			//	std::string cstring(utf8String, stringLength);
 			auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
 
 			IDWriteFactory* writeFactory = 0;
@@ -158,26 +130,14 @@ namespace gmpi
 			returnSize->height = textMetrics.height;
 			returnSize->width = textMetrics.widthIncludingTrailingWhitespace;
 
-			//auto th = pTextLayout_->GetMaxHeight(); // just return 100000
-			//auto tw = pTextLayout_->GetMaxWidth();
+			if (!useLegacyBaseLineSnapping)
+			{
+				returnSize->height -= topAdjustment;
+			}
 
 			SafeRelease(pTextLayout_);
 			SafeRelease(writeFactory);
 		}
-
-		/*
-		//#undef DrawText
-		//void GraphicsContext_DirectX::DrawTextU(const char* utf8String, int32_t stringLength, GmpiDrawing_API::IMpTextFormat* TextFormat, GmpiDrawing::Rect rect, GmpiDrawing_API::IMpBrush* brush, int32_t flags )
-		void GraphicsContext_DirectX::DrawTextU(const char* utf8String, int32_t stringLength, const GmpiDrawing_API::IMpTextFormat* TextFormat, const GmpiDrawing_API::MP1_RECT* layoutRect, const GmpiDrawing_API::IMpBrush* brush, int32_t flags)
-		{
-			std::string cstring(utf8String, stringLength);
-			auto widestring = stringConverter->from_bytes(cstring);
-
-			auto b = ((Brush*)brush)->nativeBrush();
-			auto tf = ((TextFormat*)TextFormat)->native();
-			context_->DrawText(widestring.data(), (UINT32)widestring.size(), tf, (D2D1_RECT_F*)layoutRect, b, (D2D1_DRAW_TEXT_OPTIONS)flags);
-		}
-		*/
 
 		// Create factory myself;
 		Factory::Factory() :
@@ -198,26 +158,33 @@ namespace gmpi
 			else
 			{
 				D2D1_FACTORY_OPTIONS o;
-				o.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 #ifdef _DEBUG
-	//			o.debugLevel = D2D1_DEBUG_LEVEL_WARNING; // Need to install special stuff. https://msdn.microsoft.com/en-us/library/windows/desktop/ee794278%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396 
+				o.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;// D2D1_DEBUG_LEVEL_WARNING; // Need to install special stuff. https://msdn.microsoft.com/en-us/library/windows/desktop/ee794278%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396 
+#else
+				o.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 #endif
-// wrong UUID	auto rs = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory), &o, (void**)&m_pDirect2dFactory);
+//				auto rs = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1), &o, (void**)&m_pDirect2dFactory);
 				auto rs = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &o, (void**)&m_pDirect2dFactory);
 
+#ifdef _DEBUG
+				if (FAILED(rs))
+				{
+					o.debugLevel = D2D1_DEBUG_LEVEL_NONE; // fallback
+					rs = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &o, (void**)&m_pDirect2dFactory);
+				}
+#endif
 				if (FAILED(rs))
 				{
 					_RPT1(_CRT_WARN, "D2D1CreateFactory FAIL %d\n", rs);
 					return;  // Fail.
 				}
-
 				//		_RPT2(_CRT_WARN, "D2D1CreateFactory OK %d : %x\n", rs, m_pDirect2dFactory);
 			}
 
 			writeFactory = nullptr;
 
 			auto hr = DWriteCreateFactory(
-				DWRITE_FACTORY_TYPE_SHARED,
+				DWRITE_FACTORY_TYPE_SHARED, // no improvment to glitching DWRITE_FACTORY_TYPE_ISOLATED
 				__uuidof(writeFactory),
 				reinterpret_cast<IUnknown**>(&writeFactory)
 			);
@@ -234,8 +201,10 @@ namespace gmpi
 
 			// Cache font family names
 			{
+				// TODO IDWriteFontSet is improved API, GetSystemFontSet()
+
 				IDWriteFontCollection* fonts = nullptr;
-				writeFactory->GetSystemFontCollection(&fonts);
+				writeFactory->GetSystemFontCollection(&fonts, TRUE);
 
 				auto count = fonts->GetFontFamilyCount();
 
@@ -254,10 +223,11 @@ namespace gmpi
 					{
 						wchar_t name[64];
 						names->GetString(nameIndex, name, sizeof(name) / sizeof(name[0]));
-						//						_RPTW1(_CRT_WARN, L"%s\n", name);
-						std::transform(name, name + wcslen(name), name, ::tolower);
 
-						supportedFontFamilies.push_back(name);
+						supportedFontFamilies.push_back(stringConverter.to_bytes(name));
+
+						std::transform(name, name + wcslen(name), name, ::tolower);
+						supportedFontFamiliesLowerCase.push_back(name);
 					}
 
 					names->Release();
@@ -266,6 +236,25 @@ namespace gmpi
 
 				fonts->Release();
 			}
+#if 0
+			// test matrix rotation calc
+			for (int rot = 0; rot < 8; ++rot)
+			{
+				const float angle = (rot / 8.f) * 2.f * 3.14159274101257324219f;
+				auto test = GmpiDrawing::Matrix3x2::Rotation(angle, { 23, 7 });
+				auto test2 = D2D1::Matrix3x2F::Rotation(angle * 180.f / 3.14159274101257324219f, { 23, 7 });
+
+				_RPTN(0, "\nangle=%f\n", angle);
+				_RPTN(0, "%f, %f\n", test._11, test._12);
+				_RPTN(0, "%f, %f\n", test._21, test._22);
+				_RPTN(0, "%f, %f\n", test._31, test._32);
+		}
+
+			// test matrix scaling
+			const auto test = GmpiDrawing::Matrix3x2::Scale({ 3, 5 }, { 7, 9 });
+			const auto test2 = D2D1::Matrix3x2F::Scale({ 3, 5 }, { 7, 9 });
+			const auto breakpointer = test._11 + test2._11;
+#endif
 		}
 
 		Factory::~Factory()
@@ -290,6 +279,13 @@ namespace gmpi
 				b2.Attach(new gmpi::directx::Geometry(d2d_geometry));
 
 				b2->queryInterface(GmpiDrawing_API::SE_IID_PATHGEOMETRY_MPGUI, reinterpret_cast<void**>(pathGeometry));
+
+#ifdef LOG_DIRECTX_CALLS
+				_RPT1(_CRT_WARN, "ID2D1PathGeometry* geometry%x = nullptr;\n", (int)*pathGeometry);
+				_RPT0(_CRT_WARN, "{\n");
+				_RPT1(_CRT_WARN, "factory->CreatePathGeometry(&geometry%x);\n", (int)*pathGeometry);
+				_RPT0(_CRT_WARN, "}\n");
+#endif
 			}
 
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
@@ -303,7 +299,7 @@ namespace gmpi
 			std::wstring lowercaseName(fontFamilyNameW);
 			std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower);
 
-			if (std::find(supportedFontFamilies.begin(), supportedFontFamilies.end(), lowercaseName) == supportedFontFamilies.end())
+			if (std::find(supportedFontFamiliesLowerCase.begin(), supportedFontFamiliesLowerCase.end(), lowercaseName) == supportedFontFamiliesLowerCase.end())
 			{
 				fontFamilyNameW = fontMatch(fontFamilyNameW, fontWeight, fontSize);
 			}
@@ -327,6 +323,14 @@ namespace gmpi
 				b2.Attach(new gmpi::directx::TextFormat(&stringConverter, dwTextFormat));
 
 				b2->queryInterface(GmpiDrawing_API::SE_IID_TEXTFORMAT_MPGUI, reinterpret_cast<void**>(TextFormat));
+
+//				_RPT2(_CRT_WARN, "factory.CreateTextFormat() -> %x %S\n", (int)dwTextFormat, fontFamilyNameW.c_str());
+#ifdef LOG_DIRECTX_CALLS
+//				_RPT4(_CRT_WARN, "auto c = D2D1::ColorF(%.3f, %.3f, %.3f, %.3f);\n", color->r, color->g, color->b, color->a);
+				_RPT1(_CRT_WARN, "IDWriteTextFormat* textformat%x = nullptr;\n", (int)*TextFormat);
+				_RPT4(_CRT_WARN, "writeFactory->CreateTextFormat(L\"%S\",NULL, (DWRITE_FONT_WEIGHT)%d, (DWRITE_FONT_STYLE)%d, DWRITE_FONT_STRETCH_NORMAL, %f, L\"\",", fontFamilyNameW.c_str(), fontWeight, fontStyle, fontSize);
+				_RPT1(_CRT_WARN, "&textformat%x);\n", (int)*TextFormat);
+#endif
 			}
 
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
@@ -402,7 +406,7 @@ namespace gmpi
 			IDWriteFont* font = nullptr;
 			auto hr = interop->CreateFontFromLOGFONT(&lf, &font);
 
-			if (font)
+			if (font && hr == 0)
 			{
 				IDWriteFontFamily* family = nullptr;
 				font->GetFontFamily(&family);
@@ -419,7 +423,7 @@ namespace gmpi
 					names->GetString(nameIndex, name, sizeof(name) / sizeof(name[0]));
 					std::transform(name, name + wcslen(name), name, ::tolower);
 
-					//						supportedFontFamilies.push_back(name);
+					//						supportedFontFamiliesLowerCase.push_back(name);
 					GdiFontConversions.insert(std::pair<std::wstring, std::wstring>(fontFamilyNameW, name));
 					fontFamilyNameW = name;
 				}
@@ -455,6 +459,24 @@ namespace gmpi
 
 		IWICBitmap* Factory::CreateDiBitmapFromNative(ID2D1Bitmap* D2D_Bitmap)
 		{
+			return {};
+#if 0
+
+/*
+The reason it doesn't work is that you are trying to use a resource created with one context/rendertarget with a different context/rendertarget.
+There are only a few situations in which that is possible and this isn't one of them.
+If all you want to do is save the bitmap to a file using WIC, follow this sample: http://code.msdn.microsoft.com/windowsapps/SaveAsImageFile-68073cb0 .
+If you really want a WIC render target you can do it with ID2D1Bitmap1::Map by copying the data out and then creating a new bitmap using an overload that
+lets you specify the initial data. If the original ID2D1Bitmap1 wasn't created with the D2D1_BITMAP_OPTIONS_CPU_READ flag then you'll need to
+create an intermediate bitmap rendertarget that has that flag set and render the original bitmap to it or else using ID2D1DeviceContext::CreateBitmapFromDxgiSurface
+[you should be able to QueryInterface (or use ComPtr<T>::As) to get an IDxgiSurface interface from an ID2D1Bitmap1].
+Once you have a bitmap with that flag set then you can use Map on it, copy out its data,
+and then use http://msdn.microsoft.com/en-us/library/dd371803(v=vs.85).aspx to create the bitmap with initial data (i.e. the data you copied out).
+Make sure that you call Unmap when you are done reading the data and that you free any memory you copied (preferably you'd use a std::unique_ptr to store the copied data.
+You might even be able to get away with just using the data pointer that you get from calling Map directly rather than copying the data out.
+If so that'd be far more efficient so do that.)
+*/
+
 			/*
 			probly need to:
 			cast bitmap to rendertarget,
@@ -510,72 +532,68 @@ namespace gmpi
 			SafeRelease(wicRenderTarget);
 
 			return wicBitmap;
+#endif
+		}
+
+		int32_t Factory::GetFontFamilyName(int32_t fontIndex, gmpi::IString* returnString)
+		{
+			if (fontIndex < 0 || fontIndex >= supportedFontFamilies.size())
+			{
+				return gmpi::MP_FAIL;
+			}
+
+			returnString->setData(supportedFontFamilies[fontIndex].data(), static_cast<int32_t>(supportedFontFamilies[fontIndex].size()));
+			return gmpi::MP_OK;
 		}
 
 		int32_t Factory::LoadImageU(const char* utf8Uri, GmpiDrawing_API::IMpBitmap** returnDiBitmap)
 		{
 			*returnDiBitmap = nullptr;
 
-			/*
-			// Castr stream to protectedfile object.
-			ProtectedFile2* pf = (ProtectedFile2*)stream;
-			std::string uri = pf->getFullUri();
+			HRESULT hr{};
+			IWICBitmapDecoder* pDecoder{};
+			IWICStream* pIWICStream{};
 
-			// Initialize the in-memory stream where data will be stored.
-			#if defined (SE_TARGET_WINDOWS_STORE_APP)
-			auto winrtStream = ref new InMemoryRandomAccessStream();
-
-			// TODO Write (async!!)
-
-			ComPtr<IStream> pStream;
-			//	DX::ThrowIfFailed(
-			CreateStreamOverRandomAccessStream(winrtStream, IID_PPV_ARGS(&pStream));
-			//		);
-			IStream* lStream = pStream.Get();
-			#else
-
-			// allocate buffer and create stream. Inefficiant as creates extra copy in memory.
-			IStream *lStream = NULL;
-			int64_t size;
-			pf->getSize(&size);
-			HGLOBAL m_hBuffer = ::GlobalAlloc(GMEM_FIXED, (SIZE_T)size);
-
-			// fill the buffer with image data
-			pf->read((char*)m_hBuffer, size);
-
-			::CreateStreamOnHGlobal(m_hBuffer, TRUE, &lStream); // TRUE indicates pStream->Release() should free HGLOBAL automatically.
-			#endif
-
-			IWICBitmapDecoder* pDecoder = NULL;
-			if (hr == 0)
+			// is this an in-memory resource?
+			std::string uriString(utf8Uri);
+			std::string binaryData;
+			if (uriString.find(BundleInfo::resourceTypeScheme) == 0)
 			{
-			hr = pIWICFactory->CreateDecoderFromStream(
-			lStream,
-			NULL,
-			WICDecodeMetadataCacheOnLoad,
-			&pDecoder
-			);
+				binaryData = BundleInfo::instance()->getResource(utf8Uri + strlen(BundleInfo::resourceTypeScheme));
+
+				// Create a WIC stream to map onto the memory.
+				hr = pIWICFactory->CreateStream(&pIWICStream);
+
+				// Initialize the stream with the memory pointer and size.
+				if (SUCCEEDED(hr)) {
+					hr = pIWICStream->InitializeFromMemory(
+						(WICInProcPointer)(binaryData.data()),
+						(DWORD) binaryData.size());
+				}
+
+				// Create a decoder for the stream.
+				if (SUCCEEDED(hr)) {
+					hr = pIWICFactory->CreateDecoderFromStream(
+						pIWICStream,                   // The stream to use to create the decoder
+						NULL,                          // Do not prefer a particular vendor
+						WICDecodeMetadataCacheOnLoad,  // Cache metadata when needed
+						&pDecoder);                    // Pointer to the decoder
+				}
 			}
-			*/
+			else
+			{
+				auto uriW = stringConverter.from_bytes(utf8Uri);
 
-			//	std::string cstring(utf8Uri);
-			auto uriW = stringConverter.from_bytes(utf8Uri);
+				// To load a bitmap from a file, first use WIC objects to load the image and to convert it to a Direct2D-compatible format.
+				hr = pIWICFactory->CreateDecoderFromFilename(
+					uriW.c_str(),
+					NULL,
+					GENERIC_READ,
+					WICDecodeMetadataCacheOnLoad,
+					&pDecoder
+				);
+			}
 
-			IWICBitmapDecoder* pDecoder = NULL;
-			// To load a bitmap from a file, first use WIC objects to load the image and to convert it to a Direct2D-compatible format.
-			auto hr = pIWICFactory->CreateDecoderFromFilename(
-				uriW.c_str(),
-				NULL,
-				GENERIC_READ,
-				WICDecodeMetadataCacheOnLoad,
-				&pDecoder
-			);
-
-			/*
-		#if !defined (SE_TARGET_WINDOWS_STORE_APP)
-		pStream->Release(); // may not release HGLOBAL because GDI plus maintains a reference or 2.
-		#endif
-		*/
 			IWICBitmapFrameDecode *pSource = NULL;
 			if (hr == 0)
 			{
@@ -621,16 +639,21 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 
 				wicBitmap->GetSize(&width, &height);
 
-				const int maxDirectXImageSize = 16384;
+				const int maxDirectXImageSize = 16384; // TODO can be smaller. Query hardware.
 				if (width > maxDirectXImageSize || height > maxDirectXImageSize)
 				{
 					hr = -1; // fail, too big for DirectX.
-#if !defined( SE_EDIT_SUPPORT2 ) && defined( SE_SUPPORT_MFC )
-					std::wostringstream oss;
-					oss << L"Sorry, Image too large:" << uriW << L"\nMaximum dimensions is 16384 pixels.\n";
-					MessageBox( 0,oss.str().c_str(), L"", MB_OK | MB_ICONSTOP);
-					MessageBox(NULL, (LPCTSTR)oss.str().c_str(), _T("Error"), MB_OK | MB_ICONINFORMATION);
+
+/* weird for graphics to have dependancy on bundle
+#if defined( _WIN32 )
+					if (BundleInfo::instance()->isEditor)
+					{
+						std::ostringstream oss;
+						oss << L"Sorry, Image too large:" << utf8Uri << L"\nMaximum dimensions is " << maxDirectXImageSize << " pixels.\n";
+						MessageBoxA(0, oss.str().c_str(), "Error", MB_OK | MB_ICONSTOP);
+					}
 #endif
+*/
 				}
 				else
 				{
@@ -648,51 +671,74 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 			SafeRelease(pSource);
 			SafeRelease(pConverter);
 			SafeRelease(wicBitmap);
-
+			SafeRelease(pIWICStream);
+			
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
 		}
 
 		void GraphicsContext::DrawGeometry(const GmpiDrawing_API::IMpPathGeometry* geometry, const GmpiDrawing_API::IMpBrush* brush, float strokeWidth, const GmpiDrawing_API::IMpStrokeStyle* strokeStyle)
 		{
+#ifdef LOG_DIRECTX_CALLS
+			_RPT3(_CRT_WARN, "context_->DrawGeometry(geometry%x, brush%x, %f, 0);\n", (int)geometry, (int)brush, strokeWidth);
+#endif
+
 			auto& d2d_geometry = ((gmpi::directx::Geometry*)geometry)->geometry_;
 			context_->DrawGeometry(d2d_geometry, ((Brush*)brush)->nativeBrush(), (FLOAT)strokeWidth, toNative(strokeStyle));
 		}
 
 		void GraphicsContext::DrawTextU(const char* utf8String, int32_t stringLength, const GmpiDrawing_API::IMpTextFormat* textFormat, const GmpiDrawing_API::MP1_RECT* layoutRect, const GmpiDrawing_API::IMpBrush* brush, int32_t flags)
 		{
-#if 0 // compare speed of two conversion functions.
-			std::string testString("the quick brown fox jumps over the lazy dog.");
-
-			auto start = std::chrono::steady_clock::now();
-			std::wstring test;
-			for (int i = 0; i < 1000; ++i)
-			{
-				test = stringConverter->from_bytes(testString);
-			}
-
-			auto duration = std::chrono::steady_clock::now() - start;
-			auto us1 = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-
-			start = std::chrono::steady_clock::now();
-			for (int i = 0; i < 1000; ++i)
-			{
-				test = FastUnicode::Utf8ToWstring(testString.c_str());
-			}
-			duration = std::chrono::steady_clock::now() - start;
-			auto us2 = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-
-			_RPT2(_CRT_WARN, "%d %d\n", (int)us1, (int)us2);
-
-			wchar_t output[100];
-			swprintf(output, L"%d %d", (int)us1, (int)us2);
-			std::wstring widestring(output);
-#endif
 			auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
-
+			auto DxTextFormat = reinterpret_cast<const TextFormat*>(textFormat);
 			auto b = ((Brush*)brush)->nativeBrush();
-			auto tf = ((TextFormat*)textFormat)->native();
+			auto tf = DxTextFormat->native();
 
-			context_->DrawText(widestring.data(), (UINT32)widestring.size(), tf, reinterpret_cast<const D2D1_RECT_F*>(layoutRect), b, (D2D1_DRAW_TEXT_OPTIONS)flags);
+			// Don't draw bounding box padding that some fonts have above ascent.
+			auto adjusted = *layoutRect;
+			if (!DxTextFormat->getUseLegacyBaseLineSnapping())
+			{
+				adjusted.top -= DxTextFormat->getTopAdjustment();
+
+				// snap to pixel to match Mac.
+                const float scale = 0.5f; // Hi DPI x2
+				const float offset = -0.25f;
+                const auto winBaseline = layoutRect->top + DxTextFormat->getAscent();
+                const auto winBaselineSnapped = floorf((offset + winBaseline) / scale) * scale;
+				const auto adjust = winBaselineSnapped - winBaseline + scale;
+
+				adjusted.top += adjust;
+				adjusted.bottom += adjust;
+			}
+
+			context_->DrawText(widestring.data(), (UINT32)widestring.size(), tf, reinterpret_cast<const D2D1_RECT_F*>(&adjusted), b, (D2D1_DRAW_TEXT_OPTIONS)flags);
+
+#ifdef LOG_DIRECTX_CALLS
+			{
+				std::wstring widestring2 = widestring;
+				replacein( widestring2, L"\n", L"\\n");
+				_RPT0(_CRT_WARN, "{\n");
+				_RPT4(_CRT_WARN, "auto r = D2D1::RectF(%.3f, %.3f, %.3f, %.3ff);\n", layoutRect->left, layoutRect->top, layoutRect->right, layoutRect->bottom);
+				_RPT4(_CRT_WARN, "context_->DrawTextW(L\"%S\", %d, textformat%x, &r, brush%x,", widestring2.c_str(), (int)widestring.size(), (int)textFormat, (int) brush);
+				_RPT1(_CRT_WARN, " (D2D1_DRAW_TEXT_OPTIONS) %d);\n}\n", flags);
+			}
+#endif
+/*
+
+#if 0
+			{
+				GmpiDrawing_API::MP1_FONT_METRICS fontMetrics;
+				((GmpiDrawing_API::IMpTextFormat*)textFormat)->GetFontMetrics(&fontMetrics);
+
+				float predictedBaseLine = layoutRect->top + fontMetrics.ascent;
+				const float scale = 0.5f;
+				predictedBaseLine = floorf(-0.5 + predictedBaseLine / scale) * scale;
+
+				GmpiDrawing::Graphics g(this);
+				auto brush = g.CreateSolidColorBrush(GmpiDrawing::Color::Lime);
+				g.DrawLine(GmpiDrawing::Point(layoutRect->left, predictedBaseLine + 0.25f), GmpiDrawing::Point(layoutRect->left + 2, predictedBaseLine + 0.25f), brush, 0.5);
+			}
+#endif
+*/
 		}
 
 		void Bitmap::GetFactory(GmpiDrawing_API::IMpFactory** pfactory)
@@ -704,26 +750,68 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 		{
 			*returnInterface = nullptr;
 
-
 			// If image was not loaded from a WicBitmap (i.e. was created from device context), then need to write it to WICBitmap first.
 			if (diBitmap_ == nullptr)
 			{
+				if(!nativeBitmap_)
+				{
+					return gmpi::MP_FAIL;
+				}
+
+return gmpi::MP_FAIL; // creating WIC from D2DBitmap not implemented fully.
+
+
+				const auto size = nativeBitmap_->GetPixelSize();
+				D2D1_BITMAP_PROPERTIES1 props = {};
+				props.pixelFormat = nativeBitmap_->GetPixelFormat();
+				nativeBitmap_->GetDpi(&props.dpiX, &props.dpiY);
+				props.bitmapOptions = D2D1_BITMAP_OPTIONS_CPU_READ | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+
+				HRESULT res;
+				ID2D1Bitmap1* tempBitmap = {};
+				res = nativeContext_->CreateBitmap(size, nullptr, 0, props, &tempBitmap);
+
+				D2D1_POINT_2U destPoint = {};
+				D2D1_RECT_U srcRect = {0,0,size.width, size.height};
+				res = tempBitmap->CopyFromBitmap(&destPoint, nativeBitmap_, &srcRect);
+
+				{
+					D2D1_MAPPED_RECT map;
+					tempBitmap->Map(D2D1_MAP_OPTIONS_READ, &map);
+
+// move to factory					res = pIWICFactory->CreateBitmap(size.width, size.height, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnLoad, &diBitmap_); // pre-muliplied alpha
+
+//					diBitmap_->CopyPixels()
+
+					tempBitmap->Unmap();
+				}
+
+				tempBitmap->Release();
+
 				return gmpi::MP_FAIL; // creating WIC from D2DBitmap not implemented.
-
+/*
 				assert(nativeBitmap_);
-				diBitmap_ = factory->CreateDiBitmapFromNative(nativeBitmap_);
+*/
+// clean this up				diBitmap_ = factory->CreateDiBitmapFromNative(nativeBitmap_);
 			}
-
+/*
+			if (!nativeBitmap_)
+			{
+				// need to access native bitmap already to lazy-load it. Only can be done from RenderContext.
+				assert(false && "Can't lock pixels before native bitmap created in OnRender()");
+				return gmpi::MP_FAIL;
+			}
+*/
 			gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> b2;
-			b2.Attach(new bitmapPixels(nativeBitmap_, diBitmap_, true, flags));
+			b2.Attach(new bitmapPixels(nativeBitmap_, diBitmap_, true, flags, factory->getPlatformPixelFormat()));
 
 			return b2->queryInterface(GmpiDrawing_API::SE_IID_BITMAP_PIXELS_MPGUI, (void**)(returnInterface));
 		}
 
-		ID2D1Bitmap* Bitmap::GetNativeBitmap(GraphicsContext* graphics)
+		ID2D1Bitmap* Bitmap::GetNativeBitmap(ID2D1DeviceContext* nativeContext)
 		{
 			// Check for loss of surface.
-			if (graphics->native() != nativeContext_ && diBitmap_ != nullptr)
+			if (nativeContext != nativeContext_ && diBitmap_ != nullptr)
 			{
 				if (nativeBitmap_)
 				{
@@ -731,8 +819,9 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 					nativeBitmap_ = nullptr;
 				}
 
-				nativeContext_ = graphics->native();
-
+				nativeContext_ = nativeContext;
+#if defined(_DEBUG)
+				// moved failure to cheCking error code on CreateBitmapFromWicBitmap()
 				{
 					auto maxSize = nativeContext_->GetMaximumBitmapSize();
 					UINT imageW, imageH;
@@ -744,10 +833,17 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 						return nullptr;
 					}
 				}
-
+#endif
 				D2D1_BITMAP_PROPERTIES props;
 				props.dpiX = props.dpiY = 96;
-				props.pixelFormat.format = nativeContext_->GetPixelFormat().format;
+				if (factory->getPlatformPixelFormat() == GmpiDrawing_API::IMpBitmapPixels::kBGRA_SRGB) //  graphics->SupportSRGB())
+				{
+					props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // no good with DXGI_FORMAT_R16G16B16A16_FLOAT: nativeContext_->GetPixelFormat().format;
+				}
+				else
+				{
+					props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM; // no good with DXGI_FORMAT_R16G16B16A16_FLOAT: nativeContext_->GetPixelFormat().format;
+				}
 				props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
 
 				// Convert to D2D format and cache.
@@ -757,13 +853,28 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 					&nativeBitmap_
 				);
 
-				if (!graphics->SupportSRGB())
+				if (hr != 0) // Common failure is bitmap too big for D2D.
 				{
-					ApplyAlphaCorrection_win7();
+					return nullptr;
 				}
 			}
 
 			return nativeBitmap_;
+		}
+
+		Bitmap::Bitmap(Factory* pfactory, IWICBitmap* diBitmap) :
+			nativeBitmap_(0)
+			, nativeContext_(0)
+			, diBitmap_(diBitmap)
+			, factory(pfactory)
+		{
+			diBitmap->AddRef();
+
+			// on Windows 7, leave image as-is
+			if (factory->getPlatformPixelFormat() == GmpiDrawing_API::IMpBitmapPixels::kBGRA_SRGB)
+			{
+				ApplyPreMultiplyCorrection();
+			}
 		}
 
 		// WIX premultiplies images automatically on load, but wrong (assumes linear not SRGB space). Fix it.
@@ -777,7 +888,7 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 			int totalPixels = (int)imageSize.height * pixelsSource.getBytesPerRow() / sizeof(uint32_t);
 			uint8_t* sourcePixels = pixelsSource.getAddress();
 
-			// WIX currently not premultiplying correctly, so redo it respecing gamma.
+			// WIX currently not premultiplying correctly, so redo it respecting gamma.
 			const double over255 = 1.0 / 255.0;
 			for (int i = 0; i < totalPixels; ++i)
 			{
@@ -817,10 +928,11 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 #endif
 		}
 
+#if 0
 		void Bitmap::ApplyAlphaCorrection_win7()
 		{
 
-#if 1 // apply gamma correction to compensate for linear blendinging in SRGB space (DirectX 1.0 limitation)
+#if 1 // apply gamma correction to compensate for linear blending in SRGB space (DirectX 1.0 limitation)
 			GmpiDrawing::Bitmap bitmap(this);
 
 			auto pixelsSource = bitmap.lockPixels(true);
@@ -875,6 +987,7 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 			}
 #endif
 		}
+#endif
 
 		int32_t GraphicsContext::CreateSolidColorBrush(const GmpiDrawing_API::MP1_COLOR* color, GmpiDrawing_API::IMpSolidColorBrush **solidColorBrush)
 		{
@@ -891,6 +1004,14 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 				b2->queryInterface(GmpiDrawing_API::SE_IID_SOLIDCOLORBRUSH_MPGUI, reinterpret_cast<void **>(solidColorBrush));
 			}
 
+#ifdef LOG_DIRECTX_CALLS
+			_RPT1(_CRT_WARN, "ID2D1SolidColorBrush* brush%x = nullptr;\n", (int)* solidColorBrush);
+			_RPT0(_CRT_WARN, "{\n");
+			_RPT4(_CRT_WARN, "auto c = D2D1::ColorF(%.3ff, %.3ff, %.3ff, %.3ff);\n", color->r, color->g, color->b, color->a);
+			_RPT1(_CRT_WARN, "context_->CreateSolidColorBrush(c, &brush%x);\n", (int)* solidColorBrush);
+			_RPT0(_CRT_WARN, "}\n");
+#endif
+
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
 		}
 
@@ -898,45 +1019,36 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 		{
 			*gradientStopCollection = nullptr;
 
-			ID2D1GradientStopCollection* native1 = nullptr;
-
 			HRESULT hr = 0;
 
-			if (context2_)
-			{
-				// New way. Gradients without banding.
-				// requires ID2D1DeviceContext, not merely ID2D1RenderTarget
-				// ID2D1GradientStopCollection1* native2 = nullptr;
 #if 1
-				hr = context2_->CreateGradientStopCollection(
-					(D2D1_GRADIENT_STOP*)gradientStops,
-					gradientStopsCount,
-					D2D1_GAMMA_2_2,	// gamma-correct, but not smooth.
-					//	D2D1_GAMMA_1_0, // smooth, but not gamma-correct.
-					D2D1_EXTEND_MODE_CLAMP,
-					&native1);
- 
-#else
-				ID2D1GradientStopCollection1* native = nullptr;
+			{
+				// New way. Gamma-correct gradients without banding. White->Black mid color seems wrong (too light).
+				// requires ID2D1DeviceContext, not merely ID2D1RenderTarget
+				ID2D1GradientStopCollection1* native2 = nullptr;
 
-				hr = context2_->CreateGradientStopCollection(
+				hr = context_->CreateGradientStopCollection(
 					(D2D1_GRADIENT_STOP*)gradientStops,
 					gradientStopsCount,
 					D2D1_COLOR_SPACE_SRGB,
 					D2D1_COLOR_SPACE_SRGB,
-					D2D1_BUFFER_PRECISION_UNKNOWN,
+					D2D1_BUFFER_PRECISION_8BPC_UNORM_SRGB, // Buffer precision. D2D1_BUFFER_PRECISION_16BPC_FLOAT seems the same
 					D2D1_EXTEND_MODE_CLAMP,
 					D2D1_COLOR_INTERPOLATION_MODE_STRAIGHT,
-					&native
-				);
+					&native2);
 
-				// hr returns 0x8899000a : A call to this method is invalid.
+				if (hr == 0)
+				{
+					gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> wrapper;
+					wrapper.Attach(new GradientStopCollection1(native2, factory));
 
-				native1 = (ID2D1GradientStopCollection*) native;
-#endif
+					wrapper->queryInterface(GmpiDrawing_API::SE_IID_GRADIENTSTOPCOLLECTION_MPGUI, reinterpret_cast<void**>(gradientStopCollection));
+				}
 			}
-			else
+#else
 			{
+				ID2D1GradientStopCollection* native1 = nullptr;
+
 				// for proper gradient in SRGB target, need to set gamma. hmm not sure. https://msdn.microsoft.com/en-us/library/windows/desktop/dd368113(v=vs.85).aspx
 				hr = context_->CreateGradientStopCollection(
 					(D2D1_GRADIENT_STOP*)gradientStops,
@@ -945,15 +1057,15 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 					//	D2D1_GAMMA_1_0, // smooth, but not gamma-correct.
 					D2D1_EXTEND_MODE_CLAMP,
 					&native1);
-			}
+				if (hr == 0)
+				{
+					gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> wrapper;
+					wrapper.Attach(new GradientStopCollection(native1, factory));
 
-			if (hr == 0)
-			{
-				gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> wrapper;
-				wrapper.Attach(new GradientStopCollection(native1, factory));
-
-				wrapper->queryInterface(GmpiDrawing_API::SE_IID_GRADIENTSTOPCOLLECTION_MPGUI, reinterpret_cast<void**>(gradientStopCollection));
+					wrapper->queryInterface(GmpiDrawing_API::SE_IID_GRADIENTSTOPCOLLECTION_MPGUI, reinterpret_cast<void**>(gradientStopCollection));
+				}
 			}
+#endif
 
 			return hr == 0 ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
 		}
@@ -1004,14 +1116,14 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 		{
 			*returnBitmap = nullptr;
 
-			ID2D1Bitmap* bitmap;
-			auto hr = ((ID2D1BitmapRenderTarget*)context_)->GetBitmap(&bitmap);
+			ID2D1Bitmap* nativeBitmap;
+			auto hr = nativeBitmapRenderTarget->GetBitmap(&nativeBitmap);
 
 			if (hr == 0)
 			{
 				gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> b2;
-				b2.Attach(new Bitmap(factory, context_, bitmap));
-				bitmap->Release();
+				b2.Attach(new Bitmap(factory, context_, nativeBitmap));
+				nativeBitmap->Release();
 
 				b2->queryInterface(GmpiDrawing_API::SE_IID_BITMAP_MPGUI, reinterpret_cast<void **>(returnBitmap));
 			}
@@ -1021,6 +1133,13 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 
 		void GraphicsContext::PushAxisAlignedClip(const GmpiDrawing_API::MP1_RECT* clipRect/*, GmpiDrawing_API::MP1_ANTIALIAS_MODE antialiasMode*/)
 		{
+#ifdef LOG_DIRECTX_CALLS
+			_RPT0(_CRT_WARN, "{\n");
+			_RPT4(_CRT_WARN, "auto r = D2D1::RectF(%.3f, %.3f, %.3f, %.3ff);\n", clipRect->left, clipRect->top, clipRect->right, clipRect->bottom);
+			_RPT0(_CRT_WARN, "context_->PushAxisAlignedClip(&r, D2D1_ANTIALIAS_MODE_ALIASED);\n");
+			_RPT0(_CRT_WARN, "}\n");
+#endif
+
 			context_->PushAxisAlignedClip((D2D1_RECT_F*)clipRect, D2D1_ANTIALIAS_MODE_ALIASED /*, (D2D1_ANTIALIAS_MODE)antialiasMode*/);
 
 			// Transform to original position.
@@ -1034,6 +1153,13 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 
 		void GraphicsContext::GetAxisAlignedClip(GmpiDrawing_API::MP1_RECT* returnClipRect)
 		{
+#ifdef LOG_DIRECTX_CALLS
+			_RPT0(_CRT_WARN, "{\n");
+			_RPT0(_CRT_WARN, "D2D1_MATRIX_3X2_F t;\n");
+			_RPT0(_CRT_WARN, "context_->GetTransform(&t);\n");
+			_RPT0(_CRT_WARN, "}\n");
+#endif
+
 			// Transform to original position.
 			GmpiDrawing::Matrix3x2 currentTransform;
 			context_->GetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(&currentTransform));
@@ -1042,6 +1168,8 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 
 			*returnClipRect = r2;
 		}
-
 	} // namespace
 } // namespace
+
+
+#endif // skip compilation on macOS

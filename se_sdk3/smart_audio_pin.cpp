@@ -136,7 +136,7 @@ void SmartAudioPin::subProcessFirstSample( int bufferOffset, int sampleFrames, b
 	subProcessStatic( bufferOffset, sampleFrames, canSleep );
 }
 
-void SmartAudioPin::subProcessStatic( int bufferOffset, int sampleFrames, bool& canSleep )
+void SmartAudioPin::subProcessStatic( int bufferOffset, int sampleFrames, bool& /*canSleep*/ )
 {
 	float* out = bufferOffset + getBuffer();
 
@@ -326,4 +326,9 @@ float RampGenerator::getNext()
 float RampGenerator::getInstantValue()
 {
 	return currentValue_;
+}
+
+float RampGenerator::getTargetValue()
+{
+	return targetValue_;
 }

@@ -70,6 +70,7 @@ public:
 	void setTarget( float targetValue );
 	void setValueInstant( float targetValue );
 	float getInstantValue();
+	float getTargetValue();
 	float getNext();
 	bool isDone()
 	{
@@ -136,9 +137,14 @@ public:
 		dv = 0;
 	}
 
-	float getInstantValue()
+	float getInstantValue() const
 	{
 		return currentValue_;
+	}
+
+	float getTargetValue() const
+	{
+		return targetValue_;
 	}
 
 	inline float getNext()
@@ -170,6 +176,10 @@ public:
 		return dv == 0.0f;
 	}
 
+	void jumpToTarget()
+	{
+		setValueInstant(targetValue_);
+	}
 private:
 	float dv;
 	float currentValue_;

@@ -15,9 +15,11 @@ platform_string getExtension(platform_string filename)
 }
 
 #if defined(_WIN32)
-FileFinder::FileFinder(const TCHAR* folderPath) : directoryHandle(0)
+FileFinder::FileFinder(const wchar_t* folderPath) : directoryHandle(0)
 {
-	first(folderPath);
+	std::wstring temp(folderPath);
+	
+	first( toPlatformString(temp) );
 }
 #endif
 
@@ -38,7 +40,7 @@ FileFinder::FileFinder(const char* folderPath) :
 	first(searchFolder);
 }
 
-FileFinder::~FileFinder(void)
+FileFinder::~FileFinder()
 {
 #if defined(_WIN32)
 	FindClose( directoryHandle );
@@ -53,9 +55,7 @@ void FileFinder::first( const platform_string& folderPath )
 	current_.filename.clear();
 	current_.isFolder = false;
 	done_ = false;
-#if defined(_WIN32)
 	last_ = false;
-#endif
     searchPath = folderPath;
 
 #if defined(_WIN32)
@@ -67,7 +67,19 @@ void FileFinder::first( const platform_string& folderPath )
     // Loop through all the files in the directory and delete files.
 	if( success )
 	{
+#if defined(_WIN32)
 		next();
+#else
+		success = NULL != ( entry = readdir(directoryHandle) );
+
+        assert(success); // should ALWAYS be a first entry, and it should be "." (current folder).
+
+        current_.filename = entry->d_name;
+        current_.isFolder = DT_REG != entry->d_type;
+        
+        success = NULL != ( entry = readdir(directoryHandle) );
+        assert(success); // should ALWAYS be a second entry, and it should be ".." (parent folder).
+#endif
 	}
 	else
 	{
@@ -77,6 +89,8 @@ void FileFinder::first( const platform_string& folderPath )
 
 void FileFinder::next()
 {
+    assert(!done_);
+    
 #if defined(_WIN32)
 	current_.filename = fdata.cFileName;
 	current_.isFolder = (fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -101,27 +115,28 @@ void FileFinder::next()
     }
     
 #else
-	current_.filename = entry->d_name;
-	current_.isFolder = DT_REG != entry->d_type;
-
-	bool success = NULL != ( entry = readdir(directoryHandle) );
-    
-    // skip Unqualified
-    if (!extension.empty())
+    if(last_)
     {
-        while( success )
-        {
-            platform_string nextFilename = entry->d_name;
-            
-            if (getExtension(nextFilename) == extension || DT_REG != entry->d_type) // correct extension or is-folder breaks
-                break;
-            
-            success = NULL != ( entry = readdir(directoryHandle) );
-        }
+        done_ = true;
+        return;
     }
     
-    done_ = !success;
+    current_.filename = entry->d_name;
+    current_.isFolder = DT_REG != entry->d_type;
     
+    bool qualifies = true;
+    do
+    {
+        last_ = NULL == (entry = readdir(directoryHandle));
+    
+        qualifies =
+                last_
+                || extension.empty()
+                || getExtension(entry->d_name) == extension
+                || DT_REG != entry->d_type; // DT_REG = regular file (not directory).
+            
+    }while(!qualifies);
+
 #endif
 
 	current_.fullPath = combinePathAndFile( StripFilename(searchPath), current_.filename);

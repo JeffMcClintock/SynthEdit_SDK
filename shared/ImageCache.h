@@ -37,7 +37,7 @@ protected:
 	GmpiDrawing::Bitmap GetImage(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, const char* shortUri, ImageMetadata** bitmapMetadata = 0);
 	
 	void RegisterCustomImage(const char* imageIdentifier, GmpiDrawing::Bitmap bitmap);
-	GmpiDrawing::Bitmap GetCustomImage(const char* imageIdentifier);
+	GmpiDrawing::Bitmap GetCustomImage(GmpiDrawing_API::IMpFactory* factory, const char* imageIdentifier);
 
 	// Need to keep track of clients so imagecache can be cleared BEFORE program exit (else WPF crashes).
 	void AddClient() {
@@ -70,8 +70,8 @@ public:
 		return ImageCache::instance()->RegisterCustomImage(imageIdentifier, bitmap);
 	}
 
-	GmpiDrawing::Bitmap GetCustomImage(const char* imageIdentifier)
+	GmpiDrawing::Bitmap GetCustomImage(GmpiDrawing_API::IMpFactory* factory, const char* imageIdentifier)
 	{
-		return ImageCache::instance()->GetCustomImage(imageIdentifier);
+		return ImageCache::instance()->GetCustomImage(factory, imageIdentifier);
 	}
 };

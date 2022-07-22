@@ -82,7 +82,7 @@ GmpiDrawing::Bitmap ImageCache::GetImage(gmpi::IMpUserInterfaceHost2* host, gmpi
 		return image;
 	}
 
-	bool alreadyPremulitplied = false;
+//	bool alreadyPremulitplied = false;
 
 	// Does image have a separate 'mask' image. Happens only in SE editor. VSTs use only png.
 	if( Right(fullUri.c_str(), 3) == "bmp" )
@@ -97,10 +97,8 @@ GmpiDrawing::Bitmap ImageCache::GetImage(gmpi::IMpUserInterfaceHost2* host, gmpi
 
 			if (!maskImage.isNull())
 			{
-				alreadyPremulitplied = true;
-
 				auto pixelsSource = maskImage.lockPixels();
-				auto pixelsDest = image.lockPixels(GmpiDrawing_API::MP1_BITMAP_LOCK_WRITE);
+				auto pixelsDest = image.lockPixels(GmpiDrawing_API::MP1_BITMAP_LOCK_WRITE| GmpiDrawing_API::MP1_BITMAP_LOCK_READ);
 
 				auto imageSize = image.GetSize();
 				int totalPixels = (int)imageSize.height * pixelsSource.getBytesPerRow() / sizeof(uint32_t);
@@ -108,49 +106,61 @@ GmpiDrawing::Bitmap ImageCache::GetImage(gmpi::IMpUserInterfaceHost2* host, gmpi
 				uint8_t* sourcePixels = pixelsSource.getAddress();
 				uint8_t* destPixels = pixelsDest.getAddress();
 
-				const float gamma = 2.2f;
-				for (int i = 0; i < totalPixels; ++i)
+				if (pixelsDest.getPixelFormat() == IMpBitmapPixels::kBGRA_SRGB) // Win10 SRGB support?
 				{
-					int alpha = 255 - sourcePixels[0]; // Red.
-
-					// apply pre-multiplied alpha.
-					/*
-					int r0 = destPixels[0] * alpha + 127;
-					destPixels[0] = (r0 + 1 + (r0 >> 8)) >> 8; // fast way to divide by 255
-					int r1 = destPixels[1] * alpha + 127;
-					destPixels[1] = (r1 + 1 + (r1 >> 8)) >> 8;
-					int r2 = destPixels[2] * alpha + 127;
-					destPixels[2] = (r2 + 1 + (r2 >> 8)) >> 8;
-					*/
-
-					for (int i = 0; i < 3; ++i)
+//					constexpr float gamma = 2.2f;
+					constexpr float inv255 = 1.0f / 255.0f;
+					for (int i = 0; i < totalPixels; ++i)
 					{
-#ifdef _WIN32
-						float cf = powf(destPixels[i] / 255.0f, gamma);
-						cf *= alpha / 255.0f;
+						int alpha = 255 - sourcePixels[0]; // Red.
 
-						int ci = (int) (powf(cf, 1.0f / gamma) * 255.0f + 0.5f);
-						destPixels[i] = ci;
-#else
-                        // Mac screws up big time if using above calc, ("furry"antialiasing and black speckles on white areas of images)
-                        //destPixels[i] = ((int) destPixels[i] * (int)alpha ) / 255;
-                        int r2 = destPixels[i] * alpha + 127;
-                        destPixels[i] = (r2 + 1 + (r2 >> 8)) >> 8;
-#endif
+						// apply pre-multiplied alpha.
+						for (int i = 0; i < 3; ++i)
+						{
+							// This appears bad on Win7 and esp Mac, but is correct on Win10
+							// Mac screws up big time, ("furry"antialiasing and black speckles on white areas of images)
+/* slow version
+							float cf = powf(destPixels[i] / 255.0f, gamma);
+							cf *= alpha / 255.0f;
+
+							int ci = (int)(powf(cf, 1.0f / gamma) * 255.0f + 0.5f);
+							destPixels[i] = ci;
+*/
+
+							float cf2 = se_sdk::FastGamma::RGB_to_float(destPixels[i]);
+							destPixels[i] = se_sdk::FastGamma::float_to_sRGB(cf2 * alpha * inv255);
+						}
+
+						destPixels[3] = alpha;
+
+						sourcePixels += sizeof(uint32_t);
+						destPixels += sizeof(uint32_t);
 					}
+				}
+				else
+				{
+					for (int i = 0; i < totalPixels; ++i)
+					{
+						int alpha = 255 - sourcePixels[0]; // Red.
 
-					destPixels[3] = alpha;
-					
-					sourcePixels += sizeof(uint32_t);
-					destPixels += sizeof(uint32_t);
+						// apply pre-multiplied alpha.
+						for (int i = 0; i < 3; ++i)
+						{
+							// This is correct on Mac and Win7 because they use (inferior) linear gamma.
+							// This is wrong on Win10
+							int r2 = destPixels[i] * alpha + 127;
+							destPixels[i] = (r2 + 1 + (r2 >> 8)) >> 8; // fast way to divide by 255
+						}
+
+						destPixels[3] = alpha;
+
+						sourcePixels += sizeof(uint32_t);
+						destPixels += sizeof(uint32_t);
+					}
 				}
 			}
 		}
 	}
-
-	if(!alreadyPremulitplied)
-		image.ApplyAlphaCorrection();
-
 
 	// Init a default ImageMetadata.
 	auto bitmapMetadata = std::make_shared<ImageMetadata>();
@@ -209,14 +219,14 @@ GmpiDrawing::Bitmap ImageCache::GetImage(gmpi::IMpUserInterfaceHost2* host, gmpi
 
 void ImageCache::RegisterCustomImage(const char* imageIdentifier, GmpiDrawing::Bitmap bitmap)
 {
-	bitmaps_.push_back(ImageData(nullptr, imageIdentifier, bitmap, nullptr));
+	bitmaps_.push_back(ImageData(bitmap.GetFactory(), imageIdentifier, bitmap, nullptr));
 }
 
-GmpiDrawing::Bitmap ImageCache::GetCustomImage(const char* imageIdentifier)
+GmpiDrawing::Bitmap ImageCache::GetCustomImage(GmpiDrawing_API::IMpFactory* factory, const char* imageIdentifier)
 {
 	for (auto& cachedbitmap : bitmaps_)
 	{
-		if (cachedbitmap.factory == nullptr && cachedbitmap.fullUri == imageIdentifier)
+		if (cachedbitmap.factory == factory && cachedbitmap.fullUri == imageIdentifier)
 		{
 			return cachedbitmap.bitmap;
 			break;

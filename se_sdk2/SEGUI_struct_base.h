@@ -29,9 +29,6 @@ struct SEGUI_struct_base;
 typedef	long (SEMODCALLBACK *seGuiCallback)(SEGUI_struct_base *effect, long opcode, long index,
 		long value, void *ptr, float opt);
 
-// the 'magic number' that identifies a SynthEdit module (spells SEPL)
-//#define SepMagic 0x5345504C
-
 //---------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------
 struct SEGUI_struct_base

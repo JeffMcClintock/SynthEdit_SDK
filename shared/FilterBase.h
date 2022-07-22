@@ -10,7 +10,23 @@
 
 /*
 This class implements advanced 'sleep' behaviour for filters or any module that takes some time to settle after the input signal goes quiet.
-This base class monitors the output signal, only when the output has settled into a steady-state does the module go to sleep.
+
+The basic theory of 'power saving' in SynthEdit is:
+
+1.	Wait until the input is silent (not streaming).
+2.	Watch until the output also is silent (or at least very quiet). Now you are ready to sleep.
+3.	Output some zeros until the output buffer is all zeros (sends perfect silence to the next module).
+4.	Set the output pin status to ‘not-streaming’.
+
+Once all input and output pins are silent, the SDK will automatically sleep your module.
+ 
+FilterBase just helps with that stuff. It's pretty simple to use.
+
+* For step 1, implement isFilterSettling() and just return ‘true’ if the input is silent.
+* For step 2, implement getOutputPin() which tells the base class what output to watch for silence.
+* Step 3 and 4 are automatic with this method.
+
+This 'FilterBase' class monitors the output signal, only when the output has settled into a steady-state does the module go to sleep.
 
 USEAGE:
 
@@ -25,27 +41,21 @@ Implement these member functions
 
 	// Support for FilterBase
 
-	// Optional: This is called periodically to allow you to check if your filter has 'crashed' and you need to reset it.
-	// You can leave it empty.
-	virtual void StabilityCheck() override
-	{
-	}
-
 	// This is called to determin when your filter is settling. Typically you need to check if all your input pins are quiet (not streaming).
-	virtual bool isFilterSettling() override
+	bool isFilterSettling() override
 	{
 		return !pinSignal.isStreaming(); // <-example code. Place your code here.
 	}
 
 	// This allows the base class to monitor the filter's output signal, provide an audio output pin.
-	virtual AudioOutPin& getOutputPin() override
+	AudioOutPin& getOutputPin() override
 	{
 		return pinOutput; // <-example code. Place your code here.
 	}
 
-Call initSettling() as the last thing in your onSetPins() method. It will check if filter is setlling and if so commence monitoring the output signal.
+	Call 'initSettling()' as the last thing in your onSetPins() method. It will check if filter is settling and if so commence monitoring the output signal.
 
-	void MyFilter::onSetPins(void)
+	void MyFilter::onSetPins()
 	{
 
 		// ... usual stuff first.
@@ -53,15 +63,28 @@ Call initSettling() as the last thing in your onSetPins() method. It will check 
 		initSettling(); // must be last.
 	}
 
+Optional: Under heavy modulation, recursive Filters can sometimes become unstable and emit noise or other unpleasant sounds.
+    If this is the case, the base class provides some help for mitigating this situation by checking periodically if
+	the the filter is stable or not. To implement this:
+
 In you processing member function, call doStabilityCheck() to implement the periodic StabilityCheck() function.
-It calls your StabilityCheck() member only one time in 50, to avoid wasting CPU. This must be the first thing in the function.
+To avoid wasting CPU, it calls your StabilityCheck() member only one time in 50. This must be the first thing in the function.
 
 	void subProcess(int sampleFrames)
 	{
-		doStabilityCheck();
+		doStabilityCheck(); // must be first
 
 		// ...etc
 
+Override member StabilityCheck(), it should check if the filter is stable, and if not reset it. e.g.
+	
+	void StabilityCheck() override
+	{
+		if (!isfinite(my_state_variable)) // check for numeric overflow.
+		{
+			my_state_variable = 0.0f; // reset filter be zeroing it's state.
+		}
+	}
 */
 
 class FilterBase : public MpBase2
@@ -151,14 +174,18 @@ public:
 		}
 	}
 
-	void initSettling(void)
+	void initSettling()
 	{
 		if (isFilterSettling())
 		{
+			if (getSubProcess() != &FilterBase::subProcessSettling)
+			{
+				actualSubProcess = getSubProcess();
+				setSubProcess(&FilterBase::subProcessSettling);
+			}
+
 			historyIdx = historyCount;
-			actualSubProcess = getSubProcess();
 			static_output = -10000; // unlikely value to trigger countdown.
-			setSubProcess(&FilterBase::subProcessSettling);
 		}
 	}
 };

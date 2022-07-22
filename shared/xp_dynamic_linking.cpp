@@ -1,7 +1,4 @@
-#pragma once
-
 #include "xp_dynamic_linking.h"
-
 
 // Provide a cross-platform loading of dlls.
 
@@ -26,12 +23,7 @@ namespace gmpi_dynamic_linking
 	int32_t MP_DllLoad(DLL_HANDLE* dll_handle, const wchar_t* dll_filename)
 	{
 #if defined( _WIN32)
-	#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP )
-			*dll_handle = 0;
-			// !!TODO!! LoadPackagedLibrary( dlls packaged with app only).
-	#else
-			*dll_handle = (DLL_HANDLE) LoadLibraryW(dll_filename);
-	#endif
+		*dll_handle = (DLL_HANDLE) LoadLibraryW(dll_filename);
 #else
 		*dll_handle = (DLL_HANDLE) dlopen(WStringToUtf8(dll_filename).c_str(), 0);
 #endif
@@ -68,8 +60,6 @@ namespace gmpi_dynamic_linking
     }
 
 #if defined(_WIN32)
-#if (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP ) // Desktop Windows only.
-
 	int32_t MP_GetDllHandle(DLL_HANDLE* returnDllHandle)
 	{
 		HMODULE hmodule = 0;
@@ -87,19 +77,6 @@ namespace gmpi_dynamic_linking
 		GetModuleFileNameW((HMODULE)hmodule, full_path, sizeof(full_path));
 		return std::wstring(full_path);
 	}
-#else
-	int32_t MP_GetDllHandle(DLL_HANDLE* returnDllHandle)
-	{
-		*returnDllHandle = 0; // TODO
-		return 1;
-	}
-
-	std::wstring MP_GetDllFilename()
-	{
-		return std::wstring(); // TODO
-	}
-
-#endif
     
 #else
     // Mac

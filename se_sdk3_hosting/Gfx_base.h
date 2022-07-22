@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 /*
 #include "Gfx_base.h"
 */
@@ -73,7 +73,7 @@ namespace gmpi
 				return strokeStyleProperties.dashOffset;
 			}
 
-			virtual GmpiDrawing_API::MP1_DASH_STYLE MP_STDCALL GetDashStyle() override
+            GmpiDrawing_API::MP1_DASH_STYLE MP_STDCALL GetDashStyle() override
 			{
 				return strokeStyleProperties.dashStyle;
 			}
@@ -304,64 +304,6 @@ namespace gmpi
 					ptanx = tanx;
 					ptany = tany;
 				}
-
-				// new last point
-	//			*cpx = x2;
-	//			*cpy = y2;
-
-				// OLD, only does right-angles.
-				/*
-				// Convert right-angle curves
-				if (arc->sweepDirection == GmpiDrawing_API::MP1_SWEEP_DIRECTION_CLOCKWISE && arc->arcSize == GmpiDrawing_API::MP1_ARC_SIZE_SMALL && fabsf(arc->rotationAngle - static_cast<float>(M_PI) * 0.5f) < 0.001f)
-				{
-					auto fromPoint = pathGeometry_->GetLastPoint();
-					Gdiplus::PointF toPoint(arc->point.x, arc->point.y);
-
-					Gdiplus::RectF rect;
-					rect.Width = 2.0f * fabs(toPoint.X - fromPoint.X);
-					rect.Height = 2.0f * fabs(toPoint.Y - fromPoint.Y);
-					float fromAngle, sweepAngle = 90;
-
-					if (fromPoint.X < toPoint.X)
-					{
-						if (fromPoint.Y > toPoint.Y) // top-left clockwise
-						{
-							rect.X = fromPoint.X;
-							rect.Y = toPoint.Y;
-							fromAngle = 180;
-						}
-						else // top-right
-						{
-							rect.X = fromPoint.X - (toPoint.X - fromPoint.X);
-							rect.Y = fromPoint.Y;
-							fromAngle = 270;
-						}
-					}
-					else
-					{
-						if (fromPoint.Y > toPoint.Y) // bottom-left clockwise
-						{
-							rect.X = toPoint.X;
-							rect.Y = toPoint.Y - (fromPoint.Y - toPoint.Y);
-							fromAngle = 90;
-						}
-						else
-						{
-							rect.X = toPoint.X - (fromPoint.X - toPoint.X);
-							rect.Y = fromPoint.Y - (toPoint.Y - fromPoint.Y);
-							fromAngle = 0;
-						}
-					}
-
-					pathGeometry_->native.AddArc(rect, fromAngle, sweepAngle);
-				}
-				else
-				{
-					AddLine(arc->point); // Rough approximation.
-				}
-				*/
-				//_RPT4(_CRT_WARN, "%f %f %f %f ", arc->point.x, arc->point.y, arc->size.width, arc->size.height);
-				//_RPT1(_CRT_WARN, "%f \n", arc->rotationAngle);
 			}
 
 			virtual void MP_STDCALL AddBezier(const GmpiDrawing_API::MP1_BEZIER_SEGMENT* bezier) override
@@ -465,19 +407,21 @@ namespace gmpi
 				auto geometry = createLineGeometry(point0, point1);
 				DrawGeometry(geometry.Get(), brush, strokeWidth, strokeStyle);
 			}
-
+/*
 			virtual void MP_STDCALL DrawRoundedRectangle(const GmpiDrawing_API::MP1_ROUNDED_RECT* roundedRect, const GmpiDrawing_API::IMpBrush* brush, float strokeWidth, const GmpiDrawing_API::IMpStrokeStyle* strokeStyle) override
 			{
-				//				context_->DrawRoundedRectangle((D2D1_ROUNDED_RECT*)roundedRect, (ID2D1Brush*)((Brush*)brush)->nativeBrush(), (FLOAT)strokeWidth, toNative(strokeStyle));
+				auto geometry = createRoundedRectangleGeometry(roundedRect);
+				DrawGeometry(geometry.Get(), brush, strokeWidth, strokeStyle);
 			}
 
 			//			int32_t MP_STDCALL CreateMesh(GmpiDrawing_API::IMpMesh** returnObject) override;
 
 			virtual void MP_STDCALL FillRoundedRectangle(const GmpiDrawing_API::MP1_ROUNDED_RECT* roundedRect, const GmpiDrawing_API::IMpBrush* brush) override
 			{
-				//				context_->FillRoundedRectangle((D2D1_ROUNDED_RECT*)roundedRect, (ID2D1Brush*)((Brush*)brush)->nativeBrush());
+				auto geometry = createRoundedRectangleGeometry(roundedRect);
+				FillGeometry(geometry.Get(), brush);
 			}
-
+*/
 			GmpiDrawing::PathGeometry createEllipseGeometry(const GmpiDrawing_API::MP1_ELLIPSE* ellipse)
 			{
 				// create geometry

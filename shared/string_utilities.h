@@ -1,5 +1,4 @@
-#ifndef SE_STRING_UTILITIES_H_INCLUDED
-#define SE_STRING_UTILITIES_H_INCLUDED
+#pragma once
 
 /*
 #include "../shared/string_utilities.h"
@@ -34,14 +33,7 @@ inline std::string Right(const std::string& s, size_t count)
 // C:\temp\file.txt => file.txt
 inline std::wstring StripPath(const std::wstring& p_filename)
 {
-	std::string::size_type p = p_filename.find_last_of(L'\\');
-
-	if (p != std::string::npos)
-	{
-		return Right(p_filename, p_filename.size() - p - 1);
-	}
-
-	p = p_filename.find_last_of(L'/');
+	std::string::size_type p = p_filename.find_last_of(L"\\/");
 
 	if (p != std::string::npos)
 	{
@@ -53,20 +45,10 @@ inline std::wstring StripPath(const std::wstring& p_filename)
 
 inline std::string StripPath(const std::string& p_filename)
 {
-	std::string::size_type p = p_filename.find_last_of('\\');
+	std::string::size_type p = p_filename.find_last_of("\\/");
 
 	if (p != std::string::npos)
 	{
-
-		return Right(p_filename, p_filename.size() - p - 1);
-	}
-
-	p = p_filename.find_last_of('/');
-
-
-	if (p != std::string::npos)
-	{
-
 		return Right(p_filename, p_filename.size() - p - 1);
 	}
 
@@ -76,14 +58,25 @@ inline std::string StripPath(const std::string& p_filename)
 template<typename T1>
 T1 StripFilename_implementation(const T1& p_filename) // Leaving path.
 {
-	std::string::size_type p = p_filename.find_last_of('\\');
-
-	if( p != std::string::npos )
+	const auto p1 = p_filename.find_last_of('\\');
+	const auto p2 = p_filename.find_last_of('/');
+	
+	size_t p = std::string::npos;
+	if (p1 != std::string::npos && p2 != std::string::npos)
 	{
-		return Left(p_filename, p);
+		p = (std::max)(p1, p2);
 	}
-
-	p = p_filename.find_last_of('/');
+	else
+	{
+		if (p1 != std::string::npos)
+		{
+			p = p1;
+		}
+		else
+		{
+			p = p2;
+		}
+	}
 
 	if( p != std::string::npos )
 	{
@@ -168,7 +161,7 @@ inline std::wstring StripExtension( const std::wstring& p_filename)
 // combines path and file,
 // handles tricky situations like both having slashes, or not.
 template<typename T1>
-T1 combinePathAndFile(const T1& p_path, const T1& p_file) // Leaving path.
+T1 combinePathAndFile(const T1 p_path, const T1 p_file) // Leaving path.
 {
 	// ensure path ends in slash
 	auto first_bit = p_path;
@@ -208,5 +201,15 @@ inline std::wstring combinePathAndFile(const wchar_t* p_path, const wchar_t* p_f
 	return combinePathAndFile(path, file);
 }
 
+template<typename S>
+inline S ToNativeSlashes(S path)
+{
+	for (auto& c : path)
+	{
+		if (c == '/' || c == '\\')
+			c = PLATFORM_PATH_SLASH;
+	}
 
-#endif
+	return path;
+}
+

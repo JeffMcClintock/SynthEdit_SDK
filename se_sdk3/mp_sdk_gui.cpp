@@ -34,7 +34,6 @@ const std::wstring& StringGuiPin::operator=(const std::wstring& value)
 }
 
 #ifdef _WIN32
-#if (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP )
 
 // copied from MP_GetDllHandle
 HMODULE local_GetDllHandle()
@@ -44,7 +43,6 @@ HMODULE local_GetDllHandle()
 	return (HMODULE)hmodule;
 }
 
-#endif
 #endif
 
 /**********************************************************************************
@@ -243,8 +241,7 @@ int32_t MpGuiBase2::initialize()
 }
 
 
-#if defined(_WIN32) && ( !defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP ) && !defined(SE_TARGET_VST3)
-
+#if defined(_WIN32) && !defined(_WIN64)
 /**********************************************************************************
 SeGuiCompositedGfxBase
 This uses the SynthEdit graphics API which supports transparancy.

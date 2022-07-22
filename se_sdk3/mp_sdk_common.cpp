@@ -1,13 +1,13 @@
 // Copyright 2006 Jeff McClintock
 
-#include <memory.h>
+#include <memory>
 #include "mp_sdk_gui.h"
 #include <sstream>
 
 using namespace gmpi;
 
 // Only standalone plugins need entrypoint.
-#if defined( SE_EDIT_SUPPORT ) || defined( SE_TARGET_VST3 ) || defined( SE_TARGET_AU )
+#if defined( SE_EDIT_SUPPORT ) || defined( SE_TARGET_PLUGIN )
 #define COMPILE_HOST_SUPPORT
 #endif
 
@@ -186,7 +186,7 @@ int32_t MpFactory::createInstance( const wchar_t* uniqueId, int32_t subType,
 		}
 #endif
 
-		IoldSchoolInitialisation* p = dynamic_cast<IoldSchoolInitialisation*>( m );
+		IMpLegacyInitialization* p = dynamic_cast<IMpLegacyInitialization*>( m );
 		if( p )
 		{
 			p->setHost( host );

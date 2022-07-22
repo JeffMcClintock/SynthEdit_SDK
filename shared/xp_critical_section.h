@@ -125,7 +125,6 @@ public:
 	 * @fn void Enter(void)
 	 * @brief Wait for unlock and enter the CriticalSectionXp object.
 	 * @see TryEnter()
-	 * @return void
 	 */
 	void Enter(void)
 	{

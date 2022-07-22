@@ -117,8 +117,8 @@ public:
 
 		return gmpi::MP_NOSUPPORT;
 	}
-	virtual int32_t MP_STDCALL addRef(void) = 0;
-	virtual int32_t MP_STDCALL release(void) = 0;
+	virtual int32_t MP_STDCALL addRef() = 0;
+	virtual int32_t MP_STDCALL release() = 0;
 
 	// IMpUserInterface2 methods
 	virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host)
@@ -155,7 +155,7 @@ public:
 	virtual int32_t MP_STDCALL onLButtonUp( UINT flags, POINT point ) = 0;
 	*/
 
-	ISeGraphics* getGuiHost(void){ return guiHost_; };
+	ISeGraphics* getGuiHost(){ return guiHost_; };
 
 //protected:
 	int32_t refCount_;

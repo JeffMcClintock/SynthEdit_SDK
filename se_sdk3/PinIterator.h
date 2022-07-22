@@ -57,7 +57,7 @@ public:
 
 	int size()
 	{
-		int32_t count;
+		int32_t count =0;
 		pinIterator_->getCount( count );
 		return count;
 	}

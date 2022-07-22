@@ -10,12 +10,12 @@ class SeGuiPin
 public:
 	void Init(int p_index, SEGUI_base *p_module){m_index=p_index;m_module=p_module;};
 	void setValueText(const SeSdkString &p_new_val );
-	SeSdkString getValueText(void);
-	int getValueInt(void); // int, bool, and list type values
+	SeSdkString getValueText();
+	int getValueInt(); // int, bool, and list type values
 	void setValueInt( int p_new_val );
-	float getValueFloat(void);
+	float getValueFloat();
 	void setValueFloat( float p_new_val );
-	SeSdkString2 getExtraData(void);
+	SeSdkString2 getExtraData();
 	SEGUI_base *getModule(){return m_module;};
 	int getIndex(){return m_index;};
 	bool IsConnected();

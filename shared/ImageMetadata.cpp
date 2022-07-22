@@ -24,7 +24,6 @@ void SplitString(const char* pText, std::vector<std::string>& returnValue)
 
 		char terminator;
 
-
 		while( true )
 		{
 			// eat leading spaces.
@@ -164,8 +163,8 @@ void ImageMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 				{
 					if (words.size() > 2)
 					{
-						frameSize.width = (float) StringToInt(words[1]);
-						frameSize.height = (float)StringToInt(words[2]);
+						frameSize.width = StringToInt(words[1]);
+						frameSize.height = StringToInt(words[2]);
 //						found_image_size = true;
 					}
 				}
@@ -196,8 +195,8 @@ void ImageMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 				{
 					if (words.size() > 1)
 					{
-						handle_range_lo = (float)StringToInt(words[1]);
-						handle_range_hi = (float)StringToInt(words[2]);
+						handle_range_lo = StringToInt(words[1]);
+						handle_range_hi = StringToInt(words[2]);
 					}
 				}
 
@@ -345,6 +344,10 @@ void SkinMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 					{
 						current->vst3_vertical_offset_ = StringToInt(words[1]);
 					}
+					if (words[0] == "legacy-vertical-offset")
+					{
+						current->verticalSnapBackwardCompatibilityMode = (0 != StringToInt(words[1]));
+					}
 					if (words[0] == "GDI_pixelHeight")
 					{
 						current->pixelHeight_ = StringToInt(words[1]);
@@ -441,6 +444,14 @@ void SkinMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 							current->flags_ |= TTL_UNDERLINE;
 						}
 					}
+					
+					if( words[0] == "font-style" )
+					{
+						if( tolower(words[1][0]) == 'i' ) // Italic
+						{
+							current->flags_ |= TTL_ITALIC;
+						}
+					}
 				}
 			}
 		}
@@ -456,7 +467,7 @@ void SkinMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 	}
 }
 
-FontMetadata* SkinMetadata::getFont(std::string category)
+const FontMetadata* SkinMetadata::getFont(std::string category) const
 {
 	transform(category.begin(), category.end(), category.begin(), towlower);
 

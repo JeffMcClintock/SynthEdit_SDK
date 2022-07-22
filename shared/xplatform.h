@@ -1,53 +1,50 @@
-#ifndef __xplatform_h__
-#define __xplatform_h__
+#pragma once
 
 /*
 #include "../shared/xplatform.h"
 */
 
-/*
-  Platform				Defined
-  Waves Plugin			SE_TARGET_WAVES
-  SEM Plugin			SE_TARGET_SEM (selected SEMs)
-  VST3 Plugin			SE_TARGET_VST3									SE_PLUGIN_SUPPORT
-  VST2 Plugin			SE_TARGET_VST2					SE_SUPPORT_MFC	SE_PLUGIN_SUPPORT
-  SynthEdit.exe			SE_EDIT_SUPPORT					SE_SUPPORT_MFC	SE_PLUGIN_SUPPORT
-  SynthEdit Universal	SE_TARGET_WINDOWS_STORE_APP
-  Win Store App			SE_TARGET_WINDOWS_STORE_APP
+#include "./platform_string.h"
 
-  SE_PLUGIN_SUPPORT - SEM Version2 dll support.
-  SE_SUPPORT_MFC    - MFC-based GUI support (SynthEdit 1, VST2).
+/*
+* todo: BETTER TO SUPPORT FEATURES, e.g. 'SEM support' NOT 'JUCE' or 'VST3'
+* 
+  Platform				Defined
+  SEM Plugin			SE_TARGET_SEM (selected SEMs)
+  AU Plugin                         					SE_TARGET_PLUGIN	SE_EXTERNAL_SEM_SUPPORT=1
+  VST2/3 Plugin(64-bit)									SE_TARGET_PLUGIN	SE_EXTERNAL_SEM_SUPPORT=1	SE_TARGET_VST3 (mac only)
+  JUCE Plugin			GMPI_IS_PLATFORM_JUCE==1		SE_TARGET_PLUGIN	SE_EXTERNAL_SEM_SUPPORT=0
+  SynthEdit.exe			SE_EDIT_SUPPORT					SE_SUPPORT_MFC		SE_EXTERNAL_SEM_SUPPORT=1
+  SynthEdit.exe (store)	SE_EDIT_SUPPORT					SE_SUPPORT_MFC		SE_EXTERNAL_SEM_SUPPORT=1	SE_TARGET_STORE
+  
+  SE_TARGET_PLUGIN  - Code is running in a plugin (VST, AU, JUCE etc)
+  SE_SUPPORT_MFC    - MFC-based Serialization support.
+
+  no longer in use: SE_TARGET_AU
 */
 
-#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP )
-#define SE_TARGET_WINDOWS_STORE_APP
-#endif
-
-// SE_SUPPORT_MFC = VST 2.4
-#if !defined(SE_SUPPORT_MFC) && !defined(SE_TARGET_VST3) && !defined(SE_TARGET_AU) && !defined(SE_TARGET_SEM) && !defined(SE_EDIT_SUPPORT) && !defined(SE_TARGET_WINDOWS_STORE_APP)
-    #define SE_TARGET_WAVES
-	#define GMPI_IS_PLATFORM_WV 1
+#if defined(JUCE_APP_VERSION)
+#define GMPI_IS_PLATFORM_JUCE 1
 #else
-	#define GMPI_IS_PLATFORM_WV 0
+#define GMPI_IS_PLATFORM_JUCE 0
 #endif
 
-// Can code include inline assembler?
-#if defined(_MSC_VER )
-    // MS Windows.
-    #if !defined(_M_X64)
-        #define SE_USE_ASM
-    #endif
+// External plugins not supported on JUCE
+#if !GMPI_IS_PLATFORM_JUCE
+	#define SE_EXTERNAL_SEM_SUPPORT 1
+#else
+	#define SE_EXTERNAL_SEM_SUPPORT 0
 #endif
 
-// External plugins not supported on Waves, and Not supported on Windows store Apps
-#if !defined( SE_TARGET_WAVES ) && !defined(SE_TARGET_WINDOWS_STORE_APP)
-	#define SE_EXTERNAL_SEM_SUPPORT
-#endif
-
+#if GMPI_IS_PLATFORM_JUCE==1
+	// The SDK references this macro (without including xplatform.h), so you need to explicity define it in the IDE/Build system.
+	#if !defined(SE_TARGET_PLUGIN)
+		#error please define SE_TARGET_PLUGIN
+	#endif
 #endif
 
 // MFC Support
-#if defined( SE_TARGET_VST2 ) || (defined( SE_EDIT_SUPPORT ) && !defined(SE_TARGET_WINDOWS_STORE_APP))
+#if defined( SE_EDIT_SUPPORT )
 #if !defined(SE_SUPPORT_MFC)
 #error please define SE_SUPPORT_MFC
 #endif
@@ -60,36 +57,4 @@
 	#define PLATFORM_PATH_SLASH '/'
 	#define PLATFORM_PATH_SLASH_L L'/'
     #define MAX_PATH 500
-#endif
-
-// Strings.
-#include <string>
-
-#ifdef UNICODE
-	typedef std::wstring platform_string;
-#else
-	typedef std::string platform_string;
-#endif
-
-#ifdef _WIN32
-	#include "tchar.h"
-#else
-
-#ifndef __TCHAR_DEFINED
-	#ifdef UNICODE
-		typedef wchar_t _TCHAR;
-	#else
-		typedef char _TCHAR;
-	#endif
-	typedef _TCHAR* LPTSTR;
-
-	#ifndef _T
-		#ifdef UNICODE
-			#define _T(x) L##x
-		#else
-			#define _T(x) x
-		#endif
-	#endif
-#endif
-
 #endif

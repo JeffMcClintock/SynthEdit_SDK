@@ -28,14 +28,6 @@
 #ifndef MP_SDK_STDINT_H_INCLUDED
 #define MP_SDK_STDINT_H_INCLUDED
 
-//#if defined( __INTEL_COMPILER ) // seems defined on SE VST3 on mac???
-//#define SE_TARGET_WAVES
-//#endif
-
-//#if defined( SE_TARGET_WAVES )
-//#include "WavesPublicAPI/stdint.h"
-//#else
-
 // Detect C99 support (i.e. specified integer sizes)
 #if __STDC_VERSION__ >= 199901L
 #include <stdint.h>

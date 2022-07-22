@@ -1,6 +1,8 @@
-// Copyright 2006 Jeff McClintock
-
+// Copyright 2006-2020 SynthEdit Ltd
 // MpPluginBase - implements the IMpPlugin2 interface.
+#if !defined(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#endif
 
 #include "mp_sdk_audio.h"
 #include <assert.h>
@@ -23,6 +25,13 @@ int32_t MpPluginBase::queryInterface( const gmpi::MpGuid& iid, void** returnInte
 	if( iid == MP_IID_PLUGIN || iid == MP_IID_UNKNOWN )
 	{
 		*returnInterface = static_cast<IMpPlugin*>(this);
+		addRef();
+		return gmpi::MP_OK;
+	}
+
+	if( iid == MP_IID_LEGACY_INITIALIZATION )
+	{
+		*returnInterface = static_cast<gmpi::IMpLegacyInitialization*>(this);
 		addRef();
 		return gmpi::MP_OK;
 	}
@@ -342,19 +351,11 @@ void MpPluginBase::midiHelper( const MpEvent* e )
 	}
 	else
 	{
-		onMidiMessage(e->parm2 // pin
+		onMidiMessage(e->parm1 // pin
 						, (const unsigned char*) e->extraData, e->parm2); // midi bytes (sysex)
 	}
 }
-/*
-void MpPluginBase::AudioStreamingChangeHelper(MpEvent* e)
-{
-	assert(e->eventType == EVENT_PIN_STREAMING_START || e->eventType == EVENT_PIN_STREAMING_STOP);
 
-	bool streaming = e->eventType == EVENT_PIN_STREAMING_START;
-	OnStreamingChange(e->parm1, streaming);
-}
-*/
 MpPluginBase::MpPluginBase( ) :
 	blockPos_( 0 )
 	,sleepCount_( 0 )
@@ -362,18 +363,12 @@ MpPluginBase::MpPluginBase( ) :
 	,canSleepManualOverride_( SLEEP_AUTO )
 	,eventsComplete_( true )
 	,recursionFix(false)
-
-	#if defined(_DEBUG)
-	,debugIsOpen_( false )
-	,blockPosExact_( true )
-	,debugGraphStartCalled_( false )
-	#endif
 {
-//	host->query Interface( MP_IID_HOST, reinterpret_cast<void**>( &host_ ) );
 }
 
 int32_t MpPluginBase::setHost( gmpi::IMpUnknown* phost )
 {
+	host.Init(phost);
 	return phost->queryInterface(MP_IID_HOST, host.asIMpUnknownPtr());
 }
 
@@ -426,7 +421,7 @@ void MpPinBase::sendPinUpdate( int32_t rawSize, void* rawData, int32_t blockPosi
 	plugin_->getHost()->setPin( blockPosition, getId(), rawSize, rawData );
 }
 
-MpBaseMemberPtr MidiInPin::getDefaultEventHandler(void)
+MpBaseMemberPtr MidiInPin::getDefaultEventHandler()
 {
 	return &MpPluginBase::midiHelper;
 }

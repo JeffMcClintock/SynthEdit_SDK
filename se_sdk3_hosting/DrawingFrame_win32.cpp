@@ -1,4 +1,7 @@
 #include "pch.h"
+
+#if defined(_WIN32) // skip compilation on macOS
+
 #include <d2d1_2.h>
 #include <d3d11_1.h>
 #include <wrl.h> // Comptr
@@ -7,18 +10,8 @@
 #include "../shared/xp_dynamic_linking.h"
 #include "../shared/xp_simd.h"
 #include <Windowsx.h>
-#include "IGuiHost.h"
+#include "../SE_DSP_CORE/IGuiHost2.h"
 #include <commctrl.h>
-
-#ifdef _WIN32
-
-//#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
-#include "resource.h"
-#endif
-#include <Commdlg.h>
-
-#endif
 
 using namespace std;
 using namespace gmpi;
@@ -29,11 +22,6 @@ using namespace GmpiDrawing_API;
 using namespace Microsoft::WRL;
 using namespace D2D1;
 
-// WIN32 Edit box dialog.
-#ifdef _WIN32
-
-//#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#if defined(SE_EDIT_SUPPORT) || defined(SE_TARGET_VST2) || defined(SE_TARGET_VST3)
 namespace GmpiGuiHosting
 {
 
@@ -68,7 +56,6 @@ void DrawingFrame::open(void* pParentWnd)
 	parentWnd = (HWND)pParentWnd;
 
 	RECT r;
-//	GetWindowRect(parentWnd, &r);// find parents absolute location and size.
 	GetClientRect(parentWnd, &r);
 
 	if (!registeredWindowClass)
@@ -76,7 +63,7 @@ void DrawingFrame::open(void* pParentWnd)
 		registeredWindowClass = true;
 		OleInitialize(0);
 
-		swprintf(gClassName, L"GMPIGUI%p", local_GetDllHandle_randomshit());
+		swprintf(gClassName, sizeof(gClassName) / sizeof(gClassName[0]), L"GMPIGUI%p", local_GetDllHandle_randomshit());
 
 		windowClass.style = CS_GLOBALCLASS;// | CS_DBLCLKS;//|CS_OWNDC; // add Private-DC constant 
 
@@ -111,16 +98,76 @@ void DrawingFrame::open(void* pParentWnd)
 		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (__int3264)(LONG_PTR)this);
 		//		RegisterDragDrop(windowHandle, new CDropTarget(this));
 
-		D2D1_SIZE_U size = D2D1::SizeU(
-			r.right - r.left,
-			r.bottom - r.top
-		);
-
-		CreateRenderTarget(size);
+		CreateRenderTarget();
 
 		initTooltip();
 	}
 }
+
+/*
+*  child window DPI awareness, needs to be TOP level window I think, not the frame.
+*     // Store the current thread's DPI-awareness context. Windows 10 only
+    // DPI_AWARENESS_CONTEXT previousDpiContext = SetThreadDpiAwarenessContext(context);
+	//HINSTANCE h_kernal = GetModuleHandle(_T("Kernel32.DLL"));
+	HMODULE hUser32 = GetModuleHandleW(L"user32");
+	typedef int32_t DPI_AWARENESS_CONTEXT;
+	typedef int32_t DPI_HOSTING_BEHAVIOR;
+	typedef DPI_AWARENESS_CONTEXT ( WINAPI * PFN_SETTHREADDPIAWARENESS)(DPI_AWARENESS_CONTEXT param);
+	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiAwarenessContext = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiAwarenessContext");
+	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiHostingBehavior = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiHostingBehavior");
+	DPI_AWARENESS_CONTEXT previousDpiContext = {};
+	if(p_SetThreadDpiAwarenessContext)
+	{
+		// DPI_AWARENESS_CONTEXT_SYSTEM_AWARE - System DPI aware. This window does not scale for DPI changes. It will query for the DPI once and use that value for the lifetime of the process.
+		const auto DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = (DPI_AWARENESS_CONTEXT) -1;
+		previousDpiContext = p_SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+	}
+	struct CreateParams
+	{
+		BOOL bEnableNonClientDpiScaling;
+		BOOL bChildWindowDpiIsolation;
+	};
+	CreateParams createParams{TRUE, TRUE};
+
+	// Windows 10 (1803) supports child-HWND DPI-mode isolation. This enables
+    // child HWNDs to run in DPI-scaling modes that are isolated from that of 
+    // their parent (or host) HWND. Without child-HWND DPI isolation, all HWNDs 
+    // in an HWND tree must have the same DPI-scaling mode.
+	DPI_HOSTING_BEHAVIOR previousDpiHostingBehavior = {};
+	if (p_SetThreadDpiAwarenessContext) // &&bChildWindowDpiIsolation)
+	{
+		const int32_t DPI_HOSTING_BEHAVIOR_MIXED = 2;
+		previousDpiHostingBehavior = p_SetThreadDpiHostingBehavior(DPI_HOSTING_BEHAVIOR_MIXED);
+	}
+
+	windowHandle = CreateWindowEx(extended_style, gClassName, L"",
+		style, 0, 0, r.right - r.left, r.bottom - r.top,
+		parentWnd, NULL, local_GetDllHandle_randomshit(), &createParams);// NULL);
+
+	if (windowHandle)
+	{
+		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (__int3264)(LONG_PTR)this);
+		//		RegisterDragDrop(windowHandle, new CDropTarget(this));
+
+		// Restore the current thread's DPI awareness context
+		if(p_SetThreadDpiAwarenessContext)
+		{
+			p_SetThreadDpiAwarenessContext(previousDpiContext);
+
+			// Restore the current thread DPI hosting behavior, if we changed it.
+			//if(bChildWindowDpiIsolation)
+			{
+				p_SetThreadDpiHostingBehavior(previousDpiHostingBehavior);
+			}
+		}
+
+		CreateRenderTarget();
+
+		initTooltip();
+	}
+* 
+* 
+*/
 
 void DrawingFrameBase::initTooltip()
 {
@@ -196,7 +243,7 @@ void DrawingFrameBase::ShowToolTip()
 		SendMessage((HWND)platformObject, TTM_NEWTOOLRECT, 0, (LPARAM)&ti);
 		SendMessage((HWND)platformObject, TTM_POPUP, 0, 0);
 	}
-//#endif // WINDOWS
+
 	toolTipShown = true;
 }
 
@@ -231,7 +278,7 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 		case WM_RBUTTONDOWN:
 		case WM_RBUTTONUP:
 		{
-			GmpiDrawing::Point p(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			GmpiDrawing::Point p(static_cast<float>(GET_X_LPARAM(lParam)), static_cast<float>(GET_Y_LPARAM(lParam)));
 			p = WindowToDips.TransformPoint(p);
 
 			// Cubase sends spurious mouse move messages when transport running.
@@ -319,14 +366,13 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 		//if( wParam == FALSE ) // USER CLICKED AWAY
 		//	goto we_re_done;
 		break;
-
+/*
 	case WM_WINDOWPOSCHANGING:
 	{
 		LPWINDOWPOS wp = (LPWINDOWPOS)lParam;
-		int test = wp->cx;
 	}
 	break;
-
+*/
 	case WM_ACTIVATE:
 	{
 		/*
@@ -354,8 +400,8 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 	}
 	break;
 
-	case WM_COMMAND:
 		/*
+	case WM_COMMAND:
 		switch( LOWORD(wParam) )
 		{
 		case IDOK:
@@ -367,13 +413,13 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 		EndDialog(hwndDlg, dialogReturnValue); // seems to call back here and exit at "we_re_done"
 		return TRUE;
 		}
-		*/
 		break;
+		*/
 
 	case WM_PAINT:
 	{
 		OnPaint();
-		::DefWindowProc(windowHandle, message, wParam, lParam); // clear update rect.
+//		return ::DefWindowProc(windowHandle, message, wParam, lParam); // clear update rect.
 	}
 	break;
 
@@ -391,9 +437,7 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 
 void DrawingFrameBase::Init(SynthEdit2::IPresenter* presenter, int pviewType)
 {
-	AddView(new SynthEdit2::ContainerView());
-	GmpiDrawing::Rect viewRect{ 0, 0, static_cast<float>(viewDimensions), static_cast<float>(viewDimensions) };
-	containerView->arrange(viewRect);
+	AddView(new SynthEdit2::ContainerView(GmpiDrawing::Size(static_cast<float>(viewDimensions), static_cast<float>(viewDimensions))));
 	containerView->setDocument(presenter, pviewType);
 }
 
@@ -401,11 +445,11 @@ void DrawingFrameBase::Init(SynthEdit2::IPresenter* presenter, int pviewType)
 bool DrawingFrameBase::OnTimer()
 {
 	auto hwnd = getWindowHandle();
-	if (hwnd == nullptr)
+	if (hwnd == nullptr || containerView == nullptr)
 		return true;
 
 	// Tooltips
-	if (toolTiptimer-- < 0 && !toolTipShown)
+	if (toolTiptimer-- == 0 && !toolTipShown)
 	{
 		POINT P;
 		GetCursorPos(&P);
@@ -414,9 +458,8 @@ bool DrawingFrameBase::OnTimer()
 		if (WindowFromPoint(P) == hwnd && GetCapture() != hwnd)
 		{
 			ScreenToClient(hwnd, &P);
-			//			GmpiDrawing::Point point(P.x, P.y);
 
-			auto point = WindowToDips.TransformPoint(GmpiDrawing::Point(P.x, P.y));
+			auto point = WindowToDips.TransformPoint(GmpiDrawing::Point(static_cast<float>(P.x), static_cast<float>(P.y)));
 
 			// get item under mouse.
 			// toolTipText = L"Doog";
@@ -430,7 +473,6 @@ bool DrawingFrameBase::OnTimer()
 	}
 	
 	// Get any meter updates from DSP. ( See also CSynthEditAppBase::OnTimer() )
-//	controller->serviceGuiQueue();
 	containerView->Presenter()->GetPatchManager()->serviceGuiQueue();
 
 	// Queue pending drawing updates to backbuffer.
@@ -441,20 +483,193 @@ bool DrawingFrameBase::OnTimer()
 		::InvalidateRect(hwnd, reinterpret_cast<RECT*>(&invalidRect), bErase);
 	}
 	backBufferDirtyRects.clear();
-#if 0 // force redraw.
-	RECT test;
-	test.top = test.left = 0;
-	test.right = test.bottom = 1;
-	::InvalidateRect(hwnd, reinterpret_cast<RECT*>(&test), bErase);
-#endif
+
 	return true;
 }
 
+void RenderLog(ID2D1RenderTarget* context_, IDWriteFactory* writeFactory, ID2D1Factory1* factory)
+{
+	IDWriteTextFormat* textformata0c73080 = nullptr;
+	writeFactory->CreateTextFormat(L"Sans Serif", NULL, (DWRITE_FONT_WEIGHT)400, (DWRITE_FONT_STYLE)0, DWRITE_FONT_STRETCH_NORMAL, 10.000000, L"", &textformata0c73080);
+	IDWriteTextFormat* textformata0c73860 = nullptr;
+	writeFactory->CreateTextFormat(L"Sans Serif", NULL, (DWRITE_FONT_WEIGHT)400, (DWRITE_FONT_STYLE)0, DWRITE_FONT_STRETCH_NORMAL, 10.000000, L"", &textformata0c73860);
+	IDWriteTextFormat* textformata0c746d0 = nullptr;
+	writeFactory->CreateTextFormat(L"Sans Serif", NULL, (DWRITE_FONT_WEIGHT)400, (DWRITE_FONT_STYLE)0, DWRITE_FONT_STRETCH_NORMAL, 12.000000, L"", &textformata0c746d0);
+
+	// ==================================================
+	context_->BeginDraw();
+	{
+		auto t = D2D1::Matrix3x2F(1.000, 0.000, 0.000, 1.000, 0.000, 0.000);
+		context_->SetTransform(t);
+	}
+	{
+		auto r = D2D1::RectF(0.000, 0.000, 1718.000f, 865.000);
+		context_->PushAxisAlignedClip(&r, D2D1_ANTIALIAS_MODE_ALIASED);
+	}
+	{
+		auto c = D2D1::ColorF(0.651, 0.651, 0.651, 1.000);
+		context_->Clear(c);
+	}
+
+	{
+		D2D1_MATRIX_3X2_F t;
+		context_->GetTransform(&t);
+	}
+	{
+		D2D1_MATRIX_3X2_F t;
+		context_->GetTransform(&t);
+	}
+	{
+		auto t = D2D1::Matrix3x2F(1.000, 0.000, 0.000, 1.000, 186.000, 114.000);
+		context_->SetTransform(t);
+	}
+	{
+		D2D1_MATRIX_3X2_F t;
+		context_->GetTransform(&t);
+	}
+	ID2D1PathGeometry* geometrya1bdb2e0 = nullptr;
+	{
+		factory->CreatePathGeometry(&geometrya1bdb2e0);
+	}
+	ID2D1GeometrySink* sinka1bdb760 = nullptr;
+	{
+		geometrya1bdb2e0->Open(&sinka1bdb760);
+	}
+	sinka1bdb760->BeginFigure(D2D1::Point2F(12.500000, 0.000000), (D2D1_FIGURE_BEGIN)0);
+	sinka1bdb760->AddLine(D2D1::Point2F(6.500000, 6.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(6.500000, 102.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(12.500000, 108.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(95.500000, 108.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(101.500000, 102.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(101.500000, 6.000000));
+	sinka1bdb760->AddLine(D2D1::Point2F(95.500000, 0.000000));
+	sinka1bdb760->EndFigure((D2D1_FIGURE_END)1);
+	sinka1bdb760->Close();
+	sinka1bdb760->Release();
+	sinka1bdb760 = nullptr;
+	ID2D1SolidColorBrush* brusha1053870 = nullptr;
+	{
+		auto c = D2D1::ColorF(0.127, 0.301, 0.847, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha1053870);
+	}
+	context_->FillGeometry(geometrya1bdb2e0, brusha1053870, nullptr);
+	geometrya1bdb2e0->Release();
+	ID2D1SolidColorBrush* brusha1053800 = nullptr;
+	{
+		auto c = D2D1::ColorF(0.216, 0.216, 0.216, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha1053800);
+	}
+	ID2D1SolidColorBrush* brusha1054130 = nullptr;
+	{
+		auto c = D2D1::ColorF(0.000, 0.000, 0.000, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha1054130);
+	}
+	{
+		auto r = D2D1::RectF(11.000, -1.000, 108.000, 97.000f);
+		context_->DrawTextW(L"MIDI In\n\nChannel Lo\nChannel Hi\nNote Lo\nNote Hi\nVelocity Lo\nVelocity Hi\nProgram Change", 85, textformata0c73080, &r, brusha1053800, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	{
+		auto r = D2D1::RectF(11.000, -1.000, 108.000, 97.000f);
+		context_->DrawTextW(L"\nMIDI Out\n\n\n\n\n\n\n", 16, textformata0c73860, &r, brusha1053800, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	{
+		auto r = D2D1::RectF(10.000, -17.000, 108.000, 98.000f);
+		context_->DrawTextW(L"MIDI Filter", 11, textformata0c746d0, &r, brusha1053800, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	brusha1054130->Release();
+	brusha1054130 = nullptr;
+	brusha1053800->Release();
+	brusha1053800 = nullptr;
+	brusha1053870->Release();
+	brusha1053870 = nullptr;
+	{
+		auto t = D2D1::Matrix3x2F(1.000, 0.000, 0.000, 1.000, 493.000, 120.000);
+		context_->SetTransform(t);
+	}
+	{
+		D2D1_MATRIX_3X2_F t;
+		context_->GetTransform(&t);
+	}
+	ID2D1PathGeometry* geometrya1bdac20 = nullptr;
+	{
+		factory->CreatePathGeometry(&geometrya1bdac20);
+	}
+	ID2D1GeometrySink* sinka1bdb280 = nullptr;
+	{
+		geometrya1bdac20->Open(&sinka1bdb280);
+	}
+	sinka1bdb280->BeginFigure(D2D1::Point2F(12.500000, 0.000000), (D2D1_FIGURE_BEGIN)0);
+	sinka1bdb280->AddLine(D2D1::Point2F(6.500000, 6.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(6.500000, 78.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(12.500000, 84.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(95.500000, 84.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(101.500000, 78.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(101.500000, 6.000000));
+	sinka1bdb280->AddLine(D2D1::Point2F(95.500000, 0.000000));
+	sinka1bdb280->EndFigure((D2D1_FIGURE_END)1);
+	sinka1bdb280->Close();
+	sinka1bdb280->Release();
+	sinka1bdb280 = nullptr;
+	ID2D1SolidColorBrush* brusha1054130b = nullptr;
+	{
+		auto c = D2D1::ColorF(0.127, 0.301, 0.847, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha1054130b);
+	}
+	context_->FillGeometry(geometrya1bdac20, brusha1054130b, nullptr);
+	geometrya1bdac20->Release();
+	ID2D1SolidColorBrush* brusha10542f0 = nullptr;
+	{
+		auto c = D2D1::ColorF(0.0, 0, 0, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha10542f0);
+	}
+	ID2D1SolidColorBrush* brusha1053790 = nullptr;
+	{
+		auto c = D2D1::ColorF(0.000, 0.000, 0.000, 1.000);
+		context_->CreateSolidColorBrush(c, &brusha1053790);
+	}
+	{
+		auto r = D2D1::RectF(11.000, -1.000, 84.000, 97.000f);
+		context_->DrawTextW(L"\n\n\n\n\n\n", 6, textformata0c73080, &r, brusha10542f0, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	{
+		auto r = D2D1::RectF(11.000, -1.000, 84.000, 97.000f);
+		context_->DrawTextW(L"Name\nValue\nAnimation Position\nMenu Items\nMenu Selection\nMouse Down\nValue Out", 76, textformata0c73860, &r, brusha10542f0, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	{
+		auto r = D2D1::RectF(-1.469, -17.000, 84.000, 109.469f);
+		context_->DrawTextW(L"PatchMemory Float3", 18, textformata0c746d0, &r, brusha10542f0, (D2D1_DRAW_TEXT_OPTIONS)0);
+	}
+	brusha1053790->Release();
+	brusha1053790 = nullptr;
+	brusha10542f0->Release();
+	brusha10542f0 = nullptr;
+	brusha1054130b->Release();
+	brusha1054130b = nullptr;
+	{
+		auto t = D2D1::Matrix3x2F(1.000, 0.000, 0.000, 1.000, 0.000, 0.000);
+		context_->SetTransform(t);
+	}
+	context_->PopAxisAlignedClip();
+	context_->EndDraw();
+
+
+	textformata0c73080->Release();
+	textformata0c73860->Release();
+	textformata0c746d0->Release();
+
+} // RenderLog ====================================================
+
 void DrawingFrameBase::OnPaint()
 {
+#ifdef USE_BEGINPAINT
+	PAINTSTRUCT ps;
+	BeginPaint(getWindowHandle(), &ps);
+#else
 	// First clear update region (else windows will pound on this repeatedly).
-	UpdateRegionWinGdi updateRegion(getWindowHandle());
+
+	updateRegion_native.copyDirtyRects(getWindowHandle(), swapChainSize);
 	ValidateRect(getWindowHandle(), NULL); // Clear invalid region for next frame.
+#endif
 
 	// prevent infinite assert dialog boxes when assert happens during painting.
 	if (reentrant)
@@ -463,8 +678,15 @@ void DrawingFrameBase::OnPaint()
 	}
 	reentrant = true;
 
-	auto dirtyRects = updateRegion.getUpdateRects();
+#ifdef USE_BEGINPAINT
+	std::vector<GmpiDrawing::RectL> dirtyRects;
+	dirtyRects.push_back(GmpiDrawing::RectL(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom));
+
+	if (containerView)
+#else
+	auto& dirtyRects = updateRegion_native.getUpdateRects();
 	if (containerView && !dirtyRects.empty())
+#endif
 	{
 		//	_RPT1(_CRT_WARN, "OnPaint(); %d dirtyRects\n", dirtyRects.size() );
 
@@ -472,138 +694,149 @@ void DrawingFrameBase::OnPaint()
 		{
 			CreateDevice();
 		}
+/* didn't help
+		ID2D1Multithread* m_D2DMultithread;
+		DrawingFactory.getD2dFactory()->QueryInterface(IID_PPV_ARGS(&m_D2DMultithread));
+		m_D2DMultithread->Enter();
+*/
 
-		std::unique_ptr<gmpi::directx::GraphicsContext> context;
-		if (DX_support_sRGB)
+		if (false) // Use render log
 		{
-			context.reset(new gmpi::directx::GraphicsContext(mpRenderTarget, &DrawingFactory));
+			RenderLog(context->native(), DrawingFactory.getDirectWriteFactory(), DrawingFactory.getFactory());
 		}
 		else
 		{
-			context.reset(new gmpi::directx::GraphicsContext_Win7(mpRenderTarget, &DrawingFactory));
-		}
+			GmpiDrawing::Graphics graphics(context.get());
 
-		context->BeginDraw();
+			graphics.BeginDraw();
+			graphics.SetTransform(viewTransform);
 
-		GmpiDrawing::Graphics graphics(context.get());
-
-		graphics.SetTransform(viewTransform);
-
-#if 1
-		for (auto& r : dirtyRects)
-		{
-			auto r2 = WindowToDips.TransformRect(GmpiDrawing::Rect(r.left, r.top, r.right, r.bottom));
-
-			// Snap to whole DIPs.
-			GmpiDrawing::Rect temp;
-			temp.left = static_cast<float>(FastRealToIntTruncateTowardZero(r2.left));
-			temp.top = static_cast<float>(FastRealToIntTruncateTowardZero(r2.top));
-			temp.right = static_cast<float>(FastRealToIntTruncateTowardZero(r2.right) + 1);
-			temp.bottom = static_cast<float>(FastRealToIntTruncateTowardZero(r2.bottom) + 1);
-
-			graphics.PushAxisAlignedClip(temp);
-
-			containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
-			graphics.PopAxisAlignedClip();
-		}
-
-#else
-		// Clip to Windows update rect, for efficiency.
-		RECT rect;
-		BOOL r = GetUpdateRect(getWindowHandle(), &rect, FALSE);
-		//	_RPTW4(_CRT_WARN, L"OnPaint() (%d,%d,%d,%d) \n", rect.left, rect.top, rect.right, rect.bottom);
-		if (r != 0)
-		{
-			GmpiDrawing::Rect cliprect(rect.left, rect.top, rect.right, rect.bottom);
-			graphics.PushAxisAlignedClip(cliprect);
-		}
-
-		containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(&context));
-
-		if (r != 0)
-			graphics.PopAxisAlignedClip();
-#endif
-		// Print OS Version.
-#if 0 //def _DEBUG
-		{
-			OSVERSIONINFO osvi;
-			memset(&osvi, 0, sizeof(osvi));
-
-			osvi.dwOSVersionInfoSize = sizeof(osvi);
-			GetVersionEx(&osvi);
-
-			char versionString[100];
-			sprintf(versionString, "OS Version %d.%d", (int)osvi.dwMajorVersion, (int)osvi.dwMinorVersion);
-
-			auto brsh = graphics.CreateSolidColorBrush(GmpiDrawing::Color::Black);
-			graphics.DrawTextU(versionString, graphics.GetFactory().CreateTextFormat(12), GmpiDrawing::Rect(2.0f, 2.0f, 200, 200), brsh);
-		}
-#endif
-
-		// Print Frame Rate
-//		const bool displayFrameRate = true;
-		const bool displayFrameRate = false;
-//		static int presentTimeMs = 0;
-		if(displayFrameRate)
-		{
-			static int frameCount = 0;
-			static char frameCountString[100] = "";
-			if (++frameCount == 60)
+			if (false) // Draw entire update area as one big rect. didn't help
 			{
-				auto timenow = std::chrono::steady_clock::now();
-				auto elapsed = std::chrono::steady_clock::now() - frameCountTime;
-				auto elapsedSeconds = 0.001f * (float)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				auto r = updateRegion_native.getBoundingRect();
 
-				float frameRate = frameCount / elapsedSeconds;
+				auto r2 = WindowToDips.TransformRect(GmpiDrawing::Rect(static_cast<float>(r.left), static_cast<float>(r.top), static_cast<float>(r.right), static_cast<float>(r.bottom)));
 
-//				sprintf(frameCountString, "%3.1f FPS. %dms PT", frameRate, presentTimeMs);
-				sprintf(frameCountString, "%3.1f FPS", frameRate);
-				frameCountTime = timenow;
-				frameCount = 0;
+				// Snap to whole DIPs.
+				GmpiDrawing::Rect temp;
+				/*
+				temp.left = static_cast<float>(FastRealToIntTruncateTowardZero(r2.left));
+				temp.top = static_cast<float>(FastRealToIntTruncateTowardZero(r2.top));
+				temp.right = static_cast<float>(FastRealToIntTruncateTowardZero(r2.right) + 1);
+				temp.bottom = static_cast<float>(FastRealToIntTruncateTowardZero(r2.bottom) + 1);
+				*/
+				// attempt to avoid drawing one extra pixel
+				temp.left = floorf(r2.left);
+				temp.top = floorf(r2.top);
+				temp.right = ceilf(r2.right);
+				temp.bottom = ceilf(r2.bottom);
 
-				auto brush = graphics.CreateSolidColorBrush(GmpiDrawing::Color::Black);
-				auto fpsRect = GmpiDrawing::Rect(0, 0, 50, 18);
-				graphics.FillRectangle(fpsRect, brush);
-				brush.SetColor(GmpiDrawing::Color::White);
-				graphics.DrawTextU(frameCountString, graphics.GetFactory().CreateTextFormat(12), fpsRect, brush);
+				//_RPTW4(_CRT_WARN, L"GmpiDrawing::RectL dirtyRect{%4d,%4d,%4d,%4d};\n", (int)r.left, (int)r.top, (int)r.right, (int)r.bottom);
+				//_RPTW4(_CRT_WARN, L"GmpiDrawing::Rect dirtyRect{%4d,%4d,%4d,%4d};\n", (int)temp.left, (int)temp.top, (int)temp.right, (int)temp.bottom);
+				graphics.PushAxisAlignedClip(temp);
 
-				dirtyRects.push_back(GmpiDrawing::RectL(0, 0, 100, 36));
+				containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
+				graphics.PopAxisAlignedClip();
 			}
-		}
+			else
+			{
+				// GLITCHES, WITH TEXT OVERDRAWN WITH GARBARGE INSTRUCTURE VIEW
+				// clip and draw each react individually (causes some objects to redraw several times)
+				for (auto& r : dirtyRects)
+				{
+					auto r2 = WindowToDips.TransformRect(GmpiDrawing::Rect(static_cast<float>(r.left), static_cast<float>(r.top), static_cast<float>(r.right), static_cast<float>(r.bottom)));
 
-		auto hr = context->EndDraw();
+					// Snap to whole DIPs.
+					GmpiDrawing::Rect temp;
+					temp.left = floorf(r2.left);
+					temp.top = floorf(r2.top);
+					temp.right = ceilf(r2.right);
+					temp.bottom = ceilf(r2.bottom);
+
+					graphics.PushAxisAlignedClip(temp);
+
+					containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
+					graphics.PopAxisAlignedClip();
+				}
+			}
+
+			// Print OS Version.
+#if 0 //def _DEBUG
+			{
+				OSVERSIONINFO osvi;
+				memset(&osvi, 0, sizeof(osvi));
+
+				osvi.dwOSVersionInfoSize = sizeof(osvi);
+				GetVersionEx(&osvi);
+
+				char versionString[100];
+				sprintf(versionString, "OS Version %d.%d", (int)osvi.dwMajorVersion, (int)osvi.dwMinorVersion);
+
+				auto brsh = graphics.CreateSolidColorBrush(GmpiDrawing::Color::Black);
+				graphics.DrawTextU(versionString, graphics.GetFactory().CreateTextFormat(12), GmpiDrawing::Rect(2.0f, 2.0f, 200, 200), brsh);
+			}
+#endif
+
+			// Print Frame Rate
+	//		const bool displayFrameRate = true;
+			const bool displayFrameRate = false;
+			//		static int presentTimeMs = 0;
+			if (displayFrameRate)
+			{
+				static int frameCount = 0;
+				static char frameCountString[100] = "";
+				if (++frameCount == 60)
+				{
+					auto timenow = std::chrono::steady_clock::now();
+					auto elapsed = std::chrono::steady_clock::now() - frameCountTime;
+					auto elapsedSeconds = 0.001f * (float)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
+					float frameRate = frameCount / elapsedSeconds;
+
+					//				sprintf(frameCountString, "%3.1f FPS. %dms PT", frameRate, presentTimeMs);
+					sprintf_s(frameCountString, sizeof(frameCountString), "%3.1f FPS", frameRate);
+					frameCountTime = timenow;
+					frameCount = 0;
+
+					auto brush = graphics.CreateSolidColorBrush(GmpiDrawing::Color::Black);
+					auto fpsRect = GmpiDrawing::Rect(0, 0, 50, 18);
+					graphics.FillRectangle(fpsRect, brush);
+					brush.SetColor(GmpiDrawing::Color::White);
+					graphics.DrawTextU(frameCountString, graphics.GetFactory().CreateTextFormat(12), fpsRect, brush);
+
+					dirtyRects.push_back(GmpiDrawing::RectL(0, 0, 100, 36));
+				}
+			}
+
+			/*const auto r =*/ graphics.EndDraw();
+
+		}
 
 		//	frontBufferDirtyRects.insert(frontBufferDirtyRects.end(), dirtyRects.begin(), dirtyRects.end());
 
 		// Present the backbuffer (if it has some new content)
+		if (firstPresent)
+		{
+			firstPresent = false;
+			const auto hr = m_swapChain->Present(1, 0);
+			if (S_OK != hr && DXGI_STATUS_OCCLUDED != hr)
+			{
+				// DXGI_ERROR_INVALID_CALL 0x887A0001L
+				ReleaseDevice();
+			}
+		}
+		else
 		{
 			HRESULT hr = S_OK;
-
-			// Can't use dirty rects on fresh backbuffer until present called at least once (successfully).
-			// MOved to : DrawingFrameBase::CreateDeviceSwapChainBitmap()
-			/*
-			if (frontBufferNew)
-			{
-				_RPT0(_CRT_WARN, "Present(0, 0);\n");
-
-				hr = m_swapChain->Present(0, 0);
-
-				if (S_OK == hr || DXGI_STATUS_OCCLUDED == hr)
-					frontBufferNew = false;
-
-				InvalidateRect(getWindowHandle(), NULL, FALSE); // Any drawing happening before this initial Present() has no effect, need to ensure entire window is drawn fresh.
-			}
-			else
-			*/
 			{
 				assert(!dirtyRects.empty());
-
-				DXGI_PRESENT_PARAMETERS presetParameters;
+				DXGI_PRESENT_PARAMETERS presetParameters{ (UINT)dirtyRects.size(), reinterpret_cast<RECT*>(dirtyRects.data()), nullptr, nullptr, };
+/*
 				presetParameters.pScrollRect = nullptr;
 				presetParameters.pScrollOffset = nullptr;
-				presetParameters.DirtyRectsCount = dirtyRects.size();
+				presetParameters.DirtyRectsCount = (UINT) dirtyRects.size();
 				presetParameters.pDirtyRects = reinterpret_cast<RECT*>(dirtyRects.data()); // should be exact same layout.
-
+*/
 				// checkout DXGI_PRESENT_DO_NOT_WAIT
 //				hr = m_swapChain->Present1(1, DXGI_PRESENT_TEST, &presetParameters);
 //				_RPT1(_CRT_WARN, "Present1() test = %x\n", hr);
@@ -621,8 +854,7 @@ void DrawingFrameBase::OnPaint()
 				//presentTimeMs = (float)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 //				}
 /* could put this in timer to reduce blocking, agregating dirty rects until call successful.
-*/
-			}
+*/			}
 
 			if (S_OK != hr && DXGI_STATUS_OCCLUDED != hr)
 			{
@@ -633,6 +865,10 @@ void DrawingFrameBase::OnPaint()
 	}
 
 	reentrant = false;
+
+#ifdef USE_BEGINPAINT
+	EndPaint(getWindowHandle(), &ps);
+#endif
 }
 
 void DrawingFrameBase::CreateDevice()
@@ -642,8 +878,8 @@ void DrawingFrameBase::CreateDevice()
 	// Create a Direct3D Device
 	UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-// you must explicity install DX debug support for this to work.
-//	flags |= D3D11_CREATE_DEVICE_DEBUG;
+	// you must explicity install DX debug support for this to work.
+	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 	// Comment out first to test lower versions.
 	D3D_FEATURE_LEVEL d3dLevels[] = 
@@ -652,15 +888,16 @@ void DrawingFrameBase::CreateDevice()
 		D3D_FEATURE_LEVEL_10_1,
 		D3D_FEATURE_LEVEL_10_0,
 		D3D_FEATURE_LEVEL_9_3,
-		D3D_FEATURE_LEVEL_9_2,
-		D3D_FEATURE_LEVEL_9_1,
+		D3D_FEATURE_LEVEL_9_2, // flip SUPPORTED on my PC
+		D3D_FEATURE_LEVEL_9_1, // NO flip
 	};
 
 	D3D_FEATURE_LEVEL currentDxFeatureLevel;
 	ComPtr<ID3D11Device> D3D11Device;
 	
 	HRESULT r = DXGI_ERROR_UNSUPPORTED;
-#if 1 //ndef _DEBUG
+#if 1 // Disable for D2D software-renderer.
+	do {
 	r = D3D11CreateDevice(nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -670,6 +907,11 @@ void DrawingFrameBase::CreateDevice()
 		D3D11Device.GetAddressOf(),
 		&currentDxFeatureLevel,
 		nullptr);
+
+		CLEAR_BITS(flags, D3D11_CREATE_DEVICE_DEBUG);
+
+	} while (r == 0x887a002d); // The application requested an operation that depends on an SDK component that is missing or mismatched. (no DEBUG LAYER).
+
 #endif
 	if (DXGI_ERROR_UNSUPPORTED == r)
 	{
@@ -696,7 +938,13 @@ void DrawingFrameBase::CreateDevice()
 	ComPtr<IDXGIFactory2> factory;
 	adapter->GetParent(__uuidof(factory), reinterpret_cast<void **>(factory.GetAddressOf()));
 
+	bool DX_support_sRGB;
 	{
+		/* !! only good for detecting indows 7 !!
+		Applications not manifested for Windows 8.1 or Windows 10 will return the Windows 8 OS version value (6.2).
+		Once an application is manifested for a given operating system version,
+		GetVersionEx will always return the version that the application is manifested for
+		*/
 		OSVERSIONINFO osvi;
 		memset(&osvi, 0, sizeof(osvi));
 
@@ -708,36 +956,77 @@ void DrawingFrameBase::CreateDevice()
 			((osvi.dwMajorVersion == 6) && (osvi.dwMinorVersion > 1))); // Win7 = V6.1
 	}
 
+	/* NOTES:
+		DXGI_FORMAT_R10G10B10A2_UNORM - fails in CreateBitmapFromDxgiSurface() don't supprt direct2d says channel9.
+		DXGI_FORMAT_R16G16B16A16_FLOAT - 'tends to take up far too much memoryand bandwidth at HD resolutions' - Stack Overlow.
+
+		DXGI ERROR: IDXGIFactory::CreateSwapChain:
+			Flip model swapchains (DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL and DXGI_SWAP_EFFECT_FLIP_DISCARD)
+			only support the following Formats:
+			(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R10G10B10A2_UNORM),
+			assuming the underlying Device does as well.
+	*/
+
+	const DXGI_FORMAT bestFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; // Proper gamma-correct blending.
+	const DXGI_FORMAT fallbackFormat = DXGI_FORMAT_B8G8R8A8_UNORM; // shitty linear blending.
+
+	{
+		UINT driverSrgbSupport = 0;
+		auto hr = D3D11Device->CheckFormatSupport(bestFormat, &driverSrgbSupport);
+
+		const UINT srgbflags = D3D11_FORMAT_SUPPORT_DISPLAY | D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_BLENDABLE;
+
+		if (SUCCEEDED(hr))
+		{
+			DX_support_sRGB &= ((driverSrgbSupport & srgbflags) == srgbflags);
+		}
+	}
+
 	DX_support_sRGB &= D3D_FEATURE_LEVEL_11_0 <= currentDxFeatureLevel;
 
-#if 0 //def _DEBUG
-	DX_support_sRGB = false;
-#endif
-
-	DrawingFactory.setSrgbSupport(DX_support_sRGB);
-
-	// Create swap-chain.
-	DXGI_SWAP_CHAIN_DESC1 props = {};
-	if (DX_support_sRGB)
-	{
-		props.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // Proper gamma-correct blending.
-	}
-	else
-	{
-		props.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // shitty linear blending.
-	}
-
+	DXGI_SWAP_CHAIN_DESC1 props {};
 	props.SampleDesc.Count = 1;
 	props.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	props.BufferCount = 2;
-	props.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
+	props.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;	// Best. Efficient flip.
+	props.Format = bestFormat;
+	props.Scaling = DXGI_SCALING_NONE; // prevents annoying stretching effect when resizing window.
 
-	factory->CreateSwapChainForHwnd(D3D11Device.Get(),
-		getWindowHandle(),
-		&props,
-		nullptr,
-		nullptr,
-		&m_swapChain);
+	if (lowDpiMode)
+	{
+		RECT temprect;
+		GetClientRect(getWindowHandle(), &temprect);
+
+		props.Width = (temprect.right - temprect.left) / 2;
+		props.Height = (temprect.bottom - temprect.top) / 2;
+		props.Scaling = DXGI_SCALING_STRETCH;
+	}
+
+	auto propsFallback = props;
+	propsFallback.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;	// Less efficient blit.
+	propsFallback.Format = fallbackFormat;
+
+	for (int x = 0 ; x < 2 ;++x)
+	{
+		auto swapchainresult = factory->CreateSwapChainForHwnd(D3D11Device.Get(),
+			getWindowHandle(),
+			DX_support_sRGB ? &props : &propsFallback,
+			nullptr,
+			nullptr,
+			&m_swapChain);
+
+		if (swapchainresult == S_OK)
+			break;
+
+		DX_support_sRGB = false;
+	}
+
+	DrawingFactory.setSrgbSupport(DX_support_sRGB);
+
+	/* Channel9 HDR support
+	get IDXGISwapChain4 interface
+	sc->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709)
+	*/
 
 	// Creating the Direct2D Device
 	ComPtr<ID2D1Device> device;
@@ -745,47 +1034,44 @@ void DrawingFrameBase::CreateDevice()
 		device.GetAddressOf());
 
 	// and context.
-	device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &mpRenderTarget);
+	device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &mpRenderTarget);
 
 	float dpiX, dpiY;
-	DrawingFactory.getD2dFactory()->GetDesktopDpi(&dpiX, &dpiY);
 
-#if 0 //def _DEBUG
 	// disable DPI for testing.
-	dpiX = dpiY = 96.0f;
-#endif
+	if (lowDpiMode)
+	{
+		dpiX = dpiY = 96.0f;
+	}
+	else
+	{
+		DrawingFactory.getD2dFactory()->GetDesktopDpi(&dpiX, &dpiY);
+	}
 
 	mpRenderTarget->SetDpi(dpiX, dpiY);
 
-	/*
-	dpiScale.x = 96.f / dpiX;
-	dpiScale.y = 96.f / dpiY;
-
-	dpiScaleInverse.x = dpiX / 96.f;
-	dpiScaleInverse.y = dpiY / 96.f;
-	 */
-
-	// For windows messages, include DPI
-	/*
-	 *
-	HDC hdc = ::GetDC(m_hWnd);
-	int lx = GetDeviceCaps(hdc, LOGPIXELSX);
-	int ly = GetDeviceCaps(hdc, LOGPIXELSY);
-	::ReleaseDC(m_hWnd, hdc);
-	 */
 	DipsToWindow = GmpiDrawing::Matrix3x2::Scale(dpiX / 96.0f, dpiY / 96.0f); // was dpiScaleInverse
 	WindowToDips = DipsToWindow;
 	WindowToDips.Invert();
 
-	mpRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // "The quality of rendering grayscale text is comparable to ClearType but is much faster."}
+	// A little jagged on small fonts
+	//	mpRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // "The quality of rendering grayscale text is comparable to ClearType but is much faster."}
 
 	CreateDeviceSwapChainBitmap();
+
+	if (DrawingFactory.getPlatformPixelFormat() == GmpiDrawing_API::IMpBitmapPixels::kBGRA_SRGB) // DX_support_sRGB)
+	{
+		context.reset(new gmpi::directx::GraphicsContext(mpRenderTarget, &DrawingFactory));
+	}
+	else
+	{
+		context.reset(new gmpi::directx::GraphicsContext_Win7(mpRenderTarget, &DrawingFactory));
+	}
 }
 
 void DrawingFrameBase::CreateDeviceSwapChainBitmap()
 {
-//	AFX_MANAGE_STATE(AfxGetStaticModuleState());
-	_RPT0(_CRT_WARN, "\n\nCreateDeviceSwapChainBitmap()\n");
+//	_RPT0(_CRT_WARN, "\n\nCreateDeviceSwapChainBitmap()\n");
 
 	ComPtr<IDXGISurface> surface;
 	m_swapChain->GetBuffer(0, // buffer index
@@ -806,20 +1092,23 @@ void DrawingFrameBase::CreateDeviceSwapChainBitmap()
 		props2,
 		bitmap.GetAddressOf());
 
+	const auto bitmapsize = bitmap->GetSize();
+	swapChainSize.width = static_cast<int32_t>(bitmapsize.width);
+	swapChainSize.height = static_cast<int32_t>(bitmapsize.height);
+
+//_RPT2(_CRT_WARN, "B[%f,%f]\n", bitmapsize.width, bitmapsize.height);
+
 	// Now attach Device Context to swapchain bitmap.
 	mpRenderTarget->SetTarget(bitmap.Get());
 
-//	frontBufferNew = true;
 	// Initial present() moved here in order to ensure it happens before first Timer() tries to draw anything.
-	{
-		auto hr = m_swapChain->Present(0, 0);
-//		frontBufferNew = false;
-	}
+//	HRESULT hr = m_swapChain->Present(0, 0);
+	firstPresent = true;
 
 	InvalidateRect(getWindowHandle(), nullptr, false);
 }
 
-void DrawingFrameBase::CreateRenderTarget(D2D1_SIZE_U& size)
+void DrawingFrameBase::CreateRenderTarget()
 {
 	CreateDevice();
 
@@ -843,19 +1132,7 @@ void MP_STDCALL DrawingFrameBase::invalidateRect(const GmpiDrawing_API::MP1_RECT
 	GmpiDrawing::RectL r;
 	if (invalidRect)
 	{
-		/*
 		//_RPT4(_CRT_WARN, "invalidateRect r[ %d %d %d %d]\n", (int)invalidRect->left, (int)invalidRect->top, (int)invalidRect->right, (int)invalidRect->bottom);
-
-		// Transform to desktop pixels.
-		auto leftTop = view Transform.TransformPoint(GmpiDrawing::Point(invalidRect->left, invalidRect->top));
-		auto rightBottom = view Transform.TransformPoint(GmpiDrawing::Point(invalidRect->right, invalidRect->bottom));
-
-		r.left = FastRealToIntTruncateTowardZero(leftTop.x * dpi Scale Inverse.x);
-		r.top = FastRealToIntTruncateTowardZero(leftTop.y * dpi Scale Inverse.x);
-		r.right = FastRealToIntTruncateTowardZero(rightBottom.x * dpi Scale Inverse.x) + 1;
-		r.bottom = FastRealToIntTruncateTowardZero(rightBottom.y * dpi Scale Inverse.x) + 1;
-		*/
-
 		r = RectToIntegerLarger( DipsToWindow.TransformRect(*invalidRect) );
 	}
 	else
@@ -895,7 +1172,7 @@ void MP_STDCALL DrawingFrameBase::invalidateMeasure()
 {
 }
 
-int32_t DrawingFrameBase::setCapture(void)
+int32_t DrawingFrameBase::setCapture()
 {
 	::SetCapture(getWindowHandle());
 	return gmpi::MP_OK;
@@ -907,7 +1184,7 @@ int32_t DrawingFrameBase::getCapture(int32_t & returnValue)
 	return gmpi::MP_OK;
 }
 
-int32_t DrawingFrameBase::releaseCapture(void)
+int32_t DrawingFrameBase::releaseCapture()
 {
 	::ReleaseCapture();
 
@@ -923,12 +1200,8 @@ int32_t DrawingFrameBase::createPlatformMenu(GmpiDrawing_API::MP1_RECT* rect, gm
 
 int32_t DrawingFrameBase::createPlatformTextEdit(GmpiDrawing_API::MP1_RECT* rect, gmpi_gui::IMpPlatformText** returnTextEdit)
 {
-#ifdef SE_TARGET_WINDOWS_STORE_APP
-	*returnTextEdit = new PlatformTextEntry(this);
-#else
 	auto nativeRect = DipsToWindow.TransformRect(*rect);
 	*returnTextEdit = new GmpiGuiHosting::PGCC_PlatformTextEntry(getWindowHandle(), &nativeRect, DipsToWindow._22);
-#endif
 
 	return gmpi::MP_OK;
 }
@@ -987,32 +1260,4 @@ int32_t DrawingFrameBase::FindResourceU(const char * resourceName, const char * 
 
 } //namespace
 
-#endif // desktop
-
-#else //WIN32
-
-//int32_t PGCC_PlatformTextEntry::Show(float x, float y, float w, float h, IMpUnknown* returnString)
-int32_t PGCC_PlatformTextEntry::ShowAsync(IMpUgmpi_gui::ICompletionCallbacknknown* returnCompletionHandler)
-{
-	gmpi_gui::ICompletionCallback* callback;
-	if (MP_OK != returnCompletionHandler->queryInterface(gmpi_gui::SE_IID_COMPLETION_CALLBACK, reinterpret_cast<void**>( &callback)) )
-	{
-		return gmpi::MP_NOSUPPORT;
-	}
-
-	int out_dismissedKey;
-//	ActivateTextBoxV(parentWnd, offsetX + x, offsetY + y, w, h, text_, &out_dismissedKey);
-	ActivateTextBoxV(parentWnd, offsetX + editrect.left, offsetY + editrect.top, editrect.getWidth(), editrect.getHeight(), text_, &out_dismissedKey);
-
-	bool canceled = false; // out_dismissedKey == ??
-//	if (!canceled)
-//	{
-//		text_ = WStringToUtf8(dialogEditText);
-//	}
-
-	callback->OnComplete(!canceled ? gmpi::MP_OK : gmpi::MP_CANCEL);
-
-	return gmpi::MP_OK;
-}
-
-#endif
+#endif // skip compilation on macOS

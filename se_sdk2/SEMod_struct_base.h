@@ -205,14 +205,14 @@ enum
 	seaudioMasterCreateSharedLookup,
 	seaudioMasterSetPinOutputText,	// sets plug's output string (DT_TEXT only)
 	seaudioMasterSetProcessFunction,// sets the current sub_process() function
-	seaudioMasterResolveFilename2,	// get full path from a short filename - UNICODE.  see also seGuiHostResolveFilename
+	seaudioMasterResolveFilename2,	// get full path from a short filename - UTF16.  see also seGuiHostResolveFilename
 		/* EXAMPLE CALLING CODE
 			#include <windows .h>  //for WideCharToMultiByte
 
 			// get the full path of an imbedded file when you only know it's short name
 			const int MAX_FILENAME_LENGTH = 300;
 
-			// Both source and destination are UNICODE (two-byte) character strings
+			// Both source and destination are UTF16 (two-byte) character strings
 			unsigned short *source = L"test.txt";
 			unsigned short dest[MAX_FILENAME_LENGTH];
 

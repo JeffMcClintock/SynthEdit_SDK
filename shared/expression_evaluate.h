@@ -7,9 +7,9 @@ class EvaluatorException
 class Evaluator  
 {
 public:
-	const static int MAXVARS = 50;              /* Max user-defined variables */
-	const static int TOKLEN = 30;              /* Max token length */
-	const static int VARLEN = 15;              /* Max length of variable names */
+	static const int MAXVARS = 50;              /* Max user-defined variables */
+	static const int TOKLEN = 30;              /* Max token length */
+	static const int VARLEN = 15;              /* Max length of variable names */
 
 	typedef struct
 	{
@@ -21,7 +21,7 @@ public:
 	{
 		ClearAllVars(); // init expression evaluator
 	}
-	virtual ~Evaluator(){};
+	virtual ~Evaluator() {}
 
 	int SetValue( const char* name, double* value );
 	int Evaluate( const char* e, double* result, int* a );

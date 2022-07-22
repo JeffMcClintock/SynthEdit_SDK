@@ -51,6 +51,7 @@ enum { VAR =1 , DEL, NUM };
 
 typedef double(*math_function_pointer)(...);
 typedef double(*math_function_pointer1)(double);
+typedef double(*math_function_pointer2)(double, double);
 
 typedef struct
 {
@@ -121,22 +122,17 @@ double sgn( double x )
 
 double my_max( double a, double b )
 {
-	return std::max(a,b);
+	return (std::max)(a,b);
 }
 
 double my_min( double a, double b )
 {
-	return std::min(a,b);
+	return (std::min)(a,b);
 }
 
 double my_hypot(double a, double b)
 {
-#if defined( SE_TARGET_WAVES )
-    assert(false); // not supported on these compilers.
-	return 0.0;
-#else
 	return hypot(a, b);
-#endif
 }
 
 /*
@@ -160,6 +156,7 @@ FUNCTION Funcs[] =
    { "exp",     1,    (math_function_pointer)(math_function_pointer1) exp },
    { "log",     1,    (math_function_pointer)(math_function_pointer1) log },
    { "log10",   1,    (math_function_pointer)(math_function_pointer1) log10 },
+   { "pow",     2,    (math_function_pointer)(math_function_pointer2) pow },
    { "sqrt",    1,    (math_function_pointer)(math_function_pointer1) sqrt },
    { "floor",   1,    (math_function_pointer)(math_function_pointer1) floor },
    { "ceil",    1,    (math_function_pointer)(math_function_pointer1) ceil },

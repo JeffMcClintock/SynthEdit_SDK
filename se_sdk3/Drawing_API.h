@@ -7,6 +7,15 @@
 using namespace GmpiDrawing_API;
 */
 
+/* FUTURE ideas
+	// Obtain information about physical pixels. Translates DIPs to pixels. Alternatly GetPixelDpi, but might need offset also.
+	// Alternatly might want to do like dpi in terms of integer 96ths to aliviate rounding errors.
+	virtual void MP_STDCALL IMpDeviceContext::GetPixelTranslation(MP1_MATRIX_3X2* returnTransform) = 0;
+
+	* Support drawing extended-color bitmaps (e.g. 10 bits per pixel)
+	* Support additive composing (for lighting effects) (already works on Windows, not Mac)
+*/
+
 // todo, no dependancy on Gmpi.
 #include "mp_sdk_common.h"
 
@@ -83,20 +92,20 @@ namespace GmpiDrawing_API
 
 	enum MP1_TEXT_ALIGNMENT
 	{
-		MP1_TEXT_ALIGNMENT_LEADING = 0
+		MP1_TEXT_ALIGNMENT_LEADING = 0		// Left
 
-		,MP1_TEXT_ALIGNMENT_TRAILING = 1
+		,MP1_TEXT_ALIGNMENT_TRAILING = 1	// Right
 
-		,MP1_TEXT_ALIGNMENT_CENTER = 2
+		,MP1_TEXT_ALIGNMENT_CENTER = 2		// Centered
 	};
 
 	enum MP1_PARAGRAPH_ALIGNMENT
 	{
-		MP1_PARAGRAPH_ALIGNMENT_NEAR = 0
+		MP1_PARAGRAPH_ALIGNMENT_NEAR = 0	// Top
 
-		,MP1_PARAGRAPH_ALIGNMENT_FAR = 1
+		,MP1_PARAGRAPH_ALIGNMENT_FAR = 1	// Bottom
 
-		,MP1_PARAGRAPH_ALIGNMENT_CENTER = 2
+		,MP1_PARAGRAPH_ALIGNMENT_CENTER = 2	// Centered
 	};
 
 	enum MP1_WORD_WRAPPING
@@ -482,6 +491,11 @@ unsigned, can't handle negative points. not much practical use.
 		float radiusY;
 	};
 
+	// Notes:
+	// * On macOS all cap styles are taken from 'startCap'. There is no way to have a different end cap for example.
+	// * MP1_CAP_STYLE_FLAT is not recommended for dashed or dotted lines. It does not draw 'dots' on Windows.
+	// * MP1_CAP_STYLE_TRIANGLE is not supported on macOS, it draws as MP1_CAP_STYLE_ROUND.
+
 	struct MP1_STROKE_STYLE_PROPERTIES
 	{
 		MP1_CAP_STYLE startCap;
@@ -494,20 +508,36 @@ unsigned, can't handle negative points. not much practical use.
 
 		MP1_STROKE_TRANSFORM_TYPE transformType;
 	};
+/*
+	struct MP1_TEXTFORMAT_PROPERTIES 
+	{
+		float fontSize = 12;
+		const char* TextFormatfontFamilyName = "Arial";
+		GmpiDrawing_API::MP1_FONT_WEIGHT fontWeight = GmpiDrawing_API::MP1_FONT_WEIGHT_NORMAL;
+		GmpiDrawing_API::MP1_FONT_STYLE fontStyle = GmpiDrawing_API::MP1_FONT_STYLE_NORMAL;
+		GmpiDrawing_API::MP1_FONT_STRETCH fontStretch = GmpiDrawing_API::MP1_FONT_STRETCH_NORMAL;
+	};
+	*/
+
 // Interfaces
 ////////////////// FONTS //////////////////////////
 // mimicks DWRITE_FONT_METRICS, except measurements are in DIPs not design units.
 	struct MP1_FONT_METRICS
 	{
-		float ascent;
-		float descent;
-		float lineGap;
-		float capHeight;
-		float xHeight;
-		float underlinePosition;
-		float underlineThickness;
-		float strikethroughPosition;
+		float ascent;					// Ascent is the distance from the top of font character alignment box to the English baseline.
+		float descent;					// Descent is the distance from the bottom of font character alignment box to the English baseline.
+		float lineGap;					// Recommended additional white space to add between lines to improve legibility. The recommended line spacing (baseline-to-baseline distance) is the sum of ascent, descent, and lineGap. The line gap is usually positive or zero but can be negative, in which case the recommended line spacing is less than the height of the character alignment box.
+		float capHeight;				// Cap height is the distance from the English baseline to the top of a typical English capital. Capital "H" is often used as a reference character for the purpose of calculating the cap height value.
+		float xHeight;					// x-height is the distance from the English baseline to the top of lowercase letter "x", or a similar lowercase character.
+		float underlinePosition;		// Underline position is the position of underline relative to the English baseline. The value is usually made negative in order to place the underline below the baseline.
+		float underlineThickness;		//
+		float strikethroughPosition;	// Strikethrough position is the position of strikethrough relative to the English baseline. The value is usually made positive in order to place the strikethrough above the baseline.
 		float strikethroughThickness;
+
+		inline float bodyHeight() const
+		{
+			return ascent + descent;
+		}
 	};
 
 	class DECLSPEC_NOVTABLE IMpTextFormat : public gmpi::IMpUnknown
@@ -524,7 +554,11 @@ unsigned, can't handle negative points. not much practical use.
 		virtual int32_t MP_STDCALL GetFontMetrics(MP1_FONT_METRICS* returnFontMetrics) = 0;
 
 		// For the default method use lineSpacing=-1 (spacing depends solely on the content). For uniform spacing, the specified line height overrides the content.
+		// Can also be used to enable legacy-mode for cross-platform vertical font snapping by
+		// passing lineSpacing = GmpiDrawing_API::IMpTextFormat::LegacyVerticalBaselineSnapping
 		virtual int32_t MP_STDCALL SetLineSpacing(float lineSpacing, float baseline) = 0;
+
+		enum {ImprovedVerticalBaselineSnapping = -512};
 	};
 	// GUID for ITextFormat
 	// {ED903255-3FE0-4CE4-8CD1-97D72D51B7CB}
@@ -580,7 +614,8 @@ unsigned, can't handle negative points. not much practical use.
 		// Integer size.
 		virtual int32_t MP_STDCALL GetSize(MP1_SIZE_U* returnSize) = 0;
 
-		// Same as lock pixels but with option to avoid overhead of copying pixels back into image. See MP1_BITMAP_LOCK_FLAGS.
+		// Same as lockPixelsOld() but with option to avoid overhead of copying pixels back into image. See MP1_BITMAP_LOCK_FLAGS.
+		// Note: Not supported when Bitmap was created by IMpDeviceContext::CreateCompatibleRenderTarget()
 		virtual int32_t MP_STDCALL lockPixels(IMpBitmapPixels** returnPixels, int32_t flags) = 0;
 	};
 	// GUID for IBitmap
@@ -619,9 +654,9 @@ unsigned, can't handle negative points. not much practical use.
 		virtual void MP_STDCALL SetInterpolationMode(MP1_BITMAP_INTERPOLATION_MODE interpolationMode) = 0;
 	};
 	// GUID for IBitmapBrush
-	// {4540C6EE-98AB-4C79-B857-66AE64249125}
-	//static const gmpi::MpGuid SE_IID_BITMAPBRUSH_MPGUI =
-	//{ replaceme, 0x98ab, 0x4c79,{ 0xb8, 0x57, 0x66, 0xae, 0x64, 0x24, 0x91, 0x25 } };
+	// {10E6068D-75D7-4C36-89AD-1C8878E70988}
+	static const gmpi::MpGuid SE_IID_BITMAPBRUSH_MPGUI = 
+	{ 0x10e6068d, 0x75d7, 0x4c36, { 0x89, 0xad, 0x1c, 0x88, 0x78, 0xe7, 0x9, 0x88 } };
 
 	class DECLSPEC_NOVTABLE IMpSolidColorBrush : public IMpBrush
 	{
@@ -823,19 +858,18 @@ unsigned, can't handle negative points. not much practical use.
 	//static const gmpi::MpGuid SE_IID_DRAWINGSTATEBLOCK_MPGUI =
 	//{ replaceme, 0x98ab, 0x4c79,{ 0xb8, 0x57, 0x66, 0xae, 0x64, 0x24, 0x91, 0x25 } };
 
-/* FAIL
+/* not useful in practice
 	class DECLSPEC_NOVTABLE IUpdateRegion : public gmpi::IMpUnknown
 	{
 	public:
-		virtual bool MP_STDCALL isVisible(GmpiDrawing_API::MP1_RECT* rect) = 0;
-		virtual int32_t MP_STDCALL getUpdateRects(GmpiDrawing_API::MP1_RECT*** rect) = 0;
+		virtual int32_t MP_STDCALL getUpdateRects(const GmpiDrawing_API::MP1_RECT** rect) = 0;
+		virtual bool MP_STDCALL isVisible(const GmpiDrawing_API::MP1_RECT* rect) = 0;
 	};
 	// GUID for IUpdateRegion
 	// {ED046C45-6DD5-488C-BE6F-3D7B47DFFE27}
 	static const gmpi::MpGuid SE_IID_UPDATE_REGION_MPGUI =
 	{ 0xed046c45, 0x6dd5, 0x488c,{ 0xbe, 0x6f, 0x3d, 0x7b, 0x47, 0xdf, 0xfe, 0x27 } };
 */
-
 
 	class DECLSPEC_NOVTABLE IMpDeviceContext : public IMpResource
 	{
@@ -850,6 +884,29 @@ unsigned, can't handle negative points. not much practical use.
 
 		virtual int32_t MP_STDCALL CreateLinearGradientBrush(const MP1_LINEAR_GRADIENT_BRUSH_PROPERTIES* linearGradientBrushProperties, const MP1_BRUSH_PROPERTIES* brushProperties, const IMpGradientStopCollection* gradientStopCollection, IMpLinearGradientBrush** linearGradientBrush) = 0;
 
+		/*
+			Radial Gradient Brush example.
+
+			RadialGradientBrushProperties props{
+				{100.0, 100.0}, // center
+				{0.0, 0.0},		// gradientOriginOffset
+				200.0f,			// radiusX
+				200.0f			// radiusY
+			};
+
+			GradientStop gradientStops[] = {
+				{0.0f, Color::Red   },
+				{1.0f, Color::Green }
+			};
+
+			auto gradientStopCollection = g.CreateGradientStopCollection(gradientStops);
+
+			auto brushFill = g.CreateRadialGradientBrush({ props }, {}, gradientStopCollection);
+			if(!brushFill.isNull())
+			{
+				g.FillRectangle(getRect(), brushFill);
+			}
+		*/
 		virtual int32_t MP_STDCALL CreateRadialGradientBrush(const MP1_RADIAL_GRADIENT_BRUSH_PROPERTIES* radialGradientBrushProperties, const MP1_BRUSH_PROPERTIES* brushProperties, const IMpGradientStopCollection* gradientStopCollection, IMpRadialGradientBrush** radialGradientBrush) = 0;
 
 		virtual void MP_STDCALL DrawLine(MP1_POINT point0, MP1_POINT point1, const IMpBrush* brush, float strokeWidth = 1.0f, const IMpStrokeStyle* strokeStyle = nullptr) = 0;
@@ -927,7 +984,6 @@ unsigned, can't handle negative points. not much practical use.
 		// test for winrt. perhaps uri could indicate if image is in resources, and could use stream internally if nesc (i.e. VST2 only.) or just write it to disk temp.
 		// LoadStreamImage would be private member, not on store apps.
 		virtual int32_t MP_STDCALL LoadImageU(const char* utf8Uri, GmpiDrawing_API::IMpBitmap** returnDiBitmap) = 0;
-//		virtual int32_t MP_STDCALL LoadStreamImage(gmpi::IMpUnknown* stream, void** returnDiBitmap) = 0; // DEPRECATED. TO BE REMOVED IN FINAL, USE LoadImage().
 		virtual int32_t MP_STDCALL CreateStrokeStyle(const GmpiDrawing_API::MP1_STROKE_STYLE_PROPERTIES* strokeStyleProperties, float* dashes, int32_t dashesCount, GmpiDrawing_API::IMpStrokeStyle** returnValue) = 0;
 	};
 
@@ -936,10 +992,17 @@ unsigned, can't handle negative points. not much practical use.
 	static const gmpi::MpGuid SE_IID_FACTORY_MPGUI =
 	{ 0x481d4609, 0xe28b, 0x4698,{ 0xbb, 0x2d, 0x64, 0x80, 0x47, 0x5b, 0x8f, 0x31 } };
 
-	// GUID for GmpiDrawing_API::IMpFactory
-	// {F4F6ED95-CC5D-4DCE-AAA4-54A10AC9DA59}
-	//static const gmpi::MpGuid SE_IID_GRAPHICS_FACTORY =
-	//{ 0xf4f6ed95, 0xcc5d, 0x4dce,{ 0xaa, 0xa4, 0x54, 0xa1, 0xa, 0xc9, 0xda, 0x59 } };
+	class DECLSPEC_NOVTABLE IMpFactory2 : public IMpFactory
+	{
+	public:
+		virtual int32_t MP_STDCALL GetFontFamilyName(int32_t fontIndex, gmpi::IString* returnString) = 0;
+	};
+
+	// GUID for IMpFactory2
+	// {61568E7F-5256-49C6-95E6-10327EB33EC4}
+	static const gmpi::MpGuid SE_IID_FACTORY2_MPGUI =
+	{ 0x61568e7f, 0x5256, 0x49c6, { 0x95, 0xe6, 0x10, 0x32, 0x7e, 0xb3, 0x3e, 0xc4 } };
+
 } // namespace.
 
 #endif //include

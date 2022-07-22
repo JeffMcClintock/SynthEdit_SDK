@@ -77,7 +77,7 @@ void TimerManager::OnTimer(se_sdk_timers::timer_id_t timerId)
 }
 
 
-TimerManager::TimerManager(void) :
+TimerManager::TimerManager() :
 interval_( IDLE_PERIOD )
 {
 }
@@ -90,6 +90,10 @@ void TimerManager::SetInterval( int intervalMs )
 
 namespace se_sdk_timers
 {
+    bool Timer::isRunning()
+    {
+        return idleTimer_ != 0;
+    }
 	void Timer::Start()
 	{
 		Stop();
@@ -100,9 +104,6 @@ namespace se_sdk_timers
 
 #ifdef _WIN32
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP) // Windows store apps.
-			// !!! TODO !!!
-#else
 			idleTimer_ = SetTimer(
 				0,	// HWND. NULL = host main window
 				0,	// timer ID. must be 0 if HWND is null
@@ -110,10 +111,9 @@ namespace se_sdk_timers
 				SynthEditVstTimerProc);
 
 //			_RPT1(_CRT_WARN, "StartTimer %d\n", idleTimer_);
-#endif
 
 #else
-			CFRunLoopTimerContext timerContext = { periodMilliSeconds }; //untested
+            CFRunLoopTimerContext timerContext = CFRunLoopTimerContext();
 			timerContext.info = this;
 			idleTimer_ = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + periodMilliSeconds * 0.001f, periodMilliSeconds * 0.001f, 0, 0, timerCallback, &timerContext);
 			if (idleTimer_)
@@ -128,12 +128,8 @@ namespace se_sdk_timers
 		{
 #ifdef _WIN32
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP) // Windows store apps.
-			// !!! TODO !!!
-#else
 			KillTimer(0, idleTimer_);
 //			_RPT1(_CRT_WARN, "KillTimer %d\n", idleTimer_);
-#endif
 
 #else
 			CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), (CFRunLoopTimerRef)idleTimer_, kCFRunLoopCommonModes);
@@ -150,44 +146,28 @@ void Timer::OnTimer()
 	// When running under WPF. Need to ensure clients linked against MFC behave OK.
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 #endif
-	/*
-#if 0 //why a copy? A: "iterator invalidation"
-	clientContainer_t safeCopy(clients_);
-	for (auto it = safeCopy.begin(); it != safeCopy.end(); ++it)
-	{
-		if ((*it)->OnTimer() == false)
-		{
-			auto it2 = find(clients_.begin(), clients_.end(), *it);
-			if (it2 != clients_.end())
-			{
-				clients_.erase(it2);
 
-				if (clients_.empty())
-				{
-					Stop();
-				}
-			}
-		}
-	}
-#else
-	// NOPE. Crash if additional timer added during timer callback becuase iterator becomes invalid.
-	for (auto it = clients_.begin(); it != clients_.end(); )
+	clientContainer_t safeCopy(clients_);
+	for (auto client : safeCopy)
 	{
-		if ((*it)->OnTimer() == false)
+		// Access VERY cautiously. Anything can happen to clients during callback (add, remove etc).
+
+		// is client still in main list?
+		if (std::find(clients_.begin(), clients_.end(), client) == clients_.end())
+			continue;
+
+		if (!client->OnTimer())
 		{
-			it = clients_.erase(it);
-			if (clients_.empty())
-			{
-				Stop();
-			}
-		}
-		else
-		{
-			++it;
+			clients_.erase(std::remove(clients_.begin(), clients_.end(), client), clients_.end());
 		}
 	}
-#endif
-*/
+
+	if (clients_.empty())
+	{
+		Stop();
+	}
+
+#if 0 // was flaky - when an element removed, vector shrunk and skipped the next client.
 
 	// Iterate with index, std iterators can become invalidated when new clients added during callback.
 	for (int i = 0; i < clients_.size(); ++i)
@@ -207,11 +187,11 @@ void Timer::OnTimer()
 				Stop();
 			}
 		}
+#endif
 	}
 }
-}
 
-TimerManager::~TimerManager(void)
+TimerManager::~TimerManager()
 {
 	for (auto& timer : timers)
 	{
@@ -229,7 +209,7 @@ void TimerManager::RegisterClient(TimerClient* client, int periodMilliSeconds)
 			if (std::find(timer.clients_.begin(), timer.clients_.end(), client) == timer.clients_.end())
 			{
 				timer.clients_.push_back(client);
-				if (timer.clients_.size() == 1)
+				if (!timer.isRunning())
 				{
 					timer.Start();
 				}

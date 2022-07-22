@@ -18,7 +18,7 @@ namespace gmpi_dynamic_linking
 	int32_t MP_DllSymbol(DLL_HANDLE dll_handle, const char* symbol_name, void** returnFunction);
 
     std::wstring MP_GetDllFilename();
-#if defined(_WIN32) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP ) // Desktop Windows only.
+#if defined(_WIN32)
 	int32_t MP_GetDllHandle(DLL_HANDLE* returnDllHandle);
 #endif
 }

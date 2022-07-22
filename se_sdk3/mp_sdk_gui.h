@@ -10,7 +10,7 @@
 #define REGISTER_GUI_PLUGIN( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create, className)(){ return static_cast<gmpi::IMpUserInterface*> (new className(0)); }; int32_t PASTE_FUNC(r, className) = RegisterPlugin( gmpi::MP_SUB_TYPE_GUI, pluginId, &PASTE_FUNC(create, className) );}
 
 #define GMPI_REGISTER_GUI( family, className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create, className)(){ return static_cast<class MpGuiBase2*>(new className()); }; int32_t PASTE_FUNC(r, className) = RegisterPlugin( family, pluginId, &PASTE_FUNC(create, className) );}
-#define GMPI_REGISTER_CONTROLLER( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create, className)(){ return static_cast<class gmpi::IMpController*>(new className()); }; int32_t PASTE_FUNC(r, className) = RegisterPlugin( gmpi::MP_SUB_TYPE_CONTROLLER, pluginId, &PASTE_FUNC(create, className) );}
+//#define GMPI_REGISTER_CONTROLLER( className, pluginId ) namespace{ gmpi::IMpUnknown* PASTE_FUNC(create, className)(){ return static_cast<class gmpi::IMpController*>(new className()); }; int32_t PASTE_FUNC(r, className) = RegisterPlugin( gmpi::MP_SUB_TYPE_CONTROLLER, pluginId, &PASTE_FUNC(create, className) );}
 
 /* best non-macro solution (allows use of templated classnames, which fail in macro due to commas in template defintion).
 template< class moduleClass >
@@ -20,7 +20,7 @@ public:
 static gmpi::IMpUnknown* Gui(const wchar_t* moduleIdentifier)
 {
 return RegisterPlugin(gmpi::MP_SUB_TYPE_GUI, moduleIdentifier,
-[](void) -> gmpi::IMpUnknown* { return static_cast<gmpi::IMpUserInterface*> (new moduleClass(nullptr)); }
+[]() -> gmpi::IMpUnknown* { return static_cast<gmpi::IMpUserInterface*> (new moduleClass(nullptr)); }
 }
 };
 
@@ -41,7 +41,7 @@ typedef	std::map<int, class MpGuiPinBase*> GuiPins_t;
 class IGuiPinCallbackImpl
 {
 public:
-	virtual ~IGuiPinCallbackImpl(){};
+	virtual ~IGuiPinCallbackImpl() {}
 	virtual void operator()( int voice ) = 0;
 };
 
@@ -99,11 +99,11 @@ protected:
 
 // Abstract base class for several derived classes.
 class MpGuiBase_base :
-	public gmpi::IMpUserInterface, public IoldSchoolInitialisation, public GuiPinOwner
+	public gmpi::IMpUserInterface, public IoldSchoolInitialisation, public gmpi::IMpLegacyInitialization, public GuiPinOwner
 {
 public:
 	MpGuiBase_base(IMpUnknown* host);
-	virtual ~MpGuiBase_base(){}; // need virtual destructor to support deletion via pointer-to-base.
+	virtual ~MpGuiBase_base() {} // need virtual destructor to support deletion via pointer-to-base.
 
 	void initializePin( int pinId, MpGuiPinBase& pin, MpGuiBaseMemberPtr handler );
 	void initializePin( int pinId, MpGuiPinBase& pin, MpGuiBaseMemberIndexedPtr handler );
@@ -134,20 +134,41 @@ public:
 	{
 		return GuiPinOwner::notifyPin( pinId, voice );
 	}
-	virtual int32_t MP_STDCALL receiveMessageFromAudio( int32_t id, int32_t size, void* messageData ) override { return gmpi::MP_OK; }
+	virtual int32_t MP_STDCALL receiveMessageFromAudio( int32_t /*id*/, int32_t /*size*/, void* /*messageData*/ ) override { return gmpi::MP_OK; }
 	virtual int32_t MP_STDCALL onCreateContextMenu() override;
 	virtual int32_t MP_STDCALL onContextMenu( int32_t selection ) override;
 
-	// IoldSchoolInitialisation interface.
+	// IMpLegacyInitialization interface.
 	virtual int32_t MP_STDCALL setHost(IMpUnknown* host) override;
-	gmpi::IMpUserInterfaceHost* getHost(void){ return patchMemoryHost_; }
+	gmpi::IMpUserInterfaceHost* getHost(){ return patchMemoryHost_; }
 
 	virtual int32_t pinTransmit(int32_t pinId, int32_t size, const void* data, int32_t voice = 0) override
 	{
 		return getHost()->pinTransmit(pinId, size, (void*) data, voice);
 	}
 
-	GMPI_QUERYINTERFACE1(gmpi::MP_IID_GUI_PLUGIN, gmpi::IMpUserInterface)
+//	GMPI_QUERYINTERFACE1(gmpi::MP_IID_GUI_PLUGIN, gmpi::IMpUserInterface)
+	GMPI_REFCOUNT;
+	int32_t MP_STDCALL queryInterface( const gmpi::MpGuid& iid, void** returnInterface ) override
+	{
+		*returnInterface = 0;
+
+		if( iid == gmpi::MP_IID_GUI_PLUGIN || iid == gmpi::MP_IID_UNKNOWN )
+		{
+			*returnInterface = static_cast<gmpi::IMpUserInterface*>(this);
+			addRef();
+			return gmpi::MP_OK;
+		}
+
+		if( iid == gmpi::MP_IID_LEGACY_INITIALIZATION )
+		{
+			*returnInterface = static_cast<gmpi::IMpLegacyInitialization*>(this);
+			addRef();
+			return gmpi::MP_OK;
+		}
+
+		return gmpi::MP_NOSUPPORT;
+	}
 
 protected:
 	gmpi::IMpUserInterfaceHost* patchMemoryHost_;
@@ -210,14 +231,14 @@ public:
 		{
 			id = pins_.rbegin()->first + 1;
 		}
-		initializePin(id, pin, static_cast<MpGuiBaseMemberPtr2>(handler));
+		initializePin(id, pin, static_cast<MpGuiBaseMemberPtr2>(handler)); // Arrays pins need initilize with pin index first.
 	}
 
 	// IMpUserInterface2 methods
 	virtual int32_t MP_STDCALL setHost( gmpi::IMpUnknown* host ) override;
 	virtual int32_t MP_STDCALL initialize() override;
 
-	gmpi::IMpUserInterfaceHost2* getHost(void){ return patchMemoryHost_; }
+	gmpi::IMpUserInterfaceHost2* getHost(){ return patchMemoryHost_; }
 
 	// Pin updates come before initialize as each pin gets connected to whatever.
 	// Should we suport 'quiet' updates via bool flag or seperate method?
@@ -233,7 +254,7 @@ public:
 		return GuiPinOwner::notifyPin(pinId, voice);
 	}
 
-	virtual int32_t MP_STDCALL receiveMessageFromAudio(int32_t id, int32_t size, const void* messageData) override
+	virtual int32_t MP_STDCALL receiveMessageFromAudio(int32_t /*id*/, int32_t /*size*/, const void* /*messageData*/) override
     { return gmpi::MP_UNHANDLED; }
 
 	virtual int32_t pinTransmit(int32_t pinId, int32_t size, const void* data, int32_t voice = 0) override
@@ -242,16 +263,16 @@ public:
 	}
 
 	// TODO pass actual interface.
-	virtual int32_t MP_STDCALL populateContextMenu(float x, float y, gmpi::IMpUnknown* contextMenuItemsSink) override
+	virtual int32_t MP_STDCALL populateContextMenu(float /*x*/, float /*y*/, gmpi::IMpUnknown* /*contextMenuItemsSink*/) override
 	{
 		return gmpi::MP_UNHANDLED;
 	}
-	virtual int32_t MP_STDCALL onContextMenu(int32_t selection) override
+	virtual int32_t MP_STDCALL onContextMenu(int32_t /*selection*/) override
 	{
 		return gmpi::MP_UNHANDLED;
 	}
 	// TODO pass drawing POINT, pass actual returnstring interface.
-	virtual int32_t MP_STDCALL getToolTip(float x, float y, gmpi::IMpUnknown* returnToolTipString) override
+	virtual int32_t MP_STDCALL getToolTip(float /*x*/, float /*y*/, gmpi::IMpUnknown* /*returnToolTipString*/) override
 	{
 		return gmpi::MP_UNHANDLED;
 	}
@@ -278,7 +299,7 @@ class SeGuiInvisibleBase :
 	GMPI_REFCOUNT
 };
 
-#if defined(_WIN32) && ( !defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP )
+#if defined(_WIN32) && defined(_INC_WINDOWS) && ( !defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_APP )
 
 // SynthEdit double-buffered drawing with transparency support.
 // graphicsApi="composited"
@@ -289,7 +310,7 @@ public:
 	SeGuiCompositedGfxBase(IMpUnknown* host);
 
 	// IMpGraphicsSynthEdit methods
-	virtual int32_t MP_STDCALL paint( HDC hDC ) override{return gmpi::MP_OK;};
+	virtual int32_t MP_STDCALL paint( HDC /*hDC*/ ) override{return gmpi::MP_OK;};
 	virtual int32_t MP_STDCALL measure( MpSize availableSize, MpSize& returnDesiredSize ) override;
 	virtual int32_t MP_STDCALL arrange( MpRect finalRect ) override;
 	virtual int32_t MP_STDCALL onLButtonDown( UINT flags, POINT point ) override;
@@ -301,11 +322,11 @@ public:
 	void setCapture();
 	void releaseCapture();
 	bool getCapture();
-	MpRect getRect(){return rect_;};
+	MpRect getRect(){return rect_;}
 	void invalidateRect( RECT* invalidRect = 0, bool eraseBackground = true );
-	ISeGraphicsHostComposited* getGuiHost(void){return guiHost_;};
+	ISeGraphicsHostComposited* getGuiHost(){return guiHost_;};
 
-	// IoldSchoolInitialisation interface.
+	// IMpLegacyInitialization interface.
 	virtual int32_t MP_STDCALL setHost(IMpUnknown* host) override;
 
 	GMPI_QUERYINTERFACE2(SE_IID_GRAPHICS_COMPOSITED, ISeGraphicsComposited, MpGuiBase)
@@ -322,7 +343,7 @@ class MpGuiWindowsGfxBase :
 {
 public:
 	MpGuiWindowsGfxBase( IMpUnknown* unused );
-	virtual ~MpGuiWindowsGfxBase(void){}; // must be virtual so release () can delete cleanly.
+	virtual ~MpGuiWindowsGfxBase() {} // must be virtual so release () can delete cleanly.
 
 	// IMpGraphicsWinGdi methods.
 	virtual int32_t MP_STDCALL measure( MpSize availableSize, MpSize& returnDesiredSize ) override;
@@ -349,11 +370,11 @@ public:
 	bool getCapture();
 	void setCapture();
 	void releaseCapture();
-	HWND getWindowHandle(void){return window_;};
+	HWND getWindowHandle(){return window_;};
 	MpRect getRect(){return rect_;};
-	IMpGraphicsWinGdi* getGuiHost(void){return guiHost_;};
+	IMpGraphicsWinGdi* getGuiHost(){return guiHost_;};
 
-	// IoldSchoolInitialisation interface.
+	// IMpLegacyInitialization interface.
 	virtual int32_t MP_STDCALL setHost(IMpUnknown* host) override;
 
 	GMPI_QUERYINTERFACE2(MP_IID_GRAPHICS_WIN_GDI, IMpGraphicsWinGdi, MpGuiBase)
@@ -375,9 +396,9 @@ class SeGuiWindowsGfxBase :
 public:
 	SeGuiWindowsGfxBase( IMpUnknown* unused );
 
-	ISeGraphicsHostWinGdi* getGuiHost(void){return seGuiHost_;};
+	ISeGraphicsHostWinGdi* getGuiHost(){return seGuiHost_;};
 
-	// IoldSchoolInitialisation interface.
+	// IMpLegacyInitialization interface.
 	virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) override;
 
 //	GMPI_QUERYINTERFACE2(MP_IID_GRAPHICS_WIN_GDI, IMpGraphicsWinGdi, MpGuiWindowsGfxBase)
@@ -424,13 +445,15 @@ public:
 	{
 		return id_;
 	}
-	virtual int getDatatype(void) const = 0;
+	virtual int getDatatype() const = 0;
 
 protected:
 	int id_;
 	class GuiPinOwner* plugin_;
 	IGuiPinCallbackImpl* eventHandler2_;
 };
+
+// TODO: Need a way to set a large BLOB without unnesc copying, like supporting blob = std::move(blob(ptr, size));
 
 template
 <typename T> class MpGuiPin : public MpGuiPinBase
@@ -440,7 +463,6 @@ template
 public:
 	MpGuiPin()
 	{
-		setVariableToDefault( value_ );
 	}
 
 	void initialize( MpGuiBase* plugin, int p_id )
@@ -462,7 +484,7 @@ public:
 		assert( plugin_ != 0 && "Don't forget initializePin() on each pin in your constructor.");
 		plugin_->pinTransmit(getId(), rawSize(), rawData());
 	}
-	const T& getValue(void) const
+	const T& getValue() const
 	{
 		assert( plugin_ != 0 &&"Don't forget initializePin() on each pin in your constructor.");
 		return value_;
@@ -492,20 +514,19 @@ public:
 		return value_;
 	}
 
-	virtual int rawSize(void)
+	virtual int rawSize()
 	{
 		return variableRawSize<T>(value_);
 	}
-	virtual void* rawData(void)
+	virtual void* rawData()
 	{
 		return variableRawData<T>(value_);
 	}
-	virtual int getDatatype(void) const
+	virtual int getDatatype() const
 	{
 		return MpTypeTraits<T>::PinDataType;
 	}
-//	virtual int getDirection(void) const{return DIRECTION;};
-	virtual MpGuiBaseMemberPtr getDefaultEventHandler(void)
+	virtual MpGuiBaseMemberPtr getDefaultEventHandler()
 	{
 		return 0;
 	}
@@ -522,13 +543,7 @@ protected:
 	virtual bool set( int32_t voice, int size, const void* data )
 	{
 		assert(voice == 0 && "Not a polyphonic pin");
-/*
-		T temp;
-		VariableFromRaw<T>(size, data, temp);
 
-		bool ret = ! variablesAreEqual<T>(temp, value_);
-		value_ = temp;
-*/
 		// new. Don't create temporary variable (wasteful for large blobs).
 		if( size == variableRawSize(value_) )
 		{
@@ -542,21 +557,8 @@ protected:
 
 		return true;
 	}
-	/*
-	virtual void NotifyIfDefault(int32_t id)
-	{
-		T defaultvalue;
-		setVariableToDefault(defaultvalue);
 
-		if (defaultvalue == value_)
-		{
-			const int voice = 0;
-			plugin_->notifyPin(id, voice);
-		}
-	}
-	*/
-
-	T value_;
+	T value_ = {};
 };
 
 
@@ -564,7 +566,6 @@ typedef MpGuiPin<int> IntGuiPin;
 typedef MpGuiPin<bool> BoolGuiPin;
 typedef MpGuiPin<float> FloatGuiPin;
 typedef MpGuiPin<MpBlob> BlobGuiPin;
-//typedef MpGuiPin<std::wstring> StringGuiPin;
 
 class StringGuiPin : public MpGuiPin<std::wstring>
 {
@@ -582,7 +583,7 @@ template
 <typename T, int ARRAY_SIZE> class MpGuiArrayPin : public MpGuiPinBase
 {
 public:
-	MpGuiArrayPin() {};
+	MpGuiArrayPin() {}
 
 	void initialize( MpGuiBase* plugin, int p_id )
 	{
@@ -617,6 +618,11 @@ public:
 			value_[index] = value;
 			sendPinUpdate(index);
 		}
+	}
+
+	int size() const
+	{
+		return ARRAY_SIZE;
 	}
 
 	// Array-style access.
@@ -696,29 +702,21 @@ public:
 	}
 	*/
 
-	virtual int getDatatype(void) const
+	virtual int getDatatype() const
 	{
 		return MpTypeTraits<T>::PinDataType;
 	}
-//	virtual int getDirection(void) const{return DIRECTION;};
-	virtual MpGuiBaseMemberPtr getDefaultEventHandler(void)
+//	virtual int getDirection() const{return DIRECTION;};
+	virtual MpGuiBaseMemberPtr getDefaultEventHandler()
 	{
 		return 0;
 	}
 protected:
-	T value_[ARRAY_SIZE];
-//	MpGuiBaseMemberIndexedPtrBase eventHandler_;
+	T value_[ARRAY_SIZE] = {};
+
 public:
 	virtual bool setValueRaw(int index, int size, const void* data)
 	{
-/*
-		T temp;
-		VariableFromRaw<T>(size, data, temp);
-
-		bool ret = !variablesAreEqual<T>(temp, value_[index]);
-		value_[index] = temp;
-		return ret;
-*/
 		// new: Don't create temporary variable (wasteful for large blobs).
 		if( size == variableRawSize(value_[index]) )
 		{
@@ -740,26 +738,12 @@ public:
 	{
 		return variableRawData<T>(value_[index]);
 	}
-/*
-	virtual void NotifyIfDefault(int32_t id)
-	{
-		T defaultvalue;
-		setVariableToDefault(defaultvalue);
-
-		for (int32_t voice = 0; voice < (int32_t) (sizeof(value_) / sizeof(value_[0]) ); ++voice)
-		{
-			if (defaultvalue == value_[voice])
-			{
-				plugin_->notifyPin(id, voice);
-			}
-		}
-	}
-*/
 };
 
 #define MP_VOICE_COUNT 128
 typedef MpGuiArrayPin<float, MP_VOICE_COUNT> FloatArrayGuiPin;
 typedef MpGuiArrayPin<int, MP_VOICE_COUNT> IntArrayGuiPin;
 typedef MpGuiArrayPin<MpBlob, MP_VOICE_COUNT> BlobArrayGuiPin;
+typedef MpGuiArrayPin<std::wstring, MP_VOICE_COUNT> StringArrayGuiPin;
 
 #endif // .H INCLUDED

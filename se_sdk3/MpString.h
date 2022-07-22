@@ -52,7 +52,7 @@ namespace gmpi_sdk
 		{
 		}
 		//	~MpString();
-		virtual int32_t MP_STDCALL setData(const char* pData, int32_t pSize) override
+        int32_t MP_STDCALL setData(const char* pData, int32_t pSize) override
 		{
 			if (pSize < 1)
 			{
@@ -64,11 +64,11 @@ namespace gmpi_sdk
 			}
 			return gmpi::MP_OK;
 		}
-		virtual int32_t MP_STDCALL getSize() override
+        int32_t MP_STDCALL getSize() override
 		{
 			return (int32_t)cppString.size();
 		}
-		virtual const char* MP_STDCALL getData() override
+        const char* MP_STDCALL getData() override
 		{
 			return cppString.data();
 		}
@@ -82,7 +82,7 @@ namespace gmpi_sdk
 			return cppString.c_str();
 		}
 
-		const std::string& str()
+		const std::string& str() const
 		{
 			return cppString;
 		}
@@ -100,15 +100,15 @@ namespace gmpi_sdk
 			data(pData)
 			, size(pSize)
 		{};
-		virtual int32_t MP_STDCALL setData(const char* pData, int32_t pSize) override
+        int32_t MP_STDCALL setData(const char* /*pData*/, int32_t /*pSize*/) override
 		{
 			return gmpi::MP_FAIL;
 		}
-		virtual int32_t MP_STDCALL getSize() override
+        int32_t MP_STDCALL getSize() override
 		{
 			return size;
 		}
-		virtual const char* MP_STDCALL getData() override
+        const char* MP_STDCALL getData() override
 		{
 			return data;
 		}

@@ -91,25 +91,6 @@ namespace GmpiGuiHosting
 
 		virtual int32_t MP_STDCALL AddItem(const char* text, int32_t id, int32_t flags) override
 		{
-			/*
-			UINT nativeFlags = MF_STRING;
-
-
-			if ((flags & gmpi_gui::MP_PLATFORM_MENU_BREAK) != 0)
-			{
-				nativeFlags |= MF_MENUBREAK;
-			}
-
-			if ((flags & gmpi_gui::MP_PLATFORM_SUB_MENU_BEGIN) != 0)
-			{
-				// TODO. see ContextMenuBuilder::TrackPopupMenu
-			}
-			if ((flags & gmpi_gui::MP_PLATFORM_SUB_MENU_END) != 0)
-			{
-			}
-
-			AppendMenu(hmenu, nativeFlags, menuIds.size(), Utf8ToWstring(text).c_str());
-			 */
 			menuIds.push_back(id);
 
             if ((flags & gmpi_gui::MP_PLATFORM_MENU_SEPARATOR) != 0)
@@ -202,25 +183,31 @@ namespace GmpiGuiHosting
 		GMPI_REFCOUNT;
 	};
 
+    struct PlatformTextEntryObserver
+    {
+        virtual void onTextEditRemoved() = 0;
+    };
+    
 	class PlatformTextEntry : public gmpi_gui::IMpPlatformText, public EventHelperClient
 	{
         NSView* view;
-		//int align;
 		float textHeight;
+        int align = 0;
+        bool multiline = false;
 		GmpiDrawing::Rect rect;
         gmpi_gui::ICompletionCallback* completionHandler;
         SYNTHEDIT_EVENT_HELPER_CLASSNAME* eventhelper;
-
+        PlatformTextEntryObserver* drawingFrame;
+        
 	public:
 		std::string text_;
 
-		PlatformTextEntry(NSView* pview, GmpiDrawing_API::MP1_RECT* prect) :
-			completionHandler(nullptr)
-			,view(pview)
-			//, align(TPM_LEFTALIGN)
-			//, dpiScale(dpi)
-			, rect(*prect)
-			,textHeight(12)
+		PlatformTextEntry(PlatformTextEntryObserver* pdrawingFrame, NSView* pview, GmpiDrawing_API::MP1_RECT* prect) :
+			view(pview)
+            ,textHeight(12)
+            ,completionHandler(nullptr)
+			,rect(*prect)
+            ,drawingFrame(pdrawingFrame)
 		{
             eventhelper = [SYNTHEDIT_EVENT_HELPER_CLASSNAME alloc];
             [eventhelper initWithClient : this];
@@ -233,6 +220,8 @@ namespace GmpiGuiHosting
 				[textField removeFromSuperview];
 				textField = nil;
 			}
+            
+            drawingFrame->onTextEditRemoved();
 		}
 
 		virtual int32_t MP_STDCALL SetText(const char* text) override
@@ -265,35 +254,50 @@ namespace GmpiGuiHosting
             completionHandler = pCompletionHandler;
             
 			textField = [[NSTextField alloc] initWithFrame:NSMakeRect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)];
+            
+            [textField setFont:[NSFont systemFontOfSize:textHeight]];
+            
             // Set Text.
-            NSString* nsstr = [NSString stringWithCString : text_.c_str() encoding : NSUTF8StringEncoding];
+            NSString* nsstr = [NSString stringWithCString : text_.c_str() encoding: NSUTF8StringEncoding];
             [textField setStringValue:nsstr];
+            
+            textField.bezeled = false;
+            
+            switch(align)
+            {
+                case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING:
+                    break;
+                case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER:
+                    textField.alignment = NSTextAlignmentCenter;
+                    break;
+                case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING:
+                    textField.alignment = NSTextAlignmentRight;
+                    break;
+            }
+            
+            textField.usesSingleLineMode = !multiline;
+            
+            textField.drawsBackground = true;
+            [textField setBackgroundColor:[NSColor textBackgroundColor]];
             
             // Set Callback.
             [textField setTarget:eventhelper];              // This is the object that recievs callbacks.
-            [textField setAction: @selector(endEditing:)];  // This is the method on the reciever to call, coincides with NSControl method too.
+            [textField setAction: @selector(endEditing:)];  // This is the method on the reciever to call,
+
             
             // Show Text Field
 			[view addSubview : textField];
-
+            
+            // Set focus
+            [textField becomeFirstResponder];
+            
 			return gmpi::MP_OK;
 		}
 
 		virtual int32_t MP_STDCALL SetAlignment(int32_t alignment) override
 		{
-			//switch (alignment)
-			//{
-			//case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_LEADING: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Left:
-			//	align = TPM_LEFTALIGN;
-			//	break;
-			//case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_CENTER: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Center:
-			//	align = TPM_CENTERALIGN;
-			//	break;
-			//case GmpiDrawing_API::MP1_TEXT_ALIGNMENT_TRAILING: // gmpi_gui::PopupMenu::HorizontalAlignment::A_Right:
-			//default:
-			//	align = TPM_RIGHTALIGN;
-			//	break;
-			//}
+            align = (alignment & 0x03);
+            multiline = (alignment > 16) == 1;
 			return gmpi::MP_OK;
 		}
 
@@ -306,7 +310,7 @@ namespace GmpiGuiHosting
         virtual void CallbackFromCocoa(NSObject* sender) override
         {
             text_ = [[textField stringValue] UTF8String];
-            
+
             [textField removeFromSuperview];
 //            completionHandler->OnComplete(i >= 0 ? gmpi::MP_OK : gmpi::MP_CANCEL);
             completionHandler->OnComplete(gmpi::MP_OK);
@@ -399,30 +403,33 @@ namespace GmpiGuiHosting
 
 			//an array of file extensions to filter the file list
             NSMutableArray* extensionsstring = [[NSMutableArray alloc] init];
+
+            bool allowsOtherFileTypes = false;
             for( auto& e : extensions )
             {
-                /*
-                if( extensionsstring.empty() )
+                if(e.first == "*")
                 {
-                    extensionsstring = e.first;
+                    allowsOtherFileTypes = true;
                 }
                 else
                 {
-                    extensionsstring += ',';
-                    extensionsstring += e.first;
+                    NSString* temp = [NSString stringWithCString : e.first.c_str() encoding : NSUTF8StringEncoding];
+                    [extensionsstring addObject:temp];
                 }
-                 */
-                NSString* temp = [NSString stringWithCString : e.first.c_str() encoding : NSUTF8StringEncoding];
-                [extensionsstring addObject:temp];
             }
             
-//            NSString* initialUrlString = [NSString stringWithCString : initial_folder.c_str() encoding : NSUTF8StringEncoding];
-//            NSURL* initialUrl = [NSURL URLWithString:initialUrlString ];
-            //dialog.directoryURL = initialUrl;
             [dialog setDirectoryURL: [NSURL fileURLWithPath:[NSString stringWithCString : initial_folder.c_str() encoding : NSUTF8StringEncoding]]];
             
-            dialog.allowedFileTypes = extensionsstring; //@[ns_extensions_str];
-
+            // leave allowedFileTypes nil if "All" files is an option.
+            if(!extensions.empty())
+            {
+                dialog.allowedFileTypes = extensionsstring;
+                if(allowsOtherFileTypes)
+                {
+                    dialog.allowsOtherFileTypes = YES;
+                }
+            }
+            
             if( [dialog runModal] == NSFileHandlingPanelOKButton)
             {
                 //get the selected file URLs
@@ -498,12 +505,6 @@ namespace GmpiGuiHosting
 //			[alert setInformativeText : @"Deleted records cannot be restored."];
 			[alert setAlertStyle : NSWarningAlertStyle];
 
-			if ([alert runModal] == NSAlertFirstButtonReturn) {
-				// OK clicked, delete the record
-//todo				[self deleteRecord : currentRec];
-			}
-//			[alert release];
-
 			auto result = [alert runModal] == NSAlertFirstButtonReturn ? gmpi::MP_OK : gmpi::MP_CANCEL;
 			returnCompletionHandler->OnComplete(result);
 
@@ -519,7 +520,6 @@ namespace GmpiGuiHosting
 	class DrawingFrameCocoa : public gmpi_gui::IMpGraphicsHost, public gmpi::IMpUserInterfaceHost2
 	{
 		gmpi::cocoa::DrawingFactory DrawingFactory;
-		//    IGuiHost2* controller;
 		gmpi_sdk::mp_shared_ptr<gmpi::IMpUserInterface> pluginParametersLegacy;
 		gmpi_sdk::mp_shared_ptr<gmpi::IMpUserInterface2> pluginParameters;
 		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics> pluginGraphics;
@@ -657,7 +657,7 @@ namespace GmpiGuiHosting
 		{
 			//TODO        assert(false); // not implemented.
 		}
-		virtual int32_t MP_STDCALL setCapture(void) override
+		virtual int32_t MP_STDCALL setCapture() override
 		{
 			//TODO         assert(false); // not implemented.
 			return gmpi::MP_FAIL;
@@ -667,7 +667,7 @@ namespace GmpiGuiHosting
 			//TODO         assert(false); // not implemented.
 			return gmpi::MP_FAIL;
 		}
-		virtual int32_t MP_STDCALL releaseCapture(void) override
+		virtual int32_t MP_STDCALL releaseCapture() override
 		{
 			//TODO         assert(false); // not implemented.
 			return gmpi::MP_FAIL;

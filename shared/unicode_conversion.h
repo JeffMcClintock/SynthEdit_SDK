@@ -1,6 +1,4 @@
-#ifndef UNICODE_CONVERSION_H_INCLUDED
-#define UNICODE_CONVERSION_H_INCLUDED
-
+#pragma once
 /*
 #include "../shared/unicode_conversion.h"
 
@@ -10,8 +8,6 @@ using namespace JmUnicodeConversions;
 #include <string>
 #include <assert.h>
 #include <stdlib.h>	 // wcstombs() on Linux.
-#include "xplatform.h"
-
 #if defined(_WIN32)
 #include "windows.h"
 #endif
@@ -19,56 +15,90 @@ using namespace JmUnicodeConversions;
 namespace JmUnicodeConversions
 {
 
-inline std::string WStringToUtf8(const std::wstring& p_cstring )
+inline std::string WStringToUtf8_mac(const std::wstring& p_cstring)
 {
-#if defined(_WIN32)
-	size_t bytes_required = 1 + WideCharToMultiByte( CP_UTF8, 0, p_cstring.c_str(), -1, 0, 0, NULL, NULL);
-#else
-	size_t bytes_required = 1 + p_cstring.size();
-#endif
-
-	char* temp = new char[bytes_required];
-    
-#if defined(_WIN32)
-	WideCharToMultiByte( CP_UTF8, 0, p_cstring.c_str(), -1, temp, (int) bytes_required, NULL, NULL);
-#else
-	wcstombs(temp, p_cstring.c_str(), bytes_required );
-#endif
-
-	std::string res(temp);
-	delete [] temp;
+	const auto size = wcstombs(0, p_cstring.c_str(), 0);
+	std::string res;
+	res.resize(size);
+	wcstombs((char*)res.data(), p_cstring.c_str(), size);
 	return res;
 }
 
-inline std::wstring Utf8ToWstring( const char* p_string )
+inline std::string WStringToUtf8(const std::wstring& p_cstring )
 {
-    if( p_string == 0)
-    {
-        return std::wstring(L"");
-    }
 #if defined(_WIN32)
-	size_t length = 1 + MultiByteToWideChar( CP_UTF8, 0, p_string, -1, (LPWSTR)0, 0 );
+    std::string res;
+    const size_t size = WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		p_cstring.data(),
+		static_cast<int>(p_cstring.size()),
+		0,
+		0,
+		NULL,
+		NULL
+	);
+    
+	res.resize(size);
+
+	WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		p_cstring.data(),
+		static_cast<int>(p_cstring.size()),
+		const_cast<LPSTR>(res.data()),
+		static_cast<int>(size),
+		NULL,
+		NULL
+	);
+	return res;
 #else
-	size_t length = 1 + mbstowcs(0, p_string, 0 );
+	return WStringToUtf8_mac(p_cstring);
 #endif
+}
 
-	wchar_t* wide = new wchar_t[length];
-	wide[0] = 0; // Handle null input pointers.
-
-#if defined(_WIN32)
-	MultiByteToWideChar( CP_UTF8, 0, p_string, -1, (LPWSTR)wide, (int) length );
-#else
-	mbstowcs(wide, p_string, length );
-#endif
-
-	std::wstring temp(wide);
-	delete [] wide;
-	return temp;
+inline std::wstring Utf8ToWstring_mac(const std::string& p_string)
+{
+	const auto size = mbstowcs(0, p_string.c_str(), 0);
+	std::wstring res;
+	res.resize(size);
+	mbstowcs(const_cast<wchar_t*>(res.data()), p_string.c_str(), size);
+	return res;
 }
 
 inline std::wstring Utf8ToWstring( const std::string& p_string )
 {
-	return Utf8ToWstring( p_string.c_str() );
+#if defined(_WIN32)
+	std::wstring res;
+	const size_t size = MultiByteToWideChar(
+		CP_UTF8,
+		0,
+		p_string.data(),
+		static_cast<int>(p_string.size()),
+		0,
+		0
+	);
+
+	res.resize(size);
+
+	MultiByteToWideChar(
+		CP_UTF8,
+		0,
+		p_string.data(),
+		static_cast<int>(p_string.size()),
+		const_cast<LPWSTR>(res.data()),
+		static_cast<int>(size)
+	);
+	return res;
+#else
+	return Utf8ToWstring_mac(p_string);
+#endif
+}
+
+inline std::wstring Utf8ToWstring(const char* p_string)
+{
+	std::string s(p_string);
+	return Utf8ToWstring(s);
 }
 
 #ifdef _WIN32
@@ -110,46 +140,4 @@ inline std::wstring Utf8ToWstring( const std::string& p_string )
     }
     
 #endif
-    
-#ifdef UNICODE
-	inline std::wstring toWstring( const platform_string& s )
-	{
-		return s;
-	}
-	inline std::string toString( const platform_string& s )
-	{
-		return WStringToUtf8(s);
-	}
-	inline platform_string toPlatformString( const std::wstring& s )
-	{
-		return s;
-	}
-	inline platform_string toPlatformString( const std::string& s )
-	{
-		return Utf8ToWstring(s);
-	}
-#else
-	inline std::string toString( const platform_string& s )
-	{
-		return s;
-	}
-	inline std::wstring toWstring( const platform_string& s )
-	{
-		return Utf8ToWstring(s);
-	}
-    inline std::wstring toWstring( const _TCHAR* s )
-    {
-        return toWstring( platform_string(s) );
-    }
-	inline platform_string toPlatformString( const std::string& s )
-	{
-		return s;
-	}
-	inline platform_string toPlatformString( const std::wstring& s )
-	{
-		return WStringToUtf8(s);
-	}
-#endif
-
 }
-#endif

@@ -21,111 +21,202 @@ FontCache* FontCache::instance()
 	return &instance;
 }
 
-GmpiDrawing::TextFormat FontCacheClient::GetTextFormat(std::string style)
+GmpiDrawing::TextFormat_readonly FontCacheClient::GetTextFormat(std::string style)
 {
 	return GetTextFormat(dynamic_cast<MpGuiBase2*>(this)->getHost(), dynamic_cast<MpGuiGfxBase*>(this)->getGuiHost(), style);
 }
 
-FontMetadata* FontCacheClient::GetFontMetatdata(std::string style)
+const FontMetadata* FontCacheClient::GetFontMetatdata(std::string style)
 {
 	FontMetadata* returnFontData = nullptr;
 	GetTextFormat(dynamic_cast<MpGuiBase2*>(this)->getHost(), dynamic_cast<MpGuiGfxBase*>(this)->getGuiHost(), style, &returnFontData);
 	return returnFontData;
 }
 
-GmpiDrawing::TextFormat FontCache::GetTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** returnMetadata)
+SkinMetadata const* FontCache::getSkin(gmpi::IMpUserInterfaceHost2* host, std::string skinUri)
 {
-	if (returnMetadata)
-		*returnMetadata = nullptr;
-
-	Factory factory;
-	guiHost->GetDrawingFactory(factory.GetAddressOf());
-
-	// Get my skin URI.
-	MpString fullUri;
-	host->RegisterResourceUri("global", "ImageMeta", &fullUri);
-
-	for (auto& cachedfont : fonts_)
+	for (auto& cachedskin : skins_)
 	{
-		if (cachedfont.factory == factory.Get() && cachedfont.skinId == fullUri.str() && cachedfont.style == style)
+		if (cachedskin.skinUri == skinUri)
 		{
-			if (returnMetadata)
-			{
-				*returnMetadata = cachedfont.metadata.get();
-			}
-
-			return cachedfont.textFormat;
-			break;
+			return &cachedskin;
 		}
-	} 
+	}
 
 	// Load skin text file
-	SkinMetadata* skin1 = nullptr;
+	skins_.push_back(SkinMetadata());
+	skins_.back().skinUri = skinUri;
+
+	gmpi_sdk::mp_shared_ptr<gmpi::IProtectedFile2> stream2;
+	host->OpenUri(skinUri.c_str(), stream2.getAddressOf());
+	if (stream2)
+	{
+		skins_.back().Serialise(stream2);
+	}
+
+	return &(skins_.back());
+}
+
+// returned pointer is temporary only.
+SkinMetadata* FontCache::getSkin(gmpi::IMpUserInterfaceHost2* host)
+{
+	// Get my skin 'global.txt' URI.
+	MpString fullUri;
+	host->RegisterResourceUri("global", "ImageMeta", &fullUri);
 
 	for (auto& cachedskin : skins_)
 	{
 		if (cachedskin.skinUri == fullUri.str())
 		{
-			skin1 = &cachedskin;
-			break;
+			return &cachedskin;
 		}
 	}
 
-	if (skin1 == nullptr)
+	// Load skin text file
+	skins_.push_back(SkinMetadata());
+	skins_.back().skinUri = fullUri.str();
+
+	gmpi_sdk::mp_shared_ptr<gmpi::IProtectedFile2> stream2;
+	host->OpenUri(fullUri.c_str(), stream2.getAddressOf());
+	if (stream2)
 	{
-		gmpi_sdk::mp_shared_ptr<gmpi::IProtectedFile2> stream2;
-		host->OpenUri(fullUri.c_str(), stream2.getAddressOf());
-		if (stream2 == 0)
-		{
-			return factory.CreateTextFormat(); // in case of failure, return a default textformat.
-		}
-
-		skins_.push_back(SkinMetadata());
-		skins_.back().skinUri = fullUri.str();
 		skins_.back().Serialise(stream2);
-		skin1 = &(skins_.back());
 	}
 
-	auto fontmetadata = skin1->getFont(style);
+	return &(skins_.back());
+}
 
-	auto textFormat = factory.CreateTextFormat(
-		(float)fontmetadata->size_,
-		fontmetadata->faceFamilies_[0].c_str(),
-		(GmpiDrawing_API::MP1_FONT_WEIGHT) fontmetadata->getWeight(),
-		(GmpiDrawing_API::MP1_FONT_STYLE) fontmetadata->getStyle());
+GmpiDrawing::TextFormat_readonly FontCache::TextFormatExists(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** returnMetadata)
+{
+	if (returnMetadata)
+		*returnMetadata = nullptr;
 
-	fonts_.push_back(TypefaceData(factory.Get(), fullUri.str(), style, textFormat, fontmetadata));
+	// To identify a font we need the same skin, the same style and the same factory (else we risk referencing fonts from deleted windows/factorys).
+	MpString fullUri;
+	host->RegisterResourceUri("global", "ImageMeta", &fullUri);
+
+	GmpiDrawing_API::IMpFactory* factory{};
+	guiHost->GetDrawingFactory(&factory);
+
+	const fontKey key{factory, style, fullUri.str()};
+
+	auto it = fonts_.find(key);
+	if(it != fonts_.end())
+	{
+		const auto& cachedfont = it->second;
+		if (returnMetadata)
+		{
+			*returnMetadata = cachedfont.legacy_metadata.get();
+		}
+
+		return cachedfont.textFormat;
+	}
+
+	return {};
+}
+
+GmpiDrawing::TextFormat_readonly FontCache::GetTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, FontMetadata** returnMetadata)
+{
+	auto fontmetadata = getSkin(host)->getFont(style); // note, may return style "default" if 'style' does not exist in this skin.
+
+	auto textformat = FontCache::TextFormatExists(host, guiHost, fontmetadata->category_, returnMetadata); // important to check for *actual* skin name, which may be "default", not 'style'.
+	if (textformat)
+	{
+		return textformat;
+	}
+
+	return CreateTextFormatAndCache(host, guiHost, fontmetadata, returnMetadata);
+}
+
+GmpiDrawing::TextFormat_readonly FontCache::CreateTextFormatAndCache(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, const FontMetadata* fontmetadata, FontMetadata** returnMetadata)
+{
+	MpString fullUri;
+	host->RegisterResourceUri("global", "ImageMeta", &fullUri);
+
+	Factory factory;
+	guiHost->GetDrawingFactory(factory.GetAddressOf());
+
+	TextFormat textFormat;
+	if (fontmetadata->verticalSnapBackwardCompatibilityMode)
+	{
+		textFormat = factory.CreateTextFormat(
+			(float)fontmetadata->size_,
+			fontmetadata->faceFamilies_[0].c_str(),
+			(GmpiDrawing_API::MP1_FONT_WEIGHT) fontmetadata->getWeight(),
+			(GmpiDrawing_API::MP1_FONT_STYLE) fontmetadata->getStyle());
+	}
+	else
+	{
+		// Fontsize will use fontmetadata->bodyHeight_ if provided. which should be populated by widget to suit the widgets dimensions.
+		// Otherwise fallback to font-size (which varies between fonts/platforms).
+		const float minimumFontSize = 1.0f;
+		const float fallBackBodyHeight = (std::max)(minimumFontSize, static_cast<float>(fontmetadata->pixelHeight_));
+
+		const float bodyHeight = fontmetadata->bodyHeight_ > 0.0f ? fontmetadata->bodyHeight_ : fallBackBodyHeight;
+
+		textFormat = factory.CreateTextFormat2(
+			bodyHeight,
+			fontmetadata->faceFamilies_,
+			fontmetadata->getWeight(),
+			fontmetadata->getStyle(),
+			GmpiDrawing::FontStretch::Normal,
+			fontmetadata->bodyHeightDigitsOnly_
+		);
+	}
+
+	textFormat.SetTextAlignment(fontmetadata->getTextAlignment());
+	textFormat.SetParagraphAlignment(fontmetadata->paragraphAlignment);
+	textFormat.SetWordWrapping(fontmetadata->wordWrapping);
+
+	const fontKey key{factory.Get(), fontmetadata->category_, fullUri.str()};
+
+	assert(fonts_.find(key) == fonts_.end()); // don't want to delete existing entry, trashing pointers.
+	fonts_[key] = TypefaceData(textFormat, fontmetadata);
 
 	if (returnMetadata)
-		*returnMetadata = fonts_.back().metadata.get();
+		*returnMetadata = fonts_[key].legacy_metadata.get();
 
 	return textFormat;
 }
 
-void FontCache::RegisterCustomTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, const FontMetadata* fontmetadata)
+// !!! DEPRECATED. Use GetCustomTextFormat() instead.
+GmpiDrawing::TextFormat FontCache::AddCustomTextFormat(gmpi::IMpUserInterfaceHost2* host, gmpi_gui::IMpGraphicsHost* guiHost, std::string style, const FontMetadata* fontmetadata)
 {
-	Factory factory;
-	guiHost->GetDrawingFactory(factory.GetAddressOf());
+	assert(!TextFormatExists(host, guiHost, style)); // already registered?
 
-	// Get my skin URI.
-	MpString fullUri;
-	host->RegisterResourceUri("global", "ImageMeta", &fullUri);
+	FontMetadata customMetadata = *fontmetadata;
+	customMetadata.category_ = style; // adopt custom style name, else will overwrite base style cache.
 
-	// Create font.
-	GmpiDrawing::TextFormat textFormat;
-	factory.Get()->CreateTextFormat(
-		fontmetadata->faceFamilies_[0].c_str(),
-		NULL,
-		(GmpiDrawing_API::MP1_FONT_WEIGHT) fontmetadata->getWeight(),
-		(GmpiDrawing_API::MP1_FONT_STYLE) fontmetadata->getStyle(),
-		GmpiDrawing_API::MP1_FONT_STRETCH_NORMAL,
-		(float)fontmetadata->size_, // dipFontSize
-		0,							//locale
-		textFormat.GetAddressOf()
-	);
+	FontMetadata* returnMetadata = {};
+	auto tfReadOnly = CreateTextFormatAndCache(host, guiHost, &customMetadata, &returnMetadata);
 
-	fonts_.push_back(TypefaceData(factory.Get(), fullUri.str(), style, textFormat, fontmetadata));
-	fonts_.back().style = style; // custom style name.
+	// naughty, convert read-only text format to writable. (Allows caller to add final customization).
+	TextFormat res;
+	tfReadOnly.Get()->queryInterface(GmpiDrawing_API::SE_IID_TEXTFORMAT_MPGUI, res.asIMpUnknownPtr());
+	return res;
+}
+
+GmpiDrawing::TextFormat_readonly FontCache::GetCustomTextFormat(
+	gmpi::IMpUserInterfaceHost2* host,
+	gmpi_gui::IMpGraphicsHost* guiHost,
+	std::string customStyleName,
+	std::string basedOnStyle,
+	std::function<void(FontMetadata* customFont)> customizeFontCallback,
+	FontMetadata** returnMetadata)
+{
+	auto tf = TextFormatExists(host, guiHost, customStyleName, returnMetadata);
+	if (!tf.isNull())
+	{
+		return tf;
+	}
+
+	// Get the specified font metadata and make a copy.
+	auto fontmetadata = *(getSkin(host)->getFont(basedOnStyle));
+	fontmetadata.category_ = customStyleName;
+
+	customizeFontCallback(&fontmetadata);
+
+	return CreateTextFormatAndCache(host, guiHost, &fontmetadata, returnMetadata);
 }
 
 // Need to keep track of clients so imagecache can be cleared BEFORE program exit (else WPF crashes).

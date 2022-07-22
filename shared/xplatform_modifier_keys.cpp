@@ -14,12 +14,7 @@ namespace modifier_keys
 	bool isHeldShift()
 	{
 #ifdef _WIN32
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP) // Windows store apps.
-		// !!! TODO !!!
-		return false;
-#else
 		return GetKeyState(VK_SHIFT) < 0;
-#endif
 #else
 		// TODO MAC>
         return false;
@@ -29,12 +24,7 @@ namespace modifier_keys
 	bool isHeldCtrl()
 	{
 #ifdef _WIN32
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP) // Windows store apps.
-		// !!! TODO !!!
-		return false;
-#else
 		return GetKeyState(VK_CONTROL) < 0;
-#endif
 #else
 		// TODO MAC>
         return false;
@@ -44,12 +34,7 @@ namespace modifier_keys
 	bool isHeldAlt()
 	{
 #ifdef _WIN32
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP) // Windows store apps.
-		// !!! TODO !!!
-		return false;
-#else
 		return GetKeyState(VK_MENU) < 0;
-#endif
 #else
 		// TODO MAC>
         return false;

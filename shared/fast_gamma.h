@@ -13,6 +13,7 @@ namespace se_sdk
 	{
 	public:
 		float SrgbToFloat[256];
+		float RgbToFloat[256];
 		float LinearToSRGB[256];
 		float RGBtoSRGB[256];
 
@@ -37,6 +38,11 @@ namespace se_sdk
 		inline static float sRGB_to_float(unsigned char pixel)
 		{
 			return static_resource_.SrgbToFloat[pixel];
+		}
+
+		inline static float RGB_to_float(unsigned char pixel)
+		{
+			return static_resource_.RgbToFloat[pixel];
 		}
 
 		// Fast version.
@@ -132,25 +138,23 @@ namespace se_sdk
 		{
 			// return (int) (0.5 + normalised * 255.0);
 			return fastNormalisedToPixel(static_cast<float>(normalised));
-		}
-
-		
+		}	
 	};
 
 	inline gammaLookupTables::gammaLookupTables()
 	{
-		const double oneOver255 = 1.0f / 255.0f;
+		constexpr double oneOver255 = 1.0f / 255.0f;
 
 		for (int i = 1; i < 256; ++i)
 		{
 			auto srgb = i * oneOver255;
 
+			RgbToFloat[i] = static_cast<float>(FastGamma::gamma22ToLinear(srgb));
 			SrgbToFloat[i] = static_cast<float>(FastGamma::srgbToLinear(srgb));
 			LinearToSRGB[i] = static_cast<float>(FastGamma::srgbToLinear((i - 0.5f) * oneOver255));
 		}
-		LinearToSRGB[0] = SrgbToFloat[0] = 0.0f;
+		RgbToFloat[0] = LinearToSRGB[0] = SrgbToFloat[0] = 0.0f;
 
-//		const double gamma = 2.2;
 		for (int i = 1; i < 256; ++i)
 		{
 			auto rgb = i * oneOver255;

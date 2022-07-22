@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 
 /* USEAGE.
 
@@ -14,9 +15,27 @@
 
 // #define GMPI_TEST_SSE_DISABLED // use for testing non-SSE codepath.
 
-// Include SSE Intrinsics if availalble and set macro GMPI_SSE_AVAILABLE.
-#if (/*defined(_M_IX86) || defined(_M_X64) ||*/ !defined(__arm__)) && !defined(GMPI_TEST_SSE_DISABLED)
-#include <emmintrin.h>
+#if defined(GMPI_TEST_SSE_DISABLED)
+	#define GMPI_USE_SSE 0
+#else
+	#if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__)
+		#include <emmintrin.h>
+		#define GMPI_USE_SSE 1
+	#else
+		#if defined(__arm__)
+/* dosn't compile on M1
+			#include "./sse2neon.h"
+			#define GMPI_USE_SSE 1
+*/
+		#endif
+
+		#define GMPI_USE_SSE 0
+	#endif
+#endif
+
+// Include SSE Intrinsics if available and set macro GMPI_SSE_AVAILABLE.
+#if GMPI_USE_SSE
+
 #define GMPI_SSE_AVAILABLE
 
 inline int FastRealToIntTruncateTowardZero(const float& f)
@@ -37,23 +56,21 @@ inline int  FastRealToIntFloor( double value )
 }
 
 #else
-#include <assert.h>
 
-inline int FastRealToIntTruncateTowardZero(float& f)
+inline int FastRealToIntTruncateTowardZero(const float& f)
 {
-//	assert(f >= 0.0f); // else rounding wrong.
-	return (int) f;
+	return static_cast<int>(f);
 }
 
-inline int FastRealToIntTruncateTowardZero(double& f)
+inline int FastRealToIntTruncateTowardZero(const double& f)
 {
 	assert(f >= 0.0f); // else rounding wrong.
-	return (int)f;
+    return static_cast<int>(f);
 }
 
-inline int FastRealToIntFloor( double f )
+inline int FastRealToIntFloor(double f)
 {
-	return (int)f;
+    return static_cast<int>(f);
 }
 #endif
 

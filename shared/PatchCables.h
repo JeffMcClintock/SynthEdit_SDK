@@ -14,6 +14,7 @@ namespace SynthEdit2
 			int32_t toUgHandle;
 			int32_t fromUgPin;
 			int32_t toUgPin;
+			int32_t colorIndex;
 		};
 
 	public:
@@ -22,25 +23,14 @@ namespace SynthEdit2
 		PatchCables(RawView raw);
 		RawData Serialise();
 
-		void insert(int32_t fromModule, int fromPin, int32_t toModule, int toPin)
+		void insert(int32_t fromModule, int fromPin, int32_t toModule, int toPin, int color)
 		{
-			auto it = cables.insert(cables.begin(), PatchCables::Cable());
-			auto& c = *it;
-
-			c.fromUgHandle = fromModule;
-			c.toUgHandle = toModule;
-			c.fromUgPin = fromPin;
-			c.toUgPin = toPin;
+			cables.insert(cables.begin(), {fromModule, toModule, fromPin, toPin, color});
 		}
 
-		void push_back(int32_t fromModule, int fromPin, int32_t toModule, int toPin)
+		void push_back(int32_t fromModule, int fromPin, int32_t toModule, int toPin, int color)
 		{
-			cables.push_back(PatchCables::Cable());
-			auto& c = cables.back();
-			c.fromUgHandle = fromModule;
-			c.toUgHandle = toModule;
-			c.fromUgPin = fromPin;
-			c.toUgPin = toPin;
+			cables.push_back({fromModule, toModule, fromPin, toPin, color});
 		}
 	};
 }
