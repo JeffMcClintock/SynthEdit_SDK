@@ -426,7 +426,22 @@ namespace gmpi
 				recip2 * ((msg[6] << 8) | msg[7]),
 			};
 		}
+		struct controller
+		{
+			uint8_t type;
+			float value;
+		};
 
+		inline controller decodeController(midi::message_view msg)
+		{
+			assert(msg.size() == 8);
+
+			return
+			{
+				msg[2],
+				gmpi::midi::utils::u0_32_ToFloat(msg.begin() + 4),
+			};
+		}
 		struct polyController
 		{
 			uint8_t noteNumber;
@@ -434,7 +449,7 @@ namespace gmpi
 			float value;
 		};
 
-		inline polyController decodeController(midi::message_view msg)
+		inline polyController decodePolyController(midi::message_view msg)
 		{
 			assert(msg.size() == 8);
 
@@ -459,7 +474,9 @@ namespace gmpi
 			return
 			{
 				static_cast<uint16_t>((msg[2] << 8) | msg[3]),
-				static_cast<uint32_t>((msg[4] << 24) | (msg[5] << 16) | (msg[6] << 8) | msg[7])
+//				static_cast<uint32_t>((msg[4] << 24) | (msg[5] << 16) | (msg[6] << 8) | msg[7])
+                // decode backward compatible 14 bits only.
+				static_cast<uint32_t>((msg[4] << 6) | (msg[5] >> 2)) // lower 6 bits are in upper 6 of msg[5]
 			};
 		}
 
@@ -530,6 +547,20 @@ namespace gmpi
 			{
 				static_cast<uint8_t>((gmpi::midi_2_0::ChannelVoice64 << 4) | (channelGroup & 0x0f)),
 				static_cast<uint8_t>((gmpi::midi_2_0::RPN << 4) | (channel & 0x0f)),
+				static_cast<uint8_t>(rpn >> 8),
+				static_cast<uint8_t>(rpn & 0xff),
+				static_cast<uint8_t>((rawValue >> 24)),
+				static_cast<uint8_t>((rawValue >> 16) & 0xff),
+				static_cast<uint8_t>((rawValue >> 8) & 0xff),
+				static_cast<uint8_t>((rawValue >> 0) & 0xff)
+			};
+		}
+		inline rawMessage64 makeNrpnRaw(uint16_t rpn, uint32_t rawValue, uint8_t channel = 0, uint8_t channelGroup = 0)
+		{
+			return rawMessage64
+			{
+				static_cast<uint8_t>((gmpi::midi_2_0::ChannelVoice64 << 4) | (channelGroup & 0x0f)),
+				static_cast<uint8_t>((gmpi::midi_2_0::NRPN << 4) | (channel & 0x0f)),
 				static_cast<uint8_t>(rpn >> 8),
 				static_cast<uint8_t>(rpn & 0xff),
 				static_cast<uint8_t>((rawValue >> 24)),
@@ -776,6 +807,21 @@ namespace gmpi
 		{
 			std::function<void(const midi::message_view, int timestamp)> sink;
 
+			// RPN
+			unsigned short incoming_rpn[16] = {};
+			unsigned short incoming_nrpn[16] = {};
+			unsigned short incoming_rpn_value = {};
+			// RPNs are 14 bit values, so this value never occurs, represents "no rpn"
+			static const unsigned short NULL_RPN = 0xffff;
+			void cntrl_update_msb(unsigned short& var, short hb) const
+			{
+				var = (var & 0x7f) + (hb << 7);	// mask off high bits and replace
+			}
+			void cntrl_update_lsb(unsigned short& var, short lb) const
+			{
+				var = (var & 0x3F80) + lb;			// mask off low bits and replace
+			}
+
 		public:
 			MidiConverter2(std::function<void(const midi::message_view, int)> psink) :
 				sink(psink)
@@ -863,13 +909,80 @@ namespace gmpi
 				{
 					auto controller = midi_1_0::decodeControllerMsg(msg);
 
-					const auto msgout = gmpi::midi_2_0::makeController(
-						controller.controllerNumber,
-						controller.value,
-						header.channel
-					);
+					// incoming change of NRPN or RPN (registered parameter number)
+					switch (controller.controllerNumber)
+					{
+					case 101:
+						cntrl_update_msb(incoming_rpn[header.channel], static_cast<short>(msg[2]));
+						incoming_nrpn[header.channel] = NULL_RPN;	// RPNS are coming, cancel NRPNs msgs
+						break;
 
-					sink({ msgout.m }, timestamp);
+					case 100:
+						cntrl_update_lsb(incoming_rpn[header.channel], static_cast<short>(msg[2]));
+						incoming_nrpn[header.channel] = NULL_RPN;	// RPNS are coming, cancel NRPNs msgs
+						break;
+
+					case 98:
+						cntrl_update_lsb(incoming_nrpn[header.channel], static_cast<short>(msg[2]));
+						incoming_rpn[header.channel] = NULL_RPN;	// NRPNs are coming, cancel RPNS msgs
+						break;
+					case 99:
+						cntrl_update_msb(incoming_nrpn[header.channel], static_cast<short>(msg[2]));
+						incoming_rpn[header.channel] = NULL_RPN;	// NRPNs are coming, cancel RPNS msgs
+						break;
+
+					case 6:	// RPN_CONTROLLER MSB
+					{
+						cntrl_update_msb(incoming_rpn_value, static_cast<short>(msg[2]));
+
+						if (incoming_rpn[header.channel] != NULL_RPN)
+						{
+							const auto msgout = gmpi::midi_2_0::makeRpnRaw(
+								incoming_rpn[header.channel],
+								static_cast<uint32_t>(incoming_rpn_value) << 18, // 14 bit value shifted as far as possible int 32-bit value.
+								header.channel
+							);
+							sink({ msgout.m }, timestamp);
+						}
+						else
+						{
+							const auto msgout = gmpi::midi_2_0::makeNrpnRaw(
+								incoming_rpn[header.channel],
+								static_cast<uint32_t>(incoming_rpn_value) << 18,
+								header.channel
+							);
+							sink({ msgout.m }, timestamp);
+						}
+					}
+					break;
+
+					case 38:	// RPN_CONTROLLER LSB
+					{
+						cntrl_update_lsb(incoming_rpn_value, static_cast<short>(msg[2]));
+
+						const auto msgout = gmpi::midi_2_0::makeRpnRaw(
+							incoming_rpn[header.channel],
+							static_cast<uint32_t>(incoming_rpn_value) << 16,
+							header.channel
+						);
+
+						sink({ msgout.m }, timestamp);
+					}
+					break;
+
+					default:
+					{
+						const auto msgout = gmpi::midi_2_0::makeController(
+							controller.controllerNumber,
+							controller.value,
+							header.channel
+						);
+
+						sink({ msgout.m }, timestamp);
+					}
+					break;
+					}
+
 				}
 				break;
 
@@ -1142,6 +1255,304 @@ namespace gmpi
 			}
 		};
 
+		// Convert 'fat' MPE to MIDI 2.0
+		// i.e. MPE that has already been naively converted into MIDI 2.0
+		class FatMpeConverter : public gmpi::midi_2_0::NoteMapper
+		{
+			std::function<void(const midi::message_view, int timestamp)> sink;
+
+			// normalized bender for each chan. center = 0.5
+			static const int maxChannels = 16;
+
+			float channelBender[maxChannels];
+			float channelPressure[maxChannels];
+			float channelBrightness[maxChannels];
+
+			int lowerZoneMasterChannel = 0;
+			int upperZoneMasterChannel = -1;
+			int lower_zone_size = 0; // both 0 = not MPE mode
+			int upper_zone_size = 0;
+
+			bool MpeModeDetected = false;
+		public:
+
+			FatMpeConverter(std::function<void(const midi::message_view, int)> psink) :
+				sink(psink)
+			{
+				std::fill(std::begin(channelBender), std::end(channelBender), 0.5f);
+				std::fill(std::begin(channelBrightness), std::end(channelBrightness), 0.0f);
+				std::fill(std::begin(channelPressure), std::end(channelPressure), 0.0f);
+			}
+
+			void processMidi(const midi::message_view msg, int timestamp)
+			{
+				// This class expects MIDI 2.0 input always.
+				assert(gmpi::midi_2_0::isMidi2Message(msg));
+
+				const auto header = midi_2_0::decodeHeader(msg);
+
+				// 'Master' MIDI Channels are reserved for conveying messages that apply to the entire Zone.
+				if (header.channel == lowerZoneMasterChannel || header.channel == upperZoneMasterChannel)
+				{
+					// Handle MPE Configuration messages. (MCM)
+						if (gmpi::midi_2_0::Status::RPN == header.status && (header.channel == 0 || header.channel == 15))
+						{
+							const auto rpn = gmpi::midi_2_0::decodeRpn(msg);
+
+							if (rpn.rpn == 6) // number of channels in MPE zone
+							{
+								if (0 == header.channel)
+								{
+									lower_zone_size = rpn.value >> 7; // MSB only
+									upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
+								}
+								else
+								{
+									upper_zone_size = rpn.value >> 7;
+									lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
+								}
+
+								// (MPE Mode) shall be enabled in a controller or a synthesizer when at least one MPE Zone is configured.
+								// Setting both Zones on the Manager Channels to use no Channels, shall deactivate the MPE Mode.
+								MpeModeDetected = lower_zone_size || upper_zone_size;
+							}
+#if 0
+							// incoming change of NRPN or RPN (registered parameter number)
+							switch (rpn.rpn)
+							{
+							case 101:
+								cntrl_update_msb(incoming_rpn[midiChannel], static_cast<short>(e->data[2]));
+								break;
+
+							case 100:
+								cntrl_update_lsb(incoming_rpn[midiChannel], static_cast<short>(e->data[2]));
+								break;
+
+							case 98:
+							case 99:
+								incoming_rpn[midiChannel] = NULL_RPN;	// NRPNS are coming, cancel rpn msgs
+								break;
+
+							case 6:	// RPN_CONTROLLER
+							{
+								if (incoming_rpn[midiChannel] == 6) // number of channels in zone
+								{
+									const int number_of_channels_in_zone = e->data[2];
+									if (0 == midiChannel)
+									{
+										lower_zone_size = number_of_channels_in_zone;
+										upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
+									}
+									else
+									{
+										upper_zone_size = number_of_channels_in_zone;
+										lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
+									}
+
+									// (MPE Mode) shall be enabled in a controller or a synthesizer when at least one MPE Zone is configured.
+									// Setting both Zones on the Manager Channels to use no Channels, shall deactivate the MPE Mode.
+									auto_mpe_mode = lower_zone_size || upper_zone_size;
+								}
+							}
+							break;
+
+							}
+#endif
+						}
+				}
+
+				if (!MpeModeDetected)
+				{
+					// no conversion.
+					sink(msg, timestamp);
+                    return;
+				}
+
+				// for an MPE member channel, only note on/off, pitch-bend, and brightness are allowed.
+				switch (header.status)
+				{
+				case midi_2_0::Status::NoteOn:
+				{
+					const auto note = gmpi::midi_2_0::decodeNote(msg);
+					const auto MpeId = note.noteNumber | (header.channel << 7);
+					auto& keyInfo = allocateNote(MpeId, note.noteNumber);
+
+					//			_RPTN(0, "MPE Note-on %d => %d\n", note.noteNumber, keyInfo.MidiKeyNumber);
+
+					// MIDI 2.0 does not automatically reset per-note controls. MPE is expected to.
+					// reset per-note bender
+					{
+						const auto msgout = gmpi::midi_2_0::makePolyBender(
+							keyInfo.MidiKeyNumber,
+							channelBender[header.channel]
+						);
+
+						//				_RPTN(0, "MPE: Bender %d: %f\n", keyInfo.MidiKeyNumber, channelBender[header.channel]);
+						sink({ msgout.m }, timestamp);
+					}
+
+					// reset per-note brightness
+					{
+						const auto msgout = gmpi::midi_2_0::makePolyController(
+							keyInfo.MidiKeyNumber,
+							gmpi::midi_2_0::PolySoundController5, // Brightness
+							channelBrightness[header.channel]
+						);
+
+						//				_RPTN(0, "MPE: Brightness %d: %f\n", keyInfo.MidiKeyNumber, channelBrightness[header.channel]);
+						sink({ msgout.m }, timestamp);
+					}
+
+					// reset per-note pressure
+					{
+						const auto msgout = gmpi::midi_2_0::makePolyPressure(
+							keyInfo.MidiKeyNumber,
+							channelPressure[header.channel]
+						);
+
+						//				_RPTN(0, "MPE: Pressure %d: %f\n", keyInfo.MidiKeyNumber, channelPressure[header.channel]);
+						sink({ msgout.m }, timestamp);
+					}
+
+					// !!! TODO: pitch from tuning_table[note_num], not just note_num. (and float)
+					// hmm  does midi tuning work in MPE, since it's already microtonal?
+					if (keyInfo.pitch != note.noteNumber)
+					{
+						keyInfo.pitch = note.noteNumber;
+						//						_RPTN(0, "      ..pitch = %d\n", (int)keyInfo.pitch);
+
+						// !!! problem!!! w SynthEdit retaining tuning
+						// This override is valid only for the one Note containing the Attribute #3: Pitch 7.9; it is not valid for any subsequent Notes
+						//const auto msgout = gmpi::midi_2_0::makeNoteOnMessageWithPitch(
+						//	keyInfo.MidiKeyNumber,
+						//	note.velocity,
+						//	keyInfo.pitch
+						//);
+
+						const auto msgout = gmpi::midi_2_0::makeNotePitchMessage(
+							keyInfo.MidiKeyNumber,
+							keyInfo.pitch
+						);
+
+						sink({ msgout.m }, timestamp);
+					}
+
+					{
+						//				_RPTN(0, "      ..existing pitch = %d\n", (int)keyInfo.pitch);
+						const auto msgout = gmpi::midi_2_0::makeNoteOnMessage(
+							keyInfo.MidiKeyNumber,
+							note.velocity
+						);
+
+						sink({ msgout.m }, timestamp);
+					}
+				}
+				break;
+
+				case midi_2_0::Status::NoteOff:
+				{
+					const auto note = gmpi::midi_2_0::decodeNote(msg);
+					const auto MpeId = note.noteNumber | (header.channel << 7);
+					auto keyInfo = findNote(MpeId);
+
+					if (keyInfo)
+					{
+						keyInfo->held = false;
+
+						const auto msgout = gmpi::midi_2_0::makeNoteOffMessage(
+							keyInfo->MidiKeyNumber,
+							note.velocity
+						);
+
+						sink({ msgout.m }, timestamp);
+					}
+				}
+				break;
+
+				case midi_2_0::Status::PitchBend:
+				{
+					channelBender[header.channel] = gmpi::midi_2_0::decodeController(msg).value;
+
+					// TODO: repect any updates to bend-range sent using RPN (48 is default) (on manager channel?
+
+					// find whatever note is playing on this channel. Assumption is only held notes can receive benders.
+					// might not hold true for DAW automation which is drawn-on after note-off time
+					for (auto& info : noteIds)
+					{
+						// "The note will cease to be affected by Pitch Bend messages on its Channel after the Note Off message occurs" - spec.
+						if (info.held && header.channel == (info.noteId >> 7))
+						{
+							const auto msgout = gmpi::midi_2_0::makePolyBender(
+								info.MidiKeyNumber,
+								channelBender[header.channel]
+							);
+
+							//					_RPTN(0, "MPE: Bender %d: %f\n", info.MidiKeyNumber, channelBender[header.channel]);
+							sink({ msgout.m }, timestamp);
+						}
+					}
+				}
+				break;
+
+				case midi_2_0::Status::ChannelPressue:
+				{
+					channelPressure[header.channel] = gmpi::midi_2_0::decodeController(msg).value;
+
+					// find whatever note is playing on this channel. Assumption is only held notes can receive benders etc.
+					// might not hold true for DAW automation which is drawn-on after note-off time
+					for (auto& info : noteIds)
+					{
+						if (info.held && header.channel == (info.noteId >> 7))
+						{
+							//					_RPTN(0, "MPE: Pressure %d %f\n", info.MidiKeyNumber, normalised);
+							const auto msgout = gmpi::midi_2_0::makePolyPressure(
+								info.MidiKeyNumber,
+								channelPressure[header.channel]
+							);
+
+							sink({ msgout.m }, timestamp);
+						}
+					}
+				}
+				break;
+
+				case midi_2_0::Status::ControlChange:
+				{
+					const auto controller = gmpi::midi_2_0::decodeController(msg);
+
+					// 74 brightness
+					if (74 != controller.type)
+						break;
+
+					channelBrightness[header.channel] = controller.value;
+
+					// find whatever note is playing on this channel. Assumption is only held notes can receive benders etc.
+					// might not hold true for DAW automation which is drawn-on after note-off time
+					for (auto& info : noteIds)
+					{
+						if (info.held && header.channel == (info.noteId >> 7))
+						{
+							const auto msgout = gmpi::midi_2_0::makePolyController(
+								info.MidiKeyNumber,
+								gmpi::midi_2_0::PolySoundController5, // Brightness
+								channelBrightness[header.channel]
+							);
+
+							sink({ msgout.m }, timestamp);
+							//					_RPTN(0, "MPE: Brightness %d %f (%d)\n", info.MidiKeyNumber, channelBrightness[header.channel], msg[2]);
+						}
+					}
+				}
+				break;
+				}
+			}
+
+			void setSink(std::function<void(const midi::message_view, int)> psink)
+			{
+				sink = psink;
+			}
+		};
+
 		// Convert MIDI 2.0 to MIDI 1.0
 		class MidiConverter1
 		{
@@ -1250,7 +1661,7 @@ namespace gmpi
 
 				case gmpi::midi_2_0::PolyControlChange:
 				{
-					const auto polyController = gmpi::midi_2_0::decodeController(msg);
+					const auto polyController = gmpi::midi_2_0::decodePolyController(msg);
 
 					if (polyController.type == gmpi::midi_2_0::PolyPitch)
 					{
@@ -1271,7 +1682,7 @@ namespace gmpi
 				*/
 				case gmpi::midi_2_0::PolyAfterTouch:
 				{
-					const auto aftertouch = gmpi::midi_2_0::decodeController(msg);
+					const auto aftertouch = gmpi::midi_2_0::decodePolyController(msg);
 					//				_RPTN(0, "decodePolyPressure %d %f\n",aftertouch.noteNumber, aftertouch.value);
 
 					uint8_t msgout[] = {
@@ -1295,6 +1706,19 @@ namespace gmpi
 					};
 
 					gmpi::midi::utils::normalizedToBipoler14bit(normalized, msgout[1], msgout[2]);
+
+					sink({ msgout }, timestamp);
+				}
+				break;
+
+				case gmpi::midi_2_0::ChannelPressue:
+				{
+					const auto normalized = gmpi::midi_2_0::decodeController(msg).value;
+
+					uint8_t msgout[] = {
+						static_cast<uint8_t>((midi_1_0::status_type::ChannelPressure << 4) | header.channel),
+						gmpi::midi::utils::floatToU7(normalized)
+					};
 
 					sink({ msgout }, timestamp);
 				}
