@@ -6,8 +6,32 @@ using namespace gmpi;
 
 const std::string& StringGuiPin::operator=(const std::string& valueUtf8)
 {
+#if defined(_WIN32)
+	// std::wstring_convert does not handle emojis on Windows at least.
+	std::wstring value;
+	const size_t size = MultiByteToWideChar(
+		CP_UTF8,
+		0,
+		valueUtf8.data(),
+		static_cast<int>(valueUtf8.size()),
+		0,
+		0
+	);
+
+	value.resize(size);
+
+	MultiByteToWideChar(
+		CP_UTF8,
+		0,
+		valueUtf8.data(),
+		static_cast<int>(valueUtf8.size()),
+		const_cast<LPWSTR>(value.data()),
+		static_cast<int>(size)
+	);
+#else
 	static std::wstring_convert<std::codecvt_utf8<wchar_t> > convert;
 	auto value = convert.from_bytes(valueUtf8);
+#endif
 
 	if (!variablesAreEqual<std::wstring>(value, value_))
 	{
