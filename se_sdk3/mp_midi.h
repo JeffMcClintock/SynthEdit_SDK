@@ -495,8 +495,8 @@ namespace gmpi
 			{
 				static_cast<uint8_t>((gmpi::midi_2_0::ChannelVoice64 << 4) | (channelGroup & 0x0f)),
 				static_cast<uint8_t>((gmpi::midi_2_0::ControlChange << 4) | (channel & 0x0f)),
-				reserved,
 				controller,
+				reserved,
 				static_cast<uint8_t>((rawValue >> 24)),
 				static_cast<uint8_t>((rawValue >> 16) & 0xff),
 				static_cast<uint8_t>((rawValue >> 8) & 0xff),
