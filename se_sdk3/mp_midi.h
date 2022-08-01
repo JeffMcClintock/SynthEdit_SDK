@@ -664,6 +664,47 @@ namespace gmpi
 			};
 		}
 
+		inline rawMessage64 makeSysex(const uint8_t* & data, int& remain, bool& isFirst, uint8_t channelGroup = 0)
+		{
+			const int chunkSize = 6;
+			int status = 0x00;
+			
+			if (isFirst)
+			{
+				status = remain <= chunkSize ? 0x00 : 0x10; // complete, or start of several
+			}
+			else
+			{
+				status = remain <= chunkSize ? 0x30 : 0x20; // end, or more to come
+			}
+			
+			const int bytesThisChunk = (std::min)(remain, chunkSize);
+
+			rawMessage64 r
+			{
+				static_cast<uint8_t>((gmpi::midi_2_0::Data64 << 4) | (channelGroup & 0x0f)),
+				static_cast<uint8_t>(status | bytesThisChunk),
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			};
+
+			uint8_t* dst = &r.m[2];
+			int i = 0;
+			for (; i < bytesThisChunk; ++i)
+			{
+				*dst++ = *data++;
+			}
+
+			remain -= bytesThisChunk;
+			isFirst = false;
+
+			return r;
+		}		
+
 		inline float decodeNotePitch(midi::message_view msg)
 		{
 			assert(msg.size() == 8);
@@ -1002,7 +1043,19 @@ namespace gmpi
 				case midi_1_0::status_type::System:
 				{
 					[[maybe_unused]] const auto systemMessageType = header.channel;
-/* TODO
+
+					if (systemMessageType == 0) // SYSEX
+					{
+						bool isFirst = true;
+						int remain = static_cast<int>(msg.size()) - 2; // skip leading F0 and trailing F7
+						const uint8_t* src = msg.begin() + 1; // skip leading F0
+						while (remain > 0)
+						{
+							const auto msgout = gmpi::midi_2_0::makeSysex(src, remain, isFirst);
+							sink({ msgout.m }, timestamp);
+						}
+					}
+/* TODO other system messages
 					clock(decimal 248, hex 0xF8)
 					start(decimal 250, hex 0xFA)
 					continue (decimal 251, hex 0xFB)
@@ -1268,7 +1321,7 @@ namespace gmpi
 			float channelPressure[maxChannels];
 			float channelBrightness[maxChannels];
 
-			int lowerZoneMasterChannel = 0;
+			int lowerZoneMasterChannel = -1;
 			int upperZoneMasterChannel = -1;
 			int lower_zone_size = 0; // both 0 = not MPE mode
 			int upper_zone_size = 0;
@@ -1291,84 +1344,56 @@ namespace gmpi
 
 				const auto header = midi_2_0::decodeHeader(msg);
 
+				// Handle MPE Configuration messages. (MCM)
+				if (gmpi::midi_2_0::Status::RPN == header.status && (header.channel == 0 || header.channel == 15))
+				{
+					const auto rpn = gmpi::midi_2_0::decodeRpn(msg);
+
+					if (rpn.rpn == 6) // number of channels in MPE zone
+					{
+						if (0 == header.channel)
+						{
+							lower_zone_size = rpn.value >> 7; // MSB only
+							upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
+
+							if (lower_zone_size)
+								lowerZoneMasterChannel = header.channel;
+							else
+								lowerZoneMasterChannel = -1;
+						}
+						else
+						{
+							upper_zone_size = rpn.value >> 7;
+							lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
+
+							if (upper_zone_size)
+								upperZoneMasterChannel = header.channel;
+							else
+								upperZoneMasterChannel = -1;
+						}
+
+						// (MPE Mode) shall be enabled in a controller or a synthesizer when at least one MPE Zone is configured.
+						// Setting both Zones on the Manager Channels to use no Channels, shall deactivate the MPE Mode.
+						MpeModeDetected = lower_zone_size || upper_zone_size;
+					}
+				}
+
 				// 'Master' MIDI Channels are reserved for conveying messages that apply to the entire Zone.
 				if (header.channel == lowerZoneMasterChannel || header.channel == upperZoneMasterChannel)
 				{
-					// Handle MPE Configuration messages. (MCM)
-						if (gmpi::midi_2_0::Status::RPN == header.status && (header.channel == 0 || header.channel == 15))
-						{
-							const auto rpn = gmpi::midi_2_0::decodeRpn(msg);
-
-							if (rpn.rpn == 6) // number of channels in MPE zone
-							{
-								if (0 == header.channel)
-								{
-									lower_zone_size = rpn.value >> 7; // MSB only
-									upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
-								}
-								else
-								{
-									upper_zone_size = rpn.value >> 7;
-									lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
-								}
-
-								// (MPE Mode) shall be enabled in a controller or a synthesizer when at least one MPE Zone is configured.
-								// Setting both Zones on the Manager Channels to use no Channels, shall deactivate the MPE Mode.
-								MpeModeDetected = lower_zone_size || upper_zone_size;
-							}
-#if 0
-							// incoming change of NRPN or RPN (registered parameter number)
-							switch (rpn.rpn)
-							{
-							case 101:
-								cntrl_update_msb(incoming_rpn[midiChannel], static_cast<short>(e->data[2]));
-								break;
-
-							case 100:
-								cntrl_update_lsb(incoming_rpn[midiChannel], static_cast<short>(e->data[2]));
-								break;
-
-							case 98:
-							case 99:
-								incoming_rpn[midiChannel] = NULL_RPN;	// NRPNS are coming, cancel rpn msgs
-								break;
-
-							case 6:	// RPN_CONTROLLER
-							{
-								if (incoming_rpn[midiChannel] == 6) // number of channels in zone
-								{
-									const int number_of_channels_in_zone = e->data[2];
-									if (0 == midiChannel)
-									{
-										lower_zone_size = number_of_channels_in_zone;
-										upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
-									}
-									else
-									{
-										upper_zone_size = number_of_channels_in_zone;
-										lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
-									}
-
-									// (MPE Mode) shall be enabled in a controller or a synthesizer when at least one MPE Zone is configured.
-									// Setting both Zones on the Manager Channels to use no Channels, shall deactivate the MPE Mode.
-									auto_mpe_mode = lower_zone_size || upper_zone_size;
-								}
-							}
-							break;
-
-							}
-#endif
-						}
+					// no conversion for master channels
+					sink(msg, timestamp);
+					return;
 				}
 
-				if (!MpeModeDetected)
+				if (header.channel >= lower_zone_size && header.channel <= 15 - upper_zone_size)
 				{
 					// no conversion.
 					sink(msg, timestamp);
                     return;
 				}
 
-				// for an MPE member channel, only note on/off, pitch-bend, and brightness are allowed.
+				// for an MPE member channel, only note on/off, pitch-bend, pressure, and brightness are allowed.
 				switch (header.status)
 				{
 				case midi_2_0::Status::NoteOn:
