@@ -1576,6 +1576,26 @@ namespace gmpi
 			{
 				sink = psink;
 			}
+
+			void setMpeMode(int32_t mpeOn)
+			{
+				switch (mpeOn)
+				{
+				case 1: // force Off
+					lowerZoneMasterChannel = -1;
+					lower_zone_size = 0;
+					break;
+
+				case 2: // force On
+					lowerZoneMasterChannel = 0;
+					lower_zone_size = 15;
+					break;
+
+				default:
+					// Auto - do nothing
+					break;
+				}
+			}
 		};
 
 		// Convert MIDI 2.0 to MIDI 1.0
@@ -1584,7 +1604,13 @@ namespace gmpi
 			std::function<void(const midi::message_view, int timestamp)> sink;
 			float midi2NoteTune[256];
 			uint8_t midi2NoteToKey[256];
-			uint8_t ControlChangeValue[128];
+
+			struct avoidRepeatedCCs
+			{
+				float unquantized;
+				uint8_t quantized;
+			};
+			avoidRepeatedCCs ControlChangeValue[128];
 
 		public:
 			MidiConverter1(std::function<void(const midi::message_view, int)> psink) :
@@ -1596,7 +1622,12 @@ namespace gmpi
 					midi2NoteTune[i] = static_cast<float>(i);
 				}
 
-				std::fill(std::begin(ControlChangeValue), std::end(ControlChangeValue), static_cast<uint8_t>(255)); // a out-of-range value to trigger initial update.
+				for (auto& q : ControlChangeValue)
+				{
+					// out-of-range value to trigger initial update.
+					q.quantized = 255;
+					q.unquantized = -1.f;
+				}
 			}
 
 			void processMidi(const midi::message_view msg, int timestamp)
@@ -1667,10 +1698,12 @@ namespace gmpi
 					{
 						const auto newQuantizedValue = gmpi::midi::utils::floatToU7(controller.value);
 
-						// avoid sending the same 7-bit value twice.
-						if (newQuantizedValue != ControlChangeValue[controller.type])
+						// 'thin' repeated 7-bit values. Unless it apears to be on purpose (e.g. all notes off)
+						// Send exact (deliberate) repeats, but not 'close' (different but close unquantized) repeats
+						if (ControlChangeValue[controller.type].quantized != newQuantizedValue || controller.value == ControlChangeValue[controller.type].unquantized)
 						{
-							ControlChangeValue[controller.type] = newQuantizedValue;
+							ControlChangeValue[controller.type].quantized = newQuantizedValue;
+							ControlChangeValue[controller.type].unquantized = controller.value;
 
 							uint8_t msgout[] = {
 								static_cast<uint8_t>((midi_1_0::status_type::ControlChange << 4) | header.channel),
