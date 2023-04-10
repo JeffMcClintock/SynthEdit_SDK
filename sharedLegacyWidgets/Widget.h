@@ -1,6 +1,7 @@
 #pragma once
 #include "Drawing.h"
 #include "mp_sdk_gui2.h"
+#include "../shared/FontCache.h"
 
 class Widget
 {
@@ -12,7 +13,7 @@ protected:
 
 public:
 	Widget();
-	virtual ~Widget();
+	virtual ~Widget() {}
 
 	void setPosition(GmpiDrawing::Rect pPosition)
 	{
@@ -49,7 +50,48 @@ public:
 	virtual void OnRender(GmpiDrawing::Graphics& dc) = 0;
 
 	virtual bool onPointerDown(int32_t flags, GmpiDrawing_API::MP1_POINT point){ return false; };
-	virtual void onPointerMove(int32_t flags, GmpiDrawing_API::MP1_POINT point){};
-	virtual void onPointerUp(int32_t flags, GmpiDrawing_API::MP1_POINT point){};
+	virtual void onPointerMove(int32_t flags, GmpiDrawing_API::MP1_POINT point) {}
+	virtual void onPointerUp(int32_t flags, GmpiDrawing_API::MP1_POINT point) {}
 };
 
+#define GMPI_TEXT_WIDGET_BASE_CUSTOM_TEXT_FORMAT_NAME "Custom:TextWidgetBase"
+
+class TextWidgetBase :
+	public Widget, public FontCacheClient
+{
+protected:
+	GmpiDrawing::TextFormat_readonly dtextFormat;
+	FontMetadata* typeface_ = nullptr;
+	float textY = {};
+	float textHeight = {};
+
+	std::string customStyleName(const char* base_style, bool centered, GmpiDrawing::ParagraphAlignment paragraphAlignment)
+	{
+		std::string customFormatName(GMPI_TEXT_WIDGET_BASE_CUSTOM_TEXT_FORMAT_NAME);
+		if (centered)
+			customFormatName += "_CENTERED";
+
+		switch(paragraphAlignment)
+		{
+			case GmpiDrawing::ParagraphAlignment::Top:
+				customFormatName += "_TOP";
+				break;
+			case GmpiDrawing::ParagraphAlignment::Bottom:
+				customFormatName += "_BOT";
+				break;
+
+			default:
+				break;
+		}
+
+		customFormatName += ":";
+		customFormatName += base_style;
+
+		return customFormatName;
+	}
+
+	void InitTextFormat(const char* base_style, bool digitsOnly = false, bool centered = false, float overideCellHeight = -1.0f);
+
+public:
+	void VerticalCenterText(bool digitsOnly = false, float borderShrink = 0.0f);
+};

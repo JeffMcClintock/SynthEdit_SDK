@@ -20,6 +20,7 @@ namespace SynthEdit2
 	public:
 		std::vector< Cable > cables;
 
+		PatchCables() {}
 		PatchCables(RawView raw);
 		RawData Serialise();
 
@@ -31,6 +32,11 @@ namespace SynthEdit2
 		void push_back(int32_t fromModule, int fromPin, int32_t toModule, int toPin, int color)
 		{
 			cables.push_back({fromModule, toModule, fromPin, toPin, color});
+		}
+
+		void push_back(Cable& c)
+		{
+			cables.push_back(c);
 		}
 	};
 }

@@ -64,7 +64,6 @@ void FileFinder::first( const platform_string& folderPath )
     bool success = NULL != (directoryHandle = opendir(searchPath.c_str()) );
 #endif
 
-    // Loop through all the files in the directory and delete files.
 	if( success )
 	{
 #if defined(_WIN32)

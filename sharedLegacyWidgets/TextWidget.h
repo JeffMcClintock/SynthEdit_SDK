@@ -9,34 +9,27 @@
 #include "../shared/ImageMetadata.h"
 #include "../shared/FontCache.h"
 
-class TextWidget :
-	public Widget, public FontCacheClient
+class TextWidget : public TextWidgetBase
 {
 	std::string text;
-	GmpiDrawing::TextFormat dtextFormat;
-	FontMetadata* typeface_;
-	std::string style_;
-	GmpiDrawing::TextAlignment alignment;
 	GmpiDrawing_API::MP1_COLOR backgroundColor;
 
 public:
-	TextWidget(gmpi::IMpUnknown* host = nullptr) :
-		typeface_(0)
+	TextWidget(gmpi::IMpUnknown* host = nullptr)
 	{
 		if (host)
 			setHost(host);
 	}
 
-	TextWidget(gmpi::IMpUnknown* host, const char* style, const char* text = "") :
-		typeface_(0)
+	TextWidget(gmpi::IMpUnknown* host, const char* style, const char* text = "", bool centered = false)
 	{
 		setHost(host);
 		SetText(text);
-		Init(style);
+		Init(style, centered);
 	}
 
 	virtual void OnRender(GmpiDrawing::Graphics& dc) override;
-	void Init(const char* style);
+	void Init(const char* style, bool centered);
 	void SetText(std::string utf8String)
 	{
 		dirty |= utf8String != text;
@@ -48,23 +41,9 @@ public:
 	}
 	virtual GmpiDrawing::Size getSize() override;
 
-	void setCentered()
-	{
-		alignment = GmpiDrawing::TextAlignment::Center;
-	}
-	void setLeftAligned()
-	{
-		alignment = GmpiDrawing::TextAlignment::Leading;
-	}
-	void setRightAligned()
-	{
-		alignment = GmpiDrawing::TextAlignment::Trailing;
-	}
-
 	void setBackGroundColor(GmpiDrawing::Color c)
 	{
 		backgroundColor = c;
 	}
-	
 };
 

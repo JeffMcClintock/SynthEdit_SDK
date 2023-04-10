@@ -30,15 +30,17 @@ enum ug_event_type {
 		, UET_DELAYED_GATE__DEPRECATED
 		, UET_PARAM_AUTOMATION__DEPRECATED
 	, UET_VOICE_REFRESH
-	, UET_VOICE_OUTPUT_STATUS
+	, UET_VOICE_STREAMING_STATE
 	, UET_NULL			// do nothing
 	, UET_GENERIC1		// MODULES CAN USE FOR WHATEVER
 	, UET_GENERIC2
 	, UET_RUN_FUNCTION2
 	, UET_SERVICE_GUI_QUE
-	, UET_DEACTIVATE_VOICE
+//	, UET_DEACTIVATE_VOICE
 	, UET_FORCE_NEVER_SLEEP
 	, UET_PLAY_WAITING_NOTES
+	, UET_VOICE_LEVEL
+	, UET_VOICE_DONE_CHECK
 
 	// BELOW HERE. Only events published in SDK, must match events in MP_API.h
 	, UET_EVENT_SETPIN = 100
@@ -62,8 +64,11 @@ enum ug_event_type {
 #define IO_FILENAME				16
 // ALLOW USER TO SET THE VALUE OF THIS OUTPUt eg on 'constant value' ug
 #define IO_SETABLE_OUTPUT		32
+
 // plugs which can be duplicated/deleted by CUG
+// DEPRECATED. NOT STORED IN XML BECAUSE DUPLICATES 'IO_AUTODUPLICATE'. Remove after 2022 (once we're sure)
 #define IO_CUSTOMISABLE			64
+
 // plugs which handle multiple inputs, must belong to an Adder ug
 #define IO_ADDER				128
 // plugs which are private or obsolete, but are enabled on load if connected somewhere

@@ -10,13 +10,10 @@
 #include "../shared/FontCache.h"
 #include "../se_sdk3/mp_gui.h"
 
-class ListWidget :
-	public Widget, public FontCacheClient
+class ListWidget : public TextWidgetBase
 {
 	std::wstring items;
 	int currentValue;
-	GmpiDrawing::TextFormat dtextFormat;
-	FontMetadata* typeface_;
 	gmpi_gui::MpCompletionHandler onPopupMenuCompleteEvent;
 	GmpiGui::PopupMenu nativeFileDialog;
 
@@ -24,14 +21,12 @@ public:
 	std::function<void(int32_t)> OnChangedEvent;
 
 	ListWidget() :
-		typeface_(0)
-		, currentValue(0)
+		currentValue(0)
 		, onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
 	{}
 
 	ListWidget(gmpi::IMpUnknown* host, const char* style, const wchar_t* items = L"") :
-		typeface_(0)
-		, onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
+		onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
 	{
 		setHost(host);
 		SetItems(items);

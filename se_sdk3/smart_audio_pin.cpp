@@ -280,9 +280,10 @@ currentValue_(0.0f)
 
 void RampGenerator::setTransitionTime( float transitionSamples )
 {
-	if( transitionTime_ != transitionSamples )
+	const auto safeSamples = (std::max)(1.0f, transitionSamples);
+	if( transitionTime_ != safeSamples)
 	{
-		transitionTime_ = (std::max)(1.0f, transitionSamples);
+		transitionTime_ = safeSamples;
 		inverseTransitionTime_ = 1.0f / transitionTime_;
 	}
 }

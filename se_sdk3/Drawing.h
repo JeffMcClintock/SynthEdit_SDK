@@ -576,6 +576,12 @@ namespace GmpiDrawing
 		}
 	};
 
+	template<class T>
+	inline bool IsNull(const RectBase<T>& a)
+	{
+		return a.left == T{} && a.top == T{} && a.right == T{} && a.bottom == T{};
+	}
+	
 	// Operations on Rects and Sizes.
 	// Rect = Rect + Size
 	template<class T> RectBase<T> operator+(const RectBase<T>& L, const SizeBase<T>& R) { return RectBase<T>(L.left + R.width, L.top + R.height, L.right + R.width, L.bottom + R.height); }
@@ -606,6 +612,17 @@ namespace GmpiDrawing
 		result.bottom = (std::max)(a.bottom, b.bottom);
 
 		return result;
+	}
+
+	// combines update regions, ignoring empty rectangles.
+	template<class T> RectBase<T> UnionIgnoringNull(const RectBase<T>& a, const RectBase<T>& b)
+	{
+		if (IsNull(a))
+			return b;
+		else if (IsNull(b))
+			return a;
+		else
+			return Union(a, b);
 	}
 
 	template<class T> bool isOverlapped(const RectBase<T>& a, const RectBase<T>& b)
@@ -923,6 +940,14 @@ namespace GmpiDrawing
 		}
 
 	};
+ 
+    inline Point TransformPoint(const Matrix3x2& transform, Point point)
+    {
+        return Point(
+            point.x * transform._11 + point.y * transform._21 + transform._31,
+            point.x * transform._12 + point.y * transform._22 + transform._32
+        );
+    }
 	/*
 	class PixelFormat : public GmpiDrawing_API::MP1_PIXEL_FORMAT
 	{
@@ -1106,7 +1131,7 @@ namespace GmpiDrawing
 			YellowGreen = 0x9ACD32,
 		};
 
-		Color(GmpiDrawing_API::MP1_COLOR native) :
+		constexpr Color(GmpiDrawing_API::MP1_COLOR native) :
 			GmpiDrawing_API::MP1_COLOR(native)
 		{
 		}
@@ -1412,6 +1437,21 @@ namespace GmpiDrawing
 		{
 			startCap = endCap = dashCap = (GmpiDrawing_API::MP1_CAP_STYLE) style;
 		}
+
+		void setMiterLimit(float pMiterLimit) // NEW!!!
+		{
+			miterLimit = pMiterLimit;
+		}
+
+		void setDashStyle(DashStyle style) // NEW!!!
+		{
+			dashStyle = (GmpiDrawing_API::MP1_DASH_STYLE)style;
+		}
+
+		void setDashOffset(float pDashOffset) // NEW!!!
+		{
+			dashOffset = pDashOffset;
+		}
 	};
 
 	class BezierSegment : public GmpiDrawing_API::MP1_BEZIER_SEGMENT
@@ -1623,6 +1663,10 @@ namespace GmpiDrawing
 			return Get()->SetWordWrapping((GmpiDrawing_API::MP1_WORD_WRAPPING) wordWrapping);
 		}
 
+		// Sets the line spacing.
+		// negative values of lineSpacing use 'default' spacing - Line spacing depends solely on the content, adjusting to accommodate the size of fonts and inline objects.
+		// positive values use 'absolute' spacing.
+		// A reasonable ratio of baseline to lineSpacing is 80 percent.
 		inline int32_t SetLineSpacing(float lineSpacing, float baseline)
 		{
 			return Get()->SetLineSpacing(lineSpacing, baseline);
@@ -1652,16 +1696,16 @@ namespace GmpiDrawing
 			return Get()->getPixelFormat();
 		}
 
-		inline int32_t getPixel(int x, int y)
+		inline uint32_t getPixel(int x, int y)
 		{
 			auto data = reinterpret_cast<int32_t*>(getAddress());
 			return data[x + y * getBytesPerRow() / ((int) sizeof(int32_t))];
 		}
 
-		inline void setPixel(int x, int y, int32_t pixel)
+		inline void setPixel(int x, int y, uint32_t pixel)
 		{
-			auto data = reinterpret_cast<int32_t*>(getAddress());
-			data[x + y * getBytesPerRow() / ((int) sizeof(int32_t))] = pixel;
+			auto data = reinterpret_cast<uint32_t*>(getAddress());
+			data[x + y * getBytesPerRow() / ((int) sizeof(uint32_t))] = pixel;
 		}
 
 		inline void Blit(BitmapPixels& source, GmpiDrawing_API::MP1_POINT_L destinationTopLeft, GmpiDrawing_API::MP1_RECT_L sourceRectangle, int32_t unused = 0)
@@ -1989,6 +2033,17 @@ namespace GmpiDrawing
 		{
 			Get()->AddArc(&arc);
 		}
+
+		void SetFillMode(FillMode fillMode)
+		{
+			GmpiDrawing_API::IMpGeometrySink2* ext{};
+			Get()->queryInterface(GmpiDrawing_API::SE_IID_GEOMETRYSINK2_MPGUI, (void**) &ext);
+			if (ext)
+			{
+				ext->SetFillMode((GmpiDrawing_API::MP1_FILL_MODE) fillMode);
+				ext->release();
+			}
+		}
 	};
 
 	class StrokeStyle : public Resource
@@ -2182,7 +2237,7 @@ namespace GmpiDrawing
 			const float referenceFontSize = 32.0f;
 
 			TextFormat temp;
-			for (const std::string& fontFamilyName : fontStack.fontFamilies_)
+			for (const auto fontFamilyName : fontStack.fontFamilies_)
 			{
 				auto family_it = availableFonts.find(fontFamilyName);
 				if (family_it == availableFonts.end())
@@ -2196,7 +2251,7 @@ namespace GmpiDrawing
 					TextFormat referenceTextFormat;
 
 					Get()->CreateTextFormat(
-						fontFamilyName.c_str(),						// usually Arial
+						fontFamilyName,						// usually Arial
 						nullptr /* fontCollection */,
 						(GmpiDrawing_API::MP1_FONT_WEIGHT) fontWeight,
 						(GmpiDrawing_API::MP1_FONT_STYLE) fontStyle,
@@ -2222,7 +2277,7 @@ namespace GmpiDrawing
 				// Create actual textformat.
 				assert(fontSize > 0.0f);
 				Get()->CreateTextFormat(
-					fontFamilyName.c_str(),
+					fontFamilyName,
 					nullptr /* fontCollection */,
 					(GmpiDrawing_API::MP1_FONT_WEIGHT) fontWeight,
 					(GmpiDrawing_API::MP1_FONT_STYLE) fontStyle,
@@ -2285,10 +2340,10 @@ namespace GmpiDrawing
 		}
 
 		// Simplified version just for setting end-caps.
-		inline StrokeStyle CreateStrokeStyle(GmpiDrawing::CapStyle allCapsStyle ) //GmpiDrawing_API::MP1_CAP_STYLE allCapsStyle)
+		inline StrokeStyle CreateStrokeStyle(GmpiDrawing::CapStyle allCapsStyle) //GmpiDrawing_API::MP1_CAP_STYLE allCapsStyle)
 		{
 			GmpiDrawing::StrokeStyleProperties strokeStyleProperties;
-			strokeStyleProperties.startCap = strokeStyleProperties.endCap = strokeStyleProperties.startCap = (GmpiDrawing_API::MP1_CAP_STYLE) allCapsStyle;
+			strokeStyleProperties.startCap = strokeStyleProperties.endCap = static_cast<GmpiDrawing_API::MP1_CAP_STYLE>(allCapsStyle);
 
 			StrokeStyle temp;
 			Get()->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, temp.GetAddressOf());
@@ -2615,6 +2670,39 @@ namespace GmpiDrawing
 			FillGeometry(geometry, brush);
 		}
 
+		void DrawPolygon(std::vector<Point>& points, Brush brush, float strokeWidth, StrokeStyle strokeStyle) // NEW!!!
+		{
+			auto geometry = GetFactory().CreatePathGeometry();
+			auto sink = geometry.Open();
+
+			auto it = points.begin();
+			sink.BeginFigure(*it++, FigureBegin::Filled);
+			for (; it != points.end(); ++it)
+			{
+				sink.AddLine(*it);
+			}
+
+			sink.EndFigure();
+			sink.Close();
+			DrawGeometry(geometry, brush, strokeWidth, strokeStyle);
+		}
+
+		void DrawPolyline(std::vector<Point>& points, Brush brush, float strokeWidth, StrokeStyle strokeStyle) // NEW!!!
+		{
+			auto geometry = GetFactory().CreatePathGeometry();
+			auto sink = geometry.Open();
+
+			auto it = points.begin();
+			sink.BeginFigure(*it++, FigureBegin::Filled);
+			for (; it != points.end(); ++it)
+			{
+				sink.AddLine(*it);
+			}
+
+			sink.EndFigure(FigureEnd::Open);
+			sink.Close();
+			DrawGeometry(geometry, brush, strokeWidth, strokeStyle);
+		}
 		//void FillMesh(Mesh& mesh, Brush& brush)
 		//{
 		//	Get()->FillMesh(mesh.Get(), brush.Get());
@@ -2658,9 +2746,13 @@ namespace GmpiDrawing
 			int32_t stringLength = (int32_t) strlen(utf8String);
 			Get()->DrawTextU(utf8String, stringLength, textFormat.Get(), &layoutRect, brush.Get(), (GmpiDrawing_API::MP1_DRAW_TEXT_OPTIONS) options/*, measuringMode*/);
 		}
-		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags = 0)
+		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, Rect rect, Brush brush, DrawTextOptions options = DrawTextOptions::None)
 		{
-			Get()->DrawTextU(utf8String.c_str(), (int32_t)utf8String.size(), textFormat.Get(), &rect, brush.Get(), flags);
+			Get()->DrawTextU(utf8String.c_str(), static_cast<int32_t>(utf8String.size()), textFormat.Get(), &rect, brush.Get(), (GmpiDrawing_API::MP1_DRAW_TEXT_OPTIONS) options);
+		}
+		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags)
+		{
+			Get()->DrawTextU(utf8String.c_str(), static_cast<int32_t>(utf8String.size()), textFormat.Get(), &rect, brush.Get(), flags);
 		}
 		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags = 0)
 		{

@@ -1,3 +1,4 @@
+#pragma once
 
 /* Copyright (c) 2007-2021 SynthEdit Ltd
 * All rights reserved.
@@ -25,7 +26,10 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef GMPI_SDK_REVISION
 #define	GMPI_SDK_REVISION 30800 // 3.08
+#endif
+
 /* Version History
 	 1/01/2007 - V3.00 : Official release.
 	 2/10/2012 - V3.01 : Fixed bug in automatic sleep mode.
@@ -49,20 +53,7 @@
 #ifndef MP_SDK_STDINT_H_INCLUDED
 #define MP_SDK_STDINT_H_INCLUDED
 
-// Detect C99 support (i.e. specified integer sizes)
-#if (__STDC_VERSION__ >= 199901L) || (__cplusplus >= 201103L)
 #include <stdint.h>
-#else
-// else replicate it.
-// clash with Waves. typedef signed char  int8_t;
-typedef short int16_t;
-typedef int int32_t;
-typedef long long int64_t;
-typedef unsigned char  uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
-#endif
 
 #endif // MP_SDK_STDINT_H_INCLUDED
 
@@ -94,19 +85,6 @@ namespace gmpi
 		}
 
 		return true;
-/*
-		const char* ca = (const char*) &left;
-		const char* cb = (const char*) &right;
-		for( size_t i = 0 ; i < sizeof( gmpi::MpGuid ) ; ++i )
-		{
-			if( *ca++ != *cb++ )
-			{
-				return false;
-			}
-		}
-		return true;
-*/
-
 	}
 }
 
@@ -171,19 +149,19 @@ namespace gmpi
 	return gmpi::MP_NOSUPPORT; \
 }
 
-#define GMPI_REFCOUNT gmpi_sdk::selfInitializingInt refCount2_; \
+#define GMPI_REFCOUNT int32_t refCount2_ = 1; \
 	int32_t MP_STDCALL addRef() override \
 { \
-	return ++refCount2_.value_; \
+	return ++refCount2_; \
 } \
 	int32_t MP_STDCALL release() override \
 { \
-	if (--refCount2_.value_ == 0) \
+	if (--refCount2_ == 0) \
 	{ \
 	delete this; \
 	return 0; \
 	} \
-	return refCount2_.value_; \
+	return refCount2_; \
 } \
 
 #define GMPI_REFCOUNT_NO_DELETE	\
@@ -396,6 +374,7 @@ static const MpGuid MP_IID_PROTECTED_FILE2 =
 
 
 // DSP pin iterator.
+// TODO make a new iterator that can access pin ID, don't use this faulty version in GMPI.
 class IMpPinIterator : public IMpUnknown
 {
 public:
@@ -403,7 +382,7 @@ public:
 	virtual int32_t MP_STDCALL first() = 0;
 	virtual int32_t MP_STDCALL next() = 0;
 
-	virtual int32_t MP_STDCALL getPinId( int32_t& returnValue ) = 0;
+	virtual int32_t MP_STDCALL getPinId( int32_t& returnValue ) = 0; // returns *index* not ID.
 	virtual int32_t MP_STDCALL getPinDirection( int32_t& returnValue ) = 0;
 	virtual int32_t MP_STDCALL getPinDatatype( int32_t& returnValue ) = 0;
 };
@@ -1172,9 +1151,13 @@ private:
 	template <class U, int N> struct PinDataTypeTraits
 	{
 	};
-	template<int N> struct PinDataTypeTraits<int,N>
+	template<int N> struct PinDataTypeTraits<int32_t, N>
 	{
 		enum { result = gmpi::MP_INT32 };
+	};
+	template<int N> struct PinDataTypeTraits<int64_t, N>
+	{
+		enum { result = gmpi::MP_INT64 };
 	};
 	template<int N> struct PinDataTypeTraits<bool,N>
 	{
@@ -1183,6 +1166,10 @@ private:
 	template<int N> struct PinDataTypeTraits<float,N>
 	{
 		enum { result = gmpi::MP_FLOAT32 };
+	};
+	template<int N> struct PinDataTypeTraits<double, N>
+	{
+		enum { result = gmpi::MP_FLOAT64 };
 	};
 	template<int N> struct PinDataTypeTraits<std::wstring,N>
 	{
@@ -1484,11 +1471,11 @@ namespace gmpi_sdk
 	public:
 		mp_shared_ptr(){}
 
-		explicit mp_shared_ptr(wrappedObjT* newobj) : obj(0)
+		explicit mp_shared_ptr(wrappedObjT* newobj)
 		{
 			Assign(newobj);
 		}
-		mp_shared_ptr(const mp_shared_ptr<wrappedObjT>& value) : obj(0)
+		mp_shared_ptr(const mp_shared_ptr<wrappedObjT>& value)
 		{
 			Assign(value.obj);
 		}
@@ -1554,7 +1541,7 @@ namespace gmpi_sdk
 			return reinterpret_cast<void**>(&obj);
 		}
 
-		bool isNull()
+		bool isNull() const
 		{
 			return obj == nullptr;
 		}
@@ -1573,3 +1560,62 @@ namespace gmpi_sdk
 }
 
 #endif // MP_SHARED_PTR_H_INCLUDED
+
+namespace GmpiSdk
+{
+	class UriFile
+	{
+		gmpi_sdk::mp_shared_ptr<gmpi::IProtectedFile2> file;
+
+	public:
+		UriFile() {}
+		UriFile(gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> obj)
+		{
+			if (!obj)
+				return;
+
+			obj->queryInterface(gmpi::MP_IID_PROTECTED_FILE2, file.asIMpUnknownPtr());
+		}
+		UriFile(gmpi_sdk::mp_shared_ptr<gmpi::IProtectedFile2> obj) :
+			file(obj) {}
+
+		int64_t size()
+		{
+			if (file.isNull())
+				return 0;
+
+			int64_t s;
+			file->getSize(&s);
+			return s;
+		}
+
+		int32_t read(char* dest, size_t size)
+		{
+			if (file.isNull())
+				return gmpi::MP_FAIL;
+
+			return file->read(dest, size);
+		}
+
+		int64_t seek(int64_t distanceToMove, int32_t moveMethod)
+		{
+			if (file.isNull())
+				return -1;
+
+			int64_t newPos{};
+			file->seek(distanceToMove, moveMethod, &newPos);
+
+			return newPos;
+		}
+
+		gmpi::IProtectedFile2* get()
+		{
+			return file.get();
+		}
+
+		explicit operator bool()
+		{
+			return !file.isNull();
+		}
+	};
+}

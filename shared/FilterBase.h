@@ -55,7 +55,7 @@ Implement these member functions
 
 	Call 'initSettling()' as the last thing in your onSetPins() method. It will check if filter is settling and if so commence monitoring the output signal.
 
-	void MyFilter::onSetPins()
+	void MyFilter::onSetPins() override
 	{
 
 		// ... usual stuff first.
@@ -102,7 +102,7 @@ public:
 	FilterBase()
 	{}
 
-	virtual int32_t MP_STDCALL open() override
+	int32_t MP_STDCALL open() override
 	{
 		// randomise stabilityCheckCounter to avoid CPU spikes.
 		getHost()->getHandle(stabilityCheckCounter);

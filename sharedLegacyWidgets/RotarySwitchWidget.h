@@ -8,7 +8,7 @@
 
 class RotarySwitchWidget : public BitmapWidget, public FontCacheClient
 {
-	GmpiDrawing::TextFormat dtextFormat;
+	GmpiDrawing::TextFormat_readonly dtextFormat;
 	FontMetadata* typeface_;
 	std::wstring itemList_;
 	bool drawLabels_;
@@ -26,7 +26,7 @@ class RotarySwitchWidget : public BitmapWidget, public FontCacheClient
 public:
 	std::function<void(int32_t)> OnChangedEvent;
 
-	RotarySwitchWidget() {};
+	RotarySwitchWidget() {}
 
 	RotarySwitchWidget(gmpi::IMpUnknown* host, const char* imageFile) :BitmapWidget(host, imageFile)
 		, drawLabels_(true)
@@ -62,9 +62,10 @@ public:
 		itemList_ = itemList;
 		drawLabels_ = drawLabels;
 
-		dtextFormat = GetTextFormat(patchMemoryHost_, guiHost_, "switch_label", &typeface_); // getGuiHost()->CreateTextFormat(font->);
+		dtextFormat = GetTextFormat(patchMemoryHost_, guiHost_, "switch_label", &typeface_);
 
-		float fontSize = (float) typeface_->pixelHeight_;
+		// SE 1.1 used font 'size', SE 1.4 used pixelHeight_, which resulted in different (more spaced-out) results.
+		float fontSize = static_cast<float>(typeface_->verticalSnapBackwardCompatibilityMode ? typeface_->pixelHeight_ : typeface_->size_);
 
 		it_enum_list itr(itemList);
 		
@@ -193,6 +194,11 @@ public:
 	{
 		const int ROTARY_LABEL_CLEARANCE = 4;
 
+		if (!bitmapMetadata_)
+		{
+			return;
+		}
+
 		// Lines and text.
 		if (drawLabels_)
 		{
@@ -207,7 +213,7 @@ public:
 			offset.width = -drawOffset.width + bitmapMetadata_->frameSize.width / 2 ;
 			offset.height = -drawOffset.height + bitmapMetadata_->frameSize.height / 2;
 
-			GmpiDrawing::Size switch_size(bitmapMetadata_->frameSize.width, bitmapMetadata_->frameSize.height);
+			GmpiDrawing::Size switch_size((float)bitmapMetadata_->frameSize.width, (float)bitmapMetadata_->frameSize.height);
 			//?		bm->SetRect(CRect(-switch_size.cx * 0.5, -switch_size.cy * 0.5, switch_size.cx * 0.5, switch_size.cy * 0.5));
 			float inner_radius = switch_size.width * 0.4f;
 			int item_index = 0;

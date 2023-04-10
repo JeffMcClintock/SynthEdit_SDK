@@ -135,6 +135,17 @@ namespace GmpiSdk
 			return Get()->setLatency(latencySamples);
 		}
 		*/
+
+		std::wstring resolveFilename_old(std::wstring filename)
+		{
+			wchar_t fullFilename[500] = L"";
+			Get()->resolveFilename(filename.c_str(), static_cast<int32_t>(std::size(fullFilename)), fullFilename);
+			return fullFilename;
+		}
+		
+		std::string resolveFilename(std::wstring filenameW);
+		
+		UriFile openUri(std::string uri);
 	};
 
 	class ProcessorPins
@@ -237,7 +248,7 @@ public:
 	{
 		MpPinBase::sendPinUpdate( rawSize(), rawData(), blockPosition );
 	}
-	virtual void setBuffer( float* /*buffer*/ ) override
+	void setBuffer( float* /*buffer*/ ) override
 	{
 		assert(false && "Control-rate pins_ don't have a buffer");
 	}
@@ -295,7 +306,7 @@ public:
 	{
 		return pinDatatype; //MpTypeTraits<T>::PinDataType;
 	}
-	virtual void preProcessEvent( const gmpi::MpEvent* e ) override
+	void preProcessEvent( const gmpi::MpEvent* e ) override
 	{
 		switch(e->eventType)
 		{
@@ -312,7 +323,7 @@ public:
 				break;
 		};
 	}
-	virtual void postProcessEvent( const gmpi::MpEvent* e ) override
+	void postProcessEvent( const gmpi::MpEvent* e ) override
 	{
 		switch(e->eventType)
 		{
@@ -321,15 +332,15 @@ public:
 				break;
 		};
 	}
-	virtual MpBaseMemberPtr getDefaultEventHandler() override
+	MpBaseMemberPtr getDefaultEventHandler() override
 	{
-		return 0;
+		return {};
 	}
 	inline bool isUpdated() const
 	{
 		return freshValue_;
 	}
-	virtual void sendFirstUpdate() override
+	void sendFirstUpdate() override
 	{
 		sendPinUpdate();
 	}
@@ -469,8 +480,6 @@ typedef MpControlPin<float, gmpi::MP_IN>		FloatInPin;
 typedef MpControlPin<float, gmpi::MP_OUT>		FloatOutPin;
 typedef MpControlPin<MpBlob, gmpi::MP_IN>		BlobInPin;
 typedef MpControlPin<MpBlob, gmpi::MP_OUT>		BlobOutPin;
-//typedef MpControlPin<std::wstring, gmpi::MP_IN>	StringInPin;
-typedef MpControlPin<std::wstring, gmpi::MP_OUT>StringOutPin;
 
 typedef MpControlPin<bool, gmpi::MP_IN>			BoolInPin;
 typedef MpControlPin<bool, gmpi::MP_OUT>		BoolOutPin;
@@ -479,13 +488,20 @@ typedef MpControlPin<bool, gmpi::MP_OUT>		BoolOutPin;
 typedef MpControlPin<int, gmpi::MP_IN, gmpi::MP_ENUM>	EnumInPin;
 typedef MpControlPin<int, gmpi::MP_OUT, gmpi::MP_ENUM>	EnumOutPin;
 
-//typedef MpAudioPin<gmpi::MP_IN>			AudioInPin;
-//typedef MpAudioPin<gmpi::MP_OUT>		AudioOutPin;
-
 class StringInPin : public MpControlPin<std::wstring, gmpi::MP_IN>
 {
 public:
 	explicit operator std::string(); // UTF8 encoded.
+};
+
+class StringOutPin : public MpControlPin<std::wstring, gmpi::MP_OUT>
+{
+public:
+	explicit operator std::string(); // UTF8 encoded.
+	std::string operator=(std::string valueUtf8);
+	std::wstring operator=(std::wstring value);
+	const char* operator=(const char* valueUtf8);
+	const wchar_t* operator=(const wchar_t* valueUtf16);
 };
 
 class MidiInPin : public MpPinBase

@@ -5,13 +5,12 @@
 #include <d2d1_2.h>
 #include <d3d11_1.h>
 #include <wrl.h> // Comptr
+#include <Windowsx.h>
+#include <commctrl.h>
 #include "./DrawingFrame_win32.h"
-#include "../shared/it_enum_list.h"
 #include "../shared/xp_dynamic_linking.h"
 #include "../shared/xp_simd.h"
-#include <Windowsx.h>
 #include "../SE_DSP_CORE/IGuiHost2.h"
-#include <commctrl.h>
 
 using namespace std;
 using namespace gmpi;
@@ -25,7 +24,8 @@ using namespace D2D1;
 namespace GmpiGuiHosting
 {
 
-LRESULT CALLBACK DrawingFrameWindowProc(HWND hwnd,
+LRESULT CALLBACK DrawingFrameWindowProc(
+	HWND hwnd,
 	UINT message,
 	WPARAM wParam,
 	LPARAM lParam)
@@ -33,7 +33,7 @@ LRESULT CALLBACK DrawingFrameWindowProc(HWND hwnd,
 	auto drawingFrame = (DrawingFrame*)(LONG_PTR)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	if (drawingFrame)
 	{
-		return drawingFrame->WindowProc(message, wParam, lParam);
+		return drawingFrame->WindowProc(hwnd, message, wParam, lParam);
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);
@@ -51,12 +51,9 @@ bool registeredWindowClass = false;
 WNDCLASS windowClass;
 wchar_t gClassName[100];
 
-void DrawingFrame::open(void* pParentWnd)
+void DrawingFrame::open(void* pParentWnd, const GmpiDrawing_API::MP1_SIZE_L* overrideSize)
 {
 	parentWnd = (HWND)pParentWnd;
-
-	RECT r;
-	GetClientRect(parentWnd, &r);
 
 	if (!registeredWindowClass)
 	{
@@ -86,6 +83,19 @@ void DrawingFrame::open(void* pParentWnd)
 		//		bSwapped_mouse_buttons = GetSystemMetrics(SM_SWAPBUTTON) > 0;
 	}
 
+	RECT r{};
+	if (overrideSize)
+	{
+		// size to document
+		r.right = overrideSize->width;
+		r.bottom = overrideSize->height;
+	}
+	else
+	{
+		// auto size to parent
+		GetClientRect(parentWnd, &r);
+	}
+
 	int style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;// | WS_OVERLAPPEDWINDOW;
 	int extended_style = 0;
 
@@ -101,73 +111,28 @@ void DrawingFrame::open(void* pParentWnd)
 		CreateRenderTarget();
 
 		initTooltip();
-	}
-}
 
-/*
-*  child window DPI awareness, needs to be TOP level window I think, not the frame.
-*     // Store the current thread's DPI-awareness context. Windows 10 only
-    // DPI_AWARENESS_CONTEXT previousDpiContext = SetThreadDpiAwarenessContext(context);
-	//HINSTANCE h_kernal = GetModuleHandle(_T("Kernel32.DLL"));
-	HMODULE hUser32 = GetModuleHandleW(L"user32");
-	typedef int32_t DPI_AWARENESS_CONTEXT;
-	typedef int32_t DPI_HOSTING_BEHAVIOR;
-	typedef DPI_AWARENESS_CONTEXT ( WINAPI * PFN_SETTHREADDPIAWARENESS)(DPI_AWARENESS_CONTEXT param);
-	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiAwarenessContext = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiAwarenessContext");
-	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiHostingBehavior = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiHostingBehavior");
-	DPI_AWARENESS_CONTEXT previousDpiContext = {};
-	if(p_SetThreadDpiAwarenessContext)
-	{
-		// DPI_AWARENESS_CONTEXT_SYSTEM_AWARE - System DPI aware. This window does not scale for DPI changes. It will query for the DPI once and use that value for the lifetime of the process.
-		const auto DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = (DPI_AWARENESS_CONTEXT) -1;
-		previousDpiContext = p_SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
-	}
-	struct CreateParams
-	{
-		BOOL bEnableNonClientDpiScaling;
-		BOOL bChildWindowDpiIsolation;
-	};
-	CreateParams createParams{TRUE, TRUE};
-
-	// Windows 10 (1803) supports child-HWND DPI-mode isolation. This enables
-    // child HWNDs to run in DPI-scaling modes that are isolated from that of 
-    // their parent (or host) HWND. Without child-HWND DPI isolation, all HWNDs 
-    // in an HWND tree must have the same DPI-scaling mode.
-	DPI_HOSTING_BEHAVIOR previousDpiHostingBehavior = {};
-	if (p_SetThreadDpiAwarenessContext) // &&bChildWindowDpiIsolation)
-	{
-		const int32_t DPI_HOSTING_BEHAVIOR_MIXED = 2;
-		previousDpiHostingBehavior = p_SetThreadDpiHostingBehavior(DPI_HOSTING_BEHAVIOR_MIXED);
-	}
-
-	windowHandle = CreateWindowEx(extended_style, gClassName, L"",
-		style, 0, 0, r.right - r.left, r.bottom - r.top,
-		parentWnd, NULL, local_GetDllHandle_randomshit(), &createParams);// NULL);
-
-	if (windowHandle)
-	{
-		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (__int3264)(LONG_PTR)this);
-		//		RegisterDragDrop(windowHandle, new CDropTarget(this));
-
-		// Restore the current thread's DPI awareness context
-		if(p_SetThreadDpiAwarenessContext)
+		int dpiX, dpiY;
 		{
-			p_SetThreadDpiAwarenessContext(previousDpiContext);
-
-			// Restore the current thread DPI hosting behavior, if we changed it.
-			//if(bChildWindowDpiIsolation)
-			{
-				p_SetThreadDpiHostingBehavior(previousDpiHostingBehavior);
-			}
+			HDC hdc = ::GetDC(windowHandle);
+			dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+			dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+			::ReleaseDC(windowHandle, hdc);
 		}
 
-		CreateRenderTarget();
+		const GmpiDrawing_API::MP1_SIZE available{
+			static_cast<float>(((r.right - r.left) * 96) / dpiX),
+			static_cast<float>(((r.bottom - r.top) * 96) / dpiY)
+		};
 
-		initTooltip();
+		GmpiDrawing_API::MP1_SIZE desired{};
+		gmpi_gui_client->measure(available, &desired);
+		gmpi_gui_client->arrange({ 0, 0, available.width, available.height });
+
+		// starting Timer latest to avoid first event getting 'in-between' other init events.
+		StartTimer(15); // 16.66 = 60Hz. 16ms timer seems to miss v-sync. Faster timers offer no improvement to framerate.
 	}
-* 
-* 
-*/
+}
 
 void DrawingFrameBase::initTooltip()
 {
@@ -264,10 +229,15 @@ void DrawingFrameBase::HideToolTip()
 	}
 }
 
-LRESULT DrawingFrame::WindowProc(UINT message,
+LRESULT DrawingFrameBase::WindowProc(
+	HWND hwnd, 
+	UINT message,
 	WPARAM wParam,
 	LPARAM lParam)
 {
+	if(!gmpi_gui_client)
+		return DefWindowProc(hwnd, message, wParam, lParam);
+
 	switch (message)
 	{
 		case WM_MBUTTONDOWN:
@@ -343,109 +313,147 @@ LRESULT DrawingFrame::WindowProc(UINT message,
 			{
 			case WM_MOUSEMOVE:
 				{
-					r = containerView->onPointerMove(flags, p);
+					r = gmpi_gui_client->onPointerMove(flags, p);
+
+					// get notified when mouse leaves window
+					if (!isTrackingMouse)
+					{
+						TRACKMOUSEEVENT tme{};
+						tme.cbSize = sizeof(TRACKMOUSEEVENT);
+						tme.dwFlags = TME_LEAVE;
+						tme.hwndTrack = hwnd;
+
+						if (::TrackMouseEvent(&tme))
+						{
+							isTrackingMouse = true;
+						}
+						gmpi_gui_client->setHover(true);
+					}
 				}
 				break;
 
 			case WM_LBUTTONDOWN:
 			case WM_RBUTTONDOWN:
 			case WM_MBUTTONDOWN:
-				r = containerView->onPointerDown(flags, p);
+				r = gmpi_gui_client->onPointerDown(flags, p);
+				::SetFocus(hwnd);
 				break;
 
 			case WM_MBUTTONUP:
 			case WM_RBUTTONUP:
 			case WM_LBUTTONUP:
-				r = containerView->onPointerUp(flags, p);
+				r = gmpi_gui_client->onPointerUp(flags, p);
 				break;
 			}
 		}
 		break;
 
-	case WM_NCACTIVATE:
-		//if( wParam == FALSE ) // USER CLICKED AWAY
-		//	goto we_re_done;
+	case WM_MOUSELEAVE:
+		isTrackingMouse = false;
+		gmpi_gui_client->setHover(false);
 		break;
-/*
-	case WM_WINDOWPOSCHANGING:
-	{
-		LPWINDOWPOS wp = (LPWINDOWPOS)lParam;
-	}
-	break;
-*/
-	case WM_ACTIVATE:
-	{
-		/*
-		//HFONT hFont = CreateFont(18, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
-		//	CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, VARIABLE_PITCH, TEXT("Courier New"));
 
-		SendMessage(child,      // Handle of edit control
-		WM_SETFONT,         // Message to change the font
-		(WPARAM)dialogFont,      // handle of the font
-		MAKELPARAM(TRUE, 0) // Redraw text
-		);
-
-		::SetWindowPos(hwndDlg, 0, dialogX, dialogY, dialogW, dialogH, SWP_NOZORDER);
-		::SetWindowPos(child, 0, 0, 0, dialogW, dialogH, SWP_NOZORDER);
-		::SetWindowText(child, dialogEditText);
-		::SetFocus(child);
-		dialogReturnValue = 1;
-		// Select all.
-		#ifdef WIN32
-		SendMessage(child, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
-		#else
-		SendMessage(child, EM_SETSEL, 0, MAKELONG(0, -1));
-		#endif
-		*/
-	}
-	break;
-
-		/*
-	case WM_COMMAND:
-		switch( LOWORD(wParam) )
+	case WM_MOUSEWHEEL:
+	case WM_MOUSEHWHEEL:
 		{
-		case IDOK:
-		goto we_re_done;
-		break;
+			// supplied point is relative to *screen* not window.
+			POINT pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			MapWindowPoints(NULL, getWindowHandle(), &pos, 1); // !!! ::ScreenToClient() might be more correct. ref MyFrameWndDirectX::OnMouseWheel
 
-		case IDCANCEL:
-		dialogReturnValue = 0;
-		EndDialog(hwndDlg, dialogReturnValue); // seems to call back here and exit at "we_re_done"
-		return TRUE;
+			GmpiDrawing::Point p(static_cast<float>(pos.x), static_cast<float>(pos.y));
+			p = WindowToDips.TransformPoint(p);
+
+			const auto zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+			int32_t flags = gmpi_gui_api::GG_POINTER_FLAG_PRIMARY | gmpi_gui_api::GG_POINTER_FLAG_CONFIDENCE;
+
+			if (WM_MOUSEHWHEEL == message)
+				flags |= gmpi_gui_api::GG_POINTER_SCROLL_HORIZ;
+
+			const auto fwKeys = GET_KEYSTATE_WPARAM(wParam);
+			if (MK_SHIFT & fwKeys)
+			{
+				flags |= gmpi_gui_api::GG_POINTER_KEY_SHIFT;
+			}
+			if (MK_CONTROL & fwKeys)
+			{
+				flags |= gmpi_gui_api::GG_POINTER_KEY_CONTROL;
+			}
+			//if (GetKeyState(VK_MENU) < 0)
+			//{
+			//	flags |= gmpi_gui_api::GG_POINTER_KEY_ALT;
+			//}
+
+			/*auto r =*/ gmpi_gui_client->onMouseWheel(flags, zDelta, p);
 		}
 		break;
-		*/
+
+	case WM_CHAR:
+		if(gmpi_key_client)
+			gmpi_key_client->OnKeyPress((wchar_t) wParam);
+		break;
 
 	case WM_PAINT:
 	{
 		OnPaint();
-//		return ::DefWindowProc(windowHandle, message, wParam, lParam); // clear update rect.
+		//		return ::DefWindowProc(hwnd, message, wParam, lParam); // clear update rect.
 	}
 	break;
 
-	default:
-		return DefWindowProc(windowHandle, message, wParam, lParam);
+	case WM_SIZE:
+	{
+		UINT width = LOWORD(lParam);
+		UINT height = HIWORD(lParam);
 
-	//we_re_done:
-	//	if( !GetDlgItemText(hwndDlg, IDC_EDIT1, dialogEditText, sizeof(dialogEditText) / sizeof(dialogEditText[0])) )
-	//		*dialogEditText = 0;
-	//	EndDialog(hwndDlg, dialogReturnValue);
+		OnSize(width, height);
+		return ::DefWindowProc(hwnd, message, wParam, lParam); // clear update rect.
+	}
+	break;
+	
+	default:
+		return DefWindowProc(hwnd, message, wParam, lParam);
 
 	}
 	return TRUE;
 }
 
-void DrawingFrameBase::Init(SynthEdit2::IPresenter* presenter, int pviewType)
+void DrawingFrameBase::OnSize(UINT width, UINT height)
 {
-	AddView(new SynthEdit2::ContainerView(GmpiDrawing::Size(static_cast<float>(viewDimensions), static_cast<float>(viewDimensions))));
-	containerView->setDocument(presenter, pviewType);
+	assert(m_swapChain);
+	assert(mpRenderTarget);
+
+	mpRenderTarget->SetTarget(nullptr);
+
+	if (S_OK == m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))
+	{
+		CreateDeviceSwapChainBitmap();
+	}
+	else
+	{
+		ReleaseDevice();
+	}
+
+	int dpiX, dpiY;
+	{
+		HDC hdc = ::GetDC(getWindowHandle());
+		dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+		dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+		::ReleaseDC(getWindowHandle(), hdc);
+	}
+
+	const GmpiDrawing_API::MP1_SIZE available{
+		static_cast<float>(((width) * 96) / dpiX),
+		static_cast<float>(((height) * 96) / dpiY)
+	};
+
+	gmpi_gui_client->arrange({0, 0, available.width, available.height });
 }
 
 // Ideally this is called at 60Hz so we can draw as fast as practical, but without blocking to wait for Vsync all the time (makes host unresponsive).
 bool DrawingFrameBase::OnTimer()
 {
 	auto hwnd = getWindowHandle();
-	if (hwnd == nullptr || containerView == nullptr)
+	if (hwnd == nullptr || gmpi_gui_client == nullptr)
 		return true;
 
 	// Tooltips
@@ -459,21 +467,22 @@ bool DrawingFrameBase::OnTimer()
 		{
 			ScreenToClient(hwnd, &P);
 
-			auto point = WindowToDips.TransformPoint(GmpiDrawing::Point(static_cast<float>(P.x), static_cast<float>(P.y)));
+			const auto point = WindowToDips.TransformPoint(GmpiDrawing::Point(static_cast<float>(P.x), static_cast<float>(P.y)));
 
-			// get item under mouse.
-			// toolTipText = L"Doog";
-			auto text = containerView->getToolTip(point);
-			if (!text.empty())
+			gmpi_sdk::MpString text;
+			gmpi_gui_client->getToolTip(point, &text);
+			if (!text.str().empty())
 			{
-				toolTipText = Utf8ToWstring(text);
+				toolTipText = Utf8ToWstring(text.str());
 				ShowToolTip();
 			}
 		}
 	}
 	
-	// Get any meter updates from DSP. ( See also CSynthEditAppBase::OnTimer() )
-	containerView->Presenter()->GetPatchManager()->serviceGuiQueue();
+	if (frameUpdateClient)
+	{
+		frameUpdateClient->PreGraphicsRedraw();
+	}
 
 	// Queue pending drawing updates to backbuffer.
 	const BOOL bErase = FALSE;
@@ -503,11 +512,11 @@ void RenderLog(ID2D1RenderTarget* context_, IDWriteFactory* writeFactory, ID2D1F
 		context_->SetTransform(t);
 	}
 	{
-		auto r = D2D1::RectF(0.000, 0.000, 1718.000f, 865.000);
+		auto r = D2D1::RectF(0.000f, 0.000f, 1718.000f, 865.000);
 		context_->PushAxisAlignedClip(&r, D2D1_ANTIALIAS_MODE_ALIASED);
 	}
 	{
-		auto c = D2D1::ColorF(0.651, 0.651, 0.651, 1.000);
+		auto c = D2D1::ColorF(0.651f, 0.651f, 0.651f, 1.000f);
 		context_->Clear(c);
 	}
 
@@ -549,19 +558,19 @@ void RenderLog(ID2D1RenderTarget* context_, IDWriteFactory* writeFactory, ID2D1F
 	sinka1bdb760 = nullptr;
 	ID2D1SolidColorBrush* brusha1053870 = nullptr;
 	{
-		auto c = D2D1::ColorF(0.127, 0.301, 0.847, 1.000);
+		auto c = D2D1::ColorF(0.127f, 0.301f, 0.847f, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha1053870);
 	}
 	context_->FillGeometry(geometrya1bdb2e0, brusha1053870, nullptr);
 	geometrya1bdb2e0->Release();
 	ID2D1SolidColorBrush* brusha1053800 = nullptr;
 	{
-		auto c = D2D1::ColorF(0.216, 0.216, 0.216, 1.000);
+		auto c = D2D1::ColorF(0.216f, 0.216f, 0.216f, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha1053800);
 	}
 	ID2D1SolidColorBrush* brusha1054130 = nullptr;
 	{
-		auto c = D2D1::ColorF(0.000, 0.000, 0.000, 1.000);
+		auto c = D2D1::ColorF(0.000f, 0.000f, 0.000f, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha1054130);
 	}
 	{
@@ -612,19 +621,19 @@ void RenderLog(ID2D1RenderTarget* context_, IDWriteFactory* writeFactory, ID2D1F
 	sinka1bdb280 = nullptr;
 	ID2D1SolidColorBrush* brusha1054130b = nullptr;
 	{
-		auto c = D2D1::ColorF(0.127, 0.301, 0.847, 1.000);
+		auto c = D2D1::ColorF(0.127f, 0.301f, 0.847f, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha1054130b);
 	}
 	context_->FillGeometry(geometrya1bdac20, brusha1054130b, nullptr);
 	geometrya1bdac20->Release();
 	ID2D1SolidColorBrush* brusha10542f0 = nullptr;
 	{
-		auto c = D2D1::ColorF(0.0, 0, 0, 1.000);
+		auto c = D2D1::ColorF(0.0f, 0, 0, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha10542f0);
 	}
 	ID2D1SolidColorBrush* brusha1053790 = nullptr;
 	{
-		auto c = D2D1::ColorF(0.000, 0.000, 0.000, 1.000);
+		auto c = D2D1::ColorF(0.000f, 0.000f, 0.000f, 1.000f);
 		context_->CreateSolidColorBrush(c, &brusha1053790);
 	}
 	{
@@ -636,7 +645,7 @@ void RenderLog(ID2D1RenderTarget* context_, IDWriteFactory* writeFactory, ID2D1F
 		context_->DrawTextW(L"Name\nValue\nAnimation Position\nMenu Items\nMenu Selection\nMouse Down\nValue Out", 76, textformata0c73860, &r, brusha10542f0, (D2D1_DRAW_TEXT_OPTIONS)0);
 	}
 	{
-		auto r = D2D1::RectF(-1.469, -17.000, 84.000, 109.469f);
+		auto r = D2D1::RectF(-1.469f, -17.000f, 84.000f, 109.469f);
 		context_->DrawTextW(L"PatchMemory Float3", 18, textformata0c746d0, &r, brusha10542f0, (D2D1_DRAW_TEXT_OPTIONS)0);
 	}
 	brusha1053790->Release();
@@ -685,7 +694,7 @@ void DrawingFrameBase::OnPaint()
 	if (containerView)
 #else
 	auto& dirtyRects = updateRegion_native.getUpdateRects();
-	if (containerView && !dirtyRects.empty())
+	if (gmpi_gui_client && !dirtyRects.empty())
 #endif
 	{
 		//	_RPT1(_CRT_WARN, "OnPaint(); %d dirtyRects\n", dirtyRects.size() );
@@ -735,7 +744,7 @@ void DrawingFrameBase::OnPaint()
 				//_RPTW4(_CRT_WARN, L"GmpiDrawing::Rect dirtyRect{%4d,%4d,%4d,%4d};\n", (int)temp.left, (int)temp.top, (int)temp.right, (int)temp.bottom);
 				graphics.PushAxisAlignedClip(temp);
 
-				containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
+				gmpi_gui_client->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
 				graphics.PopAxisAlignedClip();
 			}
 			else
@@ -755,7 +764,7 @@ void DrawingFrameBase::OnPaint()
 
 					graphics.PushAxisAlignedClip(temp);
 
-					containerView->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
+					gmpi_gui_client->OnRender(static_cast<GmpiDrawing_API::IMpDeviceContext*>(context.get()));
 					graphics.PopAxisAlignedClip();
 				}
 			}
@@ -935,7 +944,8 @@ void DrawingFrameBase::CreateDevice()
 	dxdevice->GetAdapter(adapter.GetAddressOf());
 
 	// adapter’s parent object is the DXGI factory
-	ComPtr<IDXGIFactory2> factory;
+	// 
+	ComPtr<IDXGIFactory2> factory; // Minimum supported client: Windows 8 and Platform Update for Windows 7 
 	adapter->GetParent(__uuidof(factory), reinterpret_cast<void **>(factory.GetAddressOf()));
 
 	bool DX_support_sRGB;
@@ -1096,7 +1106,7 @@ void DrawingFrameBase::CreateDeviceSwapChainBitmap()
 	swapChainSize.width = static_cast<int32_t>(bitmapsize.width);
 	swapChainSize.height = static_cast<int32_t>(bitmapsize.height);
 
-//_RPT2(_CRT_WARN, "B[%f,%f]\n", bitmapsize.width, bitmapsize.height);
+//_RPT2(_CRT_WARN, "%x B[%f,%f]\n", this, bitmapsize.width, bitmapsize.height);
 
 	// Now attach Device Context to swapchain bitmap.
 	mpRenderTarget->SetTarget(bitmap.Get());
@@ -1111,8 +1121,51 @@ void DrawingFrameBase::CreateDeviceSwapChainBitmap()
 void DrawingFrameBase::CreateRenderTarget()
 {
 	CreateDevice();
+}
 
-	StartTimer(15); // 16.66 = 60Hz. 16ms timer seems to miss v-sync. Faster timers offer no improvement to framerate.
+void DrawingFrame::ReSize(int left, int top, int right, int bottom)
+{
+	const auto width = right - left;
+	const auto height = bottom - top;
+
+	if (mpRenderTarget && (swapChainSize.width != width || swapChainSize.height != height))
+	{
+		SetWindowPos(
+			windowHandle
+			, NULL
+			, 0
+			, 0
+			, width
+			, height
+			, SWP_NOZORDER
+		);
+
+		// Note: This method can fail, but it's okay to ignore the
+		// error here, because the error will be returned again
+		// the next time EndDraw is called.
+/*
+		UINT Width = 0; // Auto size
+		UINT Height = 0;
+
+		if (lowDpiMode)
+		{
+			RECT r;
+			GetClientRect(&r);
+
+			Width = (r.right - r.left) / 2;
+			Height = (r.bottom - r.top) / 2;
+		}
+*/
+		mpRenderTarget->SetTarget(nullptr);
+		if (S_OK == m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))
+		{
+			CreateDeviceSwapChainBitmap();
+		}
+		else
+		{
+			ReleaseDevice();
+		}
+	}
 }
 
 // Convert to an integer rect, ensuring it surrounds all partial pixels.
@@ -1261,3 +1314,69 @@ int32_t DrawingFrameBase::FindResourceU(const char * resourceName, const char * 
 } //namespace
 
 #endif // skip compilation on macOS
+
+
+/*
+*  child window DPI awareness, needs to be TOP level window I think, not the frame.
+*     // Store the current thread's DPI-awareness context. Windows 10 only
+	// DPI_AWARENESS_CONTEXT previousDpiContext = SetThreadDpiAwarenessContext(context);
+	//HINSTANCE h_kernal = GetModuleHandle(_T("Kernel32.DLL"));
+	HMODULE hUser32 = GetModuleHandleW(L"user32");
+	typedef int32_t DPI_AWARENESS_CONTEXT;
+	typedef int32_t DPI_HOSTING_BEHAVIOR;
+	typedef DPI_AWARENESS_CONTEXT ( WINAPI * PFN_SETTHREADDPIAWARENESS)(DPI_AWARENESS_CONTEXT param);
+	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiAwarenessContext = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiAwarenessContext");
+	PFN_SETTHREADDPIAWARENESS p_SetThreadDpiHostingBehavior = (PFN_SETTHREADDPIAWARENESS)GetProcAddress(hUser32, "SetThreadDpiHostingBehavior");
+	DPI_AWARENESS_CONTEXT previousDpiContext = {};
+	if(p_SetThreadDpiAwarenessContext)
+	{
+		// DPI_AWARENESS_CONTEXT_SYSTEM_AWARE - System DPI aware. This window does not scale for DPI changes. It will query for the DPI once and use that value for the lifetime of the process.
+		const auto DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = (DPI_AWARENESS_CONTEXT) -1;
+		previousDpiContext = p_SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+	}
+	struct CreateParams
+	{
+		BOOL bEnableNonClientDpiScaling;
+		BOOL bChildWindowDpiIsolation;
+	};
+	CreateParams createParams{TRUE, TRUE};
+
+	// Windows 10 (1803) supports child-HWND DPI-mode isolation. This enables
+	// child HWNDs to run in DPI-scaling modes that are isolated from that of
+	// their parent (or host) HWND. Without child-HWND DPI isolation, all HWNDs
+	// in an HWND tree must have the same DPI-scaling mode.
+	DPI_HOSTING_BEHAVIOR previousDpiHostingBehavior = {};
+	if (p_SetThreadDpiAwarenessContext) // &&bChildWindowDpiIsolation)
+	{
+		const int32_t DPI_HOSTING_BEHAVIOR_MIXED = 2;
+		previousDpiHostingBehavior = p_SetThreadDpiHostingBehavior(DPI_HOSTING_BEHAVIOR_MIXED);
+	}
+
+	windowHandle = CreateWindowEx(extended_style, gClassName, L"",
+		style, 0, 0, r.right - r.left, r.bottom - r.top,
+		parentWnd, NULL, local_GetDllHandle_randomshit(), &createParams);// NULL);
+
+	if (windowHandle)
+	{
+		SetWindowLongPtr(windowHandle, GWLP_USERDATA, (__int3264)(LONG_PTR)this);
+		//		RegisterDragDrop(windowHandle, new CDropTarget(this));
+
+		// Restore the current thread's DPI awareness context
+		if(p_SetThreadDpiAwarenessContext)
+		{
+			p_SetThreadDpiAwarenessContext(previousDpiContext);
+
+			// Restore the current thread DPI hosting behavior, if we changed it.
+			//if(bChildWindowDpiIsolation)
+			{
+				p_SetThreadDpiHostingBehavior(previousDpiHostingBehavior);
+			}
+		}
+
+		CreateRenderTarget();
+
+		initTooltip();
+	}
+*
+*
+*/

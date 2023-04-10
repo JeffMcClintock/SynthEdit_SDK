@@ -1,13 +1,9 @@
 // Copyright 2006-2020 SynthEdit Ltd
 // MpPluginBase - implements the IMpPlugin2 interface.
-#if !defined(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
-#endif
-
 #include "mp_sdk_audio.h"
 #include <assert.h>
-#include <codecvt>
-#include <locale>
+#include "MpString.h"
+#include "../shared/unicode_conversion.h"
 
 using namespace gmpi;
 
@@ -426,13 +422,62 @@ MpBaseMemberPtr MidiInPin::getDefaultEventHandler()
 	return &MpPluginBase::midiHelper;
 }
 
+const std::wstring& setTextPin(MpControlPinBase<std::wstring, gmpi::MP_STRING>& pin, const std::wstring& text)
+{
+	pin.setValue(text);
+	return text;
+}
+
+const std::string& setTextPin(MpControlPinBase<std::wstring, gmpi::MP_STRING>& pin, const std::string& text)
+{
+	const auto wtext = JmUnicodeConversions::Utf8ToWstring(text);
+	pin.setValue(wtext);
+	return text;
+}
+
+const char* setTextPin(MpControlPinBase<std::wstring, gmpi::MP_STRING>& pin, const char* text)
+{
+	const auto wtext = JmUnicodeConversions::Utf8ToWstring(text);
+	pin.setValue(wtext);
+	return text;
+}
+
+const wchar_t* setTextPin(MpControlPinBase<std::wstring, gmpi::MP_STRING>& pin, const wchar_t* text)
+{
+	std::wstring wtext(text);
+	pin.setValue(wtext);
+	return text;
+}
 
 StringInPin::operator std::string()
 {
-	std::wstring_convert<std::codecvt_utf8<wchar_t> > convert;
-	return convert.to_bytes(getValue());
+	return JmUnicodeConversions::WStringToUtf8(getValue());
 }
 
+StringOutPin::operator std::string()
+{
+	return JmUnicodeConversions::WStringToUtf8(getValue());
+}
+
+std::string StringOutPin::operator=(std::string valueUtf8)
+{
+	return setTextPin(*this, valueUtf8);
+}
+
+std::wstring StringOutPin::operator=(std::wstring value)
+{
+	return setTextPin(*this, value);
+}
+
+const char* StringOutPin::operator=(const char* valueUtf8)
+{
+	return setTextPin(*this, valueUtf8);
+}
+
+const wchar_t* StringOutPin::operator=(const wchar_t* valueUtf16)
+{
+	return setTextPin(*this, valueUtf16);
+}
 
 void MpPluginBase::initializePin( int PinId, MpPinBase &pin, MpBaseMemberPtr handler )
 {
@@ -791,4 +836,33 @@ void AudioInPin::preProcessEvent( const gmpi::MpEvent* e )
 	};
 }
 
+namespace GmpiSdk
+{
 
+std::string ProcessorHost::resolveFilename(std::wstring filenameW)
+{
+	gmpi_sdk::mp_shared_ptr<gmpi::IEmbeddedFileSupport> dspHost;
+	Get()->queryInterface(gmpi::MP_IID_HOST_EMBEDDED_FILE_SUPPORT, dspHost.asIMpUnknownPtr());
+	assert(dspHost); // new way
+
+	const auto filename = JmUnicodeConversions::WStringToUtf8(filenameW);
+
+	gmpi_sdk::MpString fullFilename;
+	dspHost->resolveFilename(filename.c_str(), &fullFilename);
+
+	return fullFilename.c_str();
+}
+
+UriFile ProcessorHost::openUri(std::string uri)
+{
+	gmpi_sdk::mp_shared_ptr<gmpi::IEmbeddedFileSupport> dspHost;
+	Get()->queryInterface(gmpi::MP_IID_HOST_EMBEDDED_FILE_SUPPORT, dspHost.asIMpUnknownPtr());
+	assert(dspHost); // new way
+
+	gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> obj;
+	dspHost->openUri(uri.c_str(), &obj.get());
+
+	return { obj };
+}
+
+}

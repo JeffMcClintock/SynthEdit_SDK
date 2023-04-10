@@ -46,20 +46,20 @@ private:
 	void subProcessPulse( int bufferOffset, int sampleFrames, bool& canSleep );
 
 	SapSubProcessMethodPointer curSubProcess_;
-	float transitionTime_;
-	float inverseTransitionTime_;
-	float currentValue_;
-	float targetValue_;
-	int mode_;
+	float transitionTime_ = {};
+	float inverseTransitionTime_ = {};
+	float currentValue_ = {};
+	float targetValue_ = {};
+	int mode_ = {};
 
 	// Curve variables.
-	float dv;	//difference v (velocity)
-	float ddv;	//difference dv
-	float c;	//constant added to ddv
+	float dv = {};	//difference v (velocity)
+	float ddv = {};	//difference dv
+	float c = {};	//constant added to ddv
 
-	int count;
-	float adaptiveHi_;
-	float adaptiveLo_;
+	int count = {};
+	float adaptiveHi_ = {};
+	float adaptiveLo_ = {};
 };
 
 class RampGenerator
@@ -78,17 +78,17 @@ public:
 	}
 
 private:
-	float dv;
-	float currentValue_;
-	float targetValue_;
-	float inverseTransitionTime_;
-	float transitionTime_;
+	float dv = {};
+	float currentValue_ = {};
+	float targetValue_ = {};
+	float inverseTransitionTime_ = {};
+	float transitionTime_ = {};
 };
 
 class RampGeneratorAdaptive
 {
-	float adaptiveHi_;
-	float adaptiveLo_;
+	float adaptiveHi_ = {};
+	float adaptiveLo_ = {};
 
 public:
 	RampGeneratorAdaptive() :
@@ -181,10 +181,10 @@ public:
 		setValueInstant(targetValue_);
 	}
 private:
-	float dv;
-	float currentValue_;
-	float targetValue_;
-	float inverseTransitionTime_;
+	float dv = {};
+	float currentValue_ = {};
+	float targetValue_ = {};
+	float inverseTransitionTime_ = {};
 };
 
 #endif // .H INCLUDED

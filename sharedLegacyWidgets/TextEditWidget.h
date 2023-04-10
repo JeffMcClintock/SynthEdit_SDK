@@ -10,31 +10,24 @@
 #include "../shared/FontCache.h"
 #include "../se_sdk3/mp_gui.h"
 
-class TextEditWidget :
-	public Widget, public FontCacheClient
+class TextEditWidget : public TextWidgetBase
 {
 	std::string text;
-	GmpiDrawing::TextFormat dtextFormat;
-	FontMetadata* typeface_;
-	std::string style_;
 	gmpi_gui::MpCompletionHandler onPopupMenuCompleteEvent;
-	GmpiGui::TextEdit nativeFileDialog;
-	GmpiDrawing::TextAlignment alignment;
+	GmpiGui::TextEdit nativeWidget;
 
 public:
 	std::function<void(std::string)> OnChangedEvent;
 
 	TextEditWidget(gmpi::IMpUnknown* host = nullptr) :
-		typeface_(0)
-		, onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
+		onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
 	{
 		if (host)
 			setHost(host);
 	}
 
 	TextEditWidget(gmpi::IMpUnknown* host, const char* style, const char* text = "") :
-		typeface_(0)
-		, onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
+		onPopupMenuCompleteEvent([this](int32_t result) -> void { this->OnPopupmenuComplete(result); })
 	{
 		setHost(host);
 		SetText(text);
@@ -53,7 +46,7 @@ public:
 		return text;
 	}
 	virtual GmpiDrawing::Size getSize() override;
-
+/* must not change on shared textformat
 	void setCentered()
 	{
 		alignment = GmpiDrawing::TextAlignment::Center;
@@ -66,6 +59,7 @@ public:
 	{
 		alignment = GmpiDrawing::TextAlignment::Trailing;
 	}
+*/
 	virtual bool onPointerDown(int32_t flags, GmpiDrawing_API::MP1_POINT point) override;
 	virtual void onPointerUp(int32_t flags, GmpiDrawing_API::MP1_POINT point) override;
 	void OnPopupmenuComplete(int32_t result);

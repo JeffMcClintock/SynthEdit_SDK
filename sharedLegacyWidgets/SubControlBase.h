@@ -35,9 +35,26 @@ public:
 
 		for (itr.First(); !itr.IsDone(); ++itr)
 		{
-			sink->AddItem(JmUnicodeConversions::WStringToUtf8(itr.CurrentItem()->text).c_str(), itr.CurrentItem()->value);
-		}
+			int32_t flags = 0;
 
+			// Special commands (sub-menus)
+			switch (itr.CurrentItem()->getType())
+			{
+				case enum_entry_type::Separator:
+				case enum_entry_type::SubMenu:
+					flags |= gmpi_gui::MP_PLATFORM_MENU_SEPARATOR;
+					break;
+
+				case enum_entry_type::SubMenuEnd:
+				case enum_entry_type::Break:
+					continue;
+
+				default:
+					break;
+			}
+
+			sink->AddItem(JmUnicodeConversions::WStringToUtf8(itr.CurrentItem()->text).c_str(), itr.CurrentItem()->value, flags);
+		}
 		sink->release();
 		return gmpi::MP_OK;
 	}

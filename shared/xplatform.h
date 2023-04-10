@@ -23,10 +23,12 @@
   no longer in use: SE_TARGET_AU
 */
 
+#if !defined(GMPI_IS_PLATFORM_JUCE) // allow this to be set in cmake for SE2JUCE projects
 #if defined(JUCE_APP_VERSION)
 #define GMPI_IS_PLATFORM_JUCE 1
 #else
 #define GMPI_IS_PLATFORM_JUCE 0
+#endif
 #endif
 
 // External plugins not supported on JUCE

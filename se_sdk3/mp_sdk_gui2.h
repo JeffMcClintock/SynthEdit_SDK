@@ -63,8 +63,10 @@ namespace gmpi_gui_api
 		GG_POINTER_FLAG_SECONDBUTTON = 0x20,
 		GG_POINTER_FLAG_THIRDBUTTON = 0x40,
 		GG_POINTER_FLAG_FOURTHBUTTON = 0x80,
-		GG_POINTER_FLAG_PRIMARY		= 0x00002000,	// First pointer to contact surface. Mouse is usually Primary.
 		GG_POINTER_FLAG_CONFIDENCE	= 0x00000400,	// Confidence is a suggestion from the source device about whether the pointer represents an intended or accidental interaction.
+		GG_POINTER_FLAG_PRIMARY		= 0x00002000,	// First pointer to contact surface. Mouse is usually Primary.
+
+		GG_POINTER_SCROLL_HORIZ		= 0x00008000,	// Mouse Wheel is scrolling horizontal.
 
 		GG_POINTER_KEY_SHIFT		= 0x00010000,	// Modifer key - <SHIFT>.
 		GG_POINTER_KEY_CONTROL		= 0x00020000,	// Modifer key - <CTRL> or <Command>.
@@ -119,6 +121,34 @@ namespace gmpi_gui_api
 	// {6AEF51B9-C92A-472B-A53E-4A476DF85C85}
 	static const gmpi::MpGuid SE_IID_GRAPHICS_MPGUI2 =
 	{ 0x6aef51b9, 0xc92a, 0x472b,{ 0xa5, 0x3e, 0x4a, 0x47, 0x6d, 0xf8, 0x5c, 0x85 } };
+
+	class DECLSPEC_NOVTABLE IMpGraphics3 : public IMpGraphics2
+	{
+	public:
+		virtual int32_t MP_STDCALL hitTest2(int32_t flags, MP1_POINT point) = 0;
+		virtual int32_t MP_STDCALL onMouseWheel(int32_t flags, int32_t delta, MP1_POINT point) = 0;
+		virtual int32_t MP_STDCALL setHover(bool isMouseOverMe) = 0;
+
+		// {CE4448E5-5DBC-426A-A963-E8CE0E2C2533}
+		inline static const gmpi::MpGuid guid =
+		{ 0xce4448e5, 0x5dbc, 0x426a, { 0xa9, 0x63, 0xe8, 0xce, 0xe, 0x2c, 0x25, 0x33 } };
+	};
+
+	// GUID for IMpGraphics3
+	// {CE4448E5-5DBC-426A-A963-E8CE0E2C2533}
+	static const gmpi::MpGuid SE_IID_GRAPHICS_MPGUI3 =
+	{ 0xce4448e5, 0x5dbc, 0x426a, { 0xa9, 0x63, 0xe8, 0xce, 0xe, 0x2c, 0x25, 0x33 } };
+
+	class IMpKeyClient : public gmpi::IMpUnknown
+	{
+	public:
+		virtual int32_t MP_STDCALL OnKeyPress(wchar_t c) = 0;
+
+		// {4A054EB8-6693-4B89-8C2B-408644483FFD}
+		inline static const gmpi::MpGuid guid =
+		{ 0x4a054eb8, 0x6693, 0x4b89, { 0x8c, 0x2b, 0x40, 0x86, 0x44, 0x48, 0x3f, 0xfd } };
+	};
+
 }
 
 // SDK (implementation of the API).
@@ -268,7 +298,7 @@ namespace gmpi_gui
 
 
 	class MpGuiGfxBase :
-		public MpGuiBase2, public gmpi_gui_api::IMpGraphics2
+		public MpGuiBase2, public gmpi_gui_api::IMpGraphics3
 	{
 		using MpGuiBase2::getToolTip; // silence compiler warning. Allows user to call deprecated version of 'getToolTip'.
 
@@ -345,6 +375,22 @@ namespace gmpi_gui
 			return gmpi::MP_UNHANDLED;
 		}
 
+		// IMpGraphics3 interface
+		int32_t MP_STDCALL hitTest2(int32_t flags, MP1_POINT point) override
+		{
+			return hitTest(point);
+		}
+
+		int32_t MP_STDCALL onMouseWheel(int32_t flags, int32_t delta, MP1_POINT point) override
+		{
+			return gmpi::MP_UNHANDLED;
+		}
+
+		int32_t MP_STDCALL setHover(bool isMouseOverMe) override
+		{
+			return gmpi::MP_UNHANDLED;
+		}
+
 		void setCapture()
 		{
 			getGuiHost()->setCapture();
@@ -370,7 +416,7 @@ namespace gmpi_gui
 		{
 			guiHost_->invalidateMeasure();
 		}
-		virtual int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) override
+		int32_t MP_STDCALL setHost(gmpi::IMpUnknown* host) override
 		{
 			host->queryInterface(gmpi_gui::SE_IID_GRAPHICS_HOST, guiHost_.asIMpUnknownPtr());
 			return MpGuiBase2::setHost(host);
@@ -441,10 +487,16 @@ namespace gmpi_gui
 			return temp;
 		}
 
-		//GMPI_QUERYINTERFACE2(gmpi_gui_api::SE_IID_GRAPHICS_MPGUI, IMpGraphics, MpGuiBase2);
 		int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override
 		{
 			*returnInterface = nullptr;
+
+			if (iid == gmpi_gui_api::SE_IID_GRAPHICS_MPGUI3)
+			{
+				*returnInterface = static_cast<IMpGraphics3*>(this);
+				addRef();
+				return gmpi::MP_OK;
+			}
 
 			if (iid == gmpi_gui_api::SE_IID_GRAPHICS_MPGUI2)
 			{
@@ -532,7 +584,7 @@ namespace GmpiSdk
 		virtual int32_t MP_STDCALL notifyPin(int32_t pinId, int32_t voice) override { return gmpi::MP_OK; }
 		virtual int32_t MP_STDCALL onDelete() override { return gmpi::MP_OK; }
 		virtual int32_t MP_STDCALL preSaveState() override { return gmpi::MP_OK; }
-		virtual int32_t MP_STDCALL open() override { return gmpi::MP_OK; }
+		int32_t MP_STDCALL open() override { return gmpi::MP_OK; }
 
 
 		gmpi::IMpControllerHost* getHost()

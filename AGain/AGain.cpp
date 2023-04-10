@@ -1,33 +1,36 @@
-#include "./AGain.h"
+#include "mp_sdk_audio.h"
 
-REGISTER_PLUGIN2( AGain, L"Gain" );
+using namespace gmpi;
+using namespace GmpiSdk;
 
-AGain::AGain() : MpBase2( )
+class AGain final : public MpBase2
 {
-	// Register pins.
-	initializePin( input1_ );
-	initializePin( input2_ );
-	initializePin( output1_ );
-	initializePin( output2_ );
-	initializePin( gain_ );
+	AudioInPin pinInput1;
+	AudioInPin pinInput2;
+	AudioOutPin pinOutput1;
+	AudioOutPin pinOutput2;
+	FloatInPin pinGain;
+
+public:
+	AGain()
+	{
+		initializePin(pinInput1);
+		initializePin(pinInput2);
+		initializePin(pinOutput1);
+		initializePin(pinOutput2);
+		initializePin(pinGain);
 }
 
-void AGain::onSetPins(void)
-{
-	// Specify which function is used to process audio.
-	SET_PROCESS2( &AGain::subProcess );
-}
-
-void AGain::subProcess( int sampleFrames )
+	void subProcess(int sampleFrames)
 {
 	// get parameter value.
-	float gain = gain_;
+		const float gain = pinGain;
 
 	// get pointers to in/output buffers.
-	auto input1	 = getBuffer(input1_);
-	auto input2	 = getBuffer(input2_);
-	auto output1 = getBuffer(output1_);
-	auto output2 = getBuffer(output2_);
+		auto input1 = getBuffer(pinInput1);
+		auto input2 = getBuffer(pinInput2);
+		auto output1 = getBuffer(pinOutput1);
+		auto output2 = getBuffer(pinOutput2);
 
 	// Apply audio processing.
 	while( --sampleFrames >= 0 )
@@ -37,3 +40,14 @@ void AGain::subProcess( int sampleFrames )
 	}
 }
 
+	void onSetPins() override
+	{
+		// Specify which function is used to process audio.
+		setSubProcess(&AGain::subProcess);
+	}
+};
+
+namespace
+{
+	auto r = Register<AGain>::withId(L"JM Gain");
+}

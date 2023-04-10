@@ -11,6 +11,8 @@ using namespace JmUnicodeConversions;
 using namespace GmpiDrawing;
 using namespace GmpiDrawing_API;
 
+Size EditWidget::default_text_size;
+
 EditWidget::EditWidget() :
 readOnly(false)
 , onTextEntryCompeteEvent([this](int32_t result) -> void { this->OnTextEnteredComplete(result); })
@@ -21,6 +23,8 @@ readOnly(false)
 void EditWidget::OnRender(Graphics& g)
 {
 	Rect r = position;
+
+	ClipDrawingToBounds c(g, r);
 
 	// Background Fill.
 	auto brush = g.CreateSolidColorBrush(Color::White);
@@ -55,40 +59,72 @@ void EditWidget::OnRender(Graphics& g)
 		g.DrawGeometry(geometry, brush, penWidth);
 	}
 
+	Rect textRect(r);
+#if 0
+{
+	float y = (r.top + r.bottom) * 0.5f;
+	g.DrawLine(0.0f, y, 100.0f, y, brush, 0.01f);
+
+	GmpiDrawing_API::MP1_FONT_METRICS fontMetrics;
+	dtextFormat.GetFontMetrics(&fontMetrics);
+	float actualtop = r.top + textY;
+	float digitTop = fontMetrics.ascent - fontMetrics.capHeight;
+	y = actualtop + digitTop;
+	g.DrawLine(10.0f, y, 100.0f, y, brush, 0.01f);
+	y = actualtop + digitTop + fontMetrics.capHeight * 0.5f;
+	g.DrawLine(10.0f, y, 100.0f, y, brush, 0.01f);
+	y = actualtop + fontMetrics.ascent;
+	g.DrawLine(10.0f, y, 100.0f, y, brush, 0.01f);
+
+	textRect.bottom = textRect.top + fontMetrics.bodyHeight();
+	auto s = dtextFormat.GetTextExtentU("8");
+	int jjj = 9;
+}
+text = "Agj|8880.3";
+#endif
+
 	// Current selection text.
 	brush.SetColor(Color::FromBytes(0, 0, 50));
 
 	static const int border = 2;
-	Rect textRect(r);
 	textRect.left += border;
 	textRect.right -= border;
 
-	// Note: SE sizes these too short to fit the text properly with ascenders and decenders.
-	// Shift the rect up if text require more vertical space than avail.
-//	auto text_size = dtextFormat.GetTextExtentU("M", 1);
-	/*
-	 *
-	float shift = (std::max)(0.0f, charHeight - textRect.getHeight());
-	textRect.top -= shift;
-	textRect.bottom -= shift;
-	 */
-	auto dtextFormat = GetTextFormat(getHost(), getGuiHost(), "Custom:EditWidget");
-	dtextFormat.SetParagraphAlignment(GmpiDrawing::ParagraphAlignment::Center);
-	dtextFormat.SetWordWrapping(WordWrapping::NoWrap); // prevent word wrapping into two lines that don't fit box.
+	if (!typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		textRect.bottom = textRect.top + textHeight;
+	}
+
+	// Center in cell.
+	textRect.Offset(0.0f, textY);
+
 	auto brush2 = g.CreateSolidColorBrush(Color::FromBytes(0, 0, 255));
 	g.DrawTextU(text, dtextFormat, textRect, brush2);
 }
 
-void EditWidget::Init(const char* style)
+void EditWidget::Init(const char* style, bool digitsOnly)
 {
-	FontMetadata* origStyle = nullptr;
-	GetTextFormat(getHost(), getGuiHost(), style, &origStyle);
+	// Cache default EditWidget size, based on default text format.
+	if(default_text_size.height == 0.0f)
+	{
+		// NOTE: This is completely the wrong font. Effectivly it just gets the fallback font.
+		// We already have a member 'typeface' with the correct font.
+		// This is here only for calculating the widget size for backwards compatibility.
+		FontMetadata* fontData{};
+		GetTextFormat(getHost(), getGuiHost(), "Custom:EditWidget", &fontData);
+		default_text_size = Size((float)fontData->pixelWidth_, (float)fontData->pixelHeight_);
+	}
 
-	FontMetadata f = *origStyle;
-	f.setTextAlignment(GmpiDrawing::TextAlignment::Leading); // Left
-//	f.SetParagraphAlignment(GmpiDrawing::ParagraphAlignment::Center);
+	const auto outlineHeight = default_text_size.height - 1.0f; // when drawing we shrink outline 1/2 pixel each side.
+	const auto padding = 1.0f; // space between text and outline, doubled.
+	const auto textCellHeight = outlineHeight - padding;
 
-	RegisterCustomTextFormat(getHost(), getGuiHost(), "Custom:EditWidget", &f);
+	InitTextFormat(style, digitsOnly, false, textCellHeight);
+
+	if (!typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		VerticalCenterText(digitsOnly, 0.5f);
+	}
 }
 
 GmpiDrawing::Size EditWidget::getSize()
@@ -107,10 +143,14 @@ GmpiDrawing::Size EditWidget::getSize()
 		}
 	}
 
-	FontMetadata* fontData = nullptr;
-	GetTextFormat(getHost(), getGuiHost(), "Custom:EditWidget", &fontData);
+	Size text_size = default_text_size;
 
-	Size text_size((float)fontData->pixelWidth_, (float)fontData->pixelHeight_);
+	if(!typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		// With new sizing, retain width from legacy version, to preserve peoples layout as much as practical.
+		// Use corrected cell height though to ensure text centered vertically.
+		text_size.height = (float)typeface_->pixelHeight_;
+	}
 
 	float minWidth = 4;
 	if( vc > 0 )
@@ -119,7 +159,7 @@ GmpiDrawing::Size EditWidget::getSize()
 		text_size.width *= vc;
 // not in  CMyEdit::SeMeasure():		text_size.height += 2; // allow for margins and window border
 
-		minWidth = ( std::max )((float)fontData->pixelWidth_, minWidth );
+		minWidth = (std::max)((float)typeface_->pixelWidth_, minWidth );
 	}
 
 	return text_size;
@@ -136,17 +176,17 @@ void EditWidget::onPointerUp(int32_t flags, GmpiDrawing_API::MP1_POINT point)
 		return;
 
 	GmpiDrawing::Rect r = getRect();
-	gmpi_sdk::mp_shared_ptr<gmpi_gui::IMpPlatformText> returnObject;
-	getGuiHost()->createPlatformTextEdit(&r, returnObject.getAddressOf());
+//	gmpi_sdk::mp_shared_ptr<gmpi_gui::IMpPlatformText> returnObject;
+	getGuiHost()->createPlatformTextEdit(&r, nativeEdit.getAddressOf());
 
-	if( returnObject == 0 )
-	{
-		return;
-	}
+	//if( returnObject == 0 )
+	//{
+	//	return;
+	//}
 
-	returnObject->queryInterface(SE_IID_GRAPHICS_PLATFORM_TEXT, nativeEdit.asIMpUnknownPtr());
+	//returnObject->queryInterface(SE_IID_GRAPHICS_PLATFORM_TEXT, nativeEdit.asIMpUnknownPtr());
 
-	if( nativeEdit == 0 )
+	if(!nativeEdit)
 	{
 		return;
 	}

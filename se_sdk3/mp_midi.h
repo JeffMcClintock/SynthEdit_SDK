@@ -393,15 +393,19 @@ namespace gmpi
 
 		inline headerInfo decodeHeader(midi::message_view msg)
 		{
-			assert(msg.size() > 1);
+			assert(msg.size() > 0);
 
-			return
+			headerInfo hdr{};
+			hdr.messageType = static_cast<uint8_t>(msg[0] >> 4);
+			hdr.group = static_cast<uint8_t>(msg[0] & 0x0f);
+
+			if (msg.size() > 1)
 			{
-				static_cast<uint8_t>(msg[0] >> 4),
-				static_cast<uint8_t>(msg[0] & 0x0f),
-				static_cast<uint8_t>(msg[1] & 0x0f),
-				static_cast<uint8_t>(msg[1] >> 4)
-			};
+				hdr.channel = static_cast<uint8_t>(msg[1] & 0x0f);
+				hdr.status = static_cast<uint8_t>(msg[1] >> 4);
+			}
+
+			return hdr;
 		}
 
 		struct noteInfo
@@ -1013,15 +1017,15 @@ namespace gmpi
 
 					default:
 					{
-						const auto msgout = gmpi::midi_2_0::makeController(
-							controller.controllerNumber,
-							controller.value,
-							header.channel
-						);
+					const auto msgout = gmpi::midi_2_0::makeController(
+						controller.controllerNumber,
+						controller.value,
+						header.channel
+					);
 
-						sink({ msgout.m }, timestamp);
-					}
-					break;
+							sink({ msgout.m }, timestamp);
+						}
+				break;
 					}
 
 				}

@@ -78,19 +78,19 @@
 	return gmpi::MP_NOSUPPORT; \
 }
 
-#define GMPI_REFCOUNT gmpi_sdk::selfInitializingInt refCount2_; \
+#define GMPI_REFCOUNT int32_t refCount2_ = 1; \
 	virtual int32_t MP_STDCALL addRef() override \
 { \
-	return ++refCount2_.value_; \
+	return ++refCount2_; \
 } \
 	virtual int32_t MP_STDCALL release() override \
 { \
-	if (--refCount2_.value_ == 0) \
+	if (--refCount2_ == 0) \
 	{ \
 	delete this; \
 	return 0; \
 	} \
-	return refCount2_.value_; \
+	return refCount2_; \
 } \
 
 #define GMPI_REFCOUNT_NO_DELETE	\

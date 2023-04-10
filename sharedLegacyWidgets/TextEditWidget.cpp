@@ -21,54 +21,45 @@ void TextEditWidget::OnRender(Graphics& dc)
 	brush.SetColor(Color::FromBytes(150, 150, 150));
 	dc.DrawRectangle(borderRect, brush);
 
-//	brush.SetColor(typeface_->getColor());
 	brush.SetColor(Color::Black);
 
 	static const float border = 1;
 	Rect textRect(r);
-	textRect.top -= 1; // emulate GDI drawing
 	textRect.left += border + 1;
 	textRect.right -= border;
 
-	auto directXOffset = typeface_->getLegacyVerticalOffset();
-	textRect.top += directXOffset;
-	textRect.bottom += directXOffset;
+	if(typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		textRect.top -= 1; // emulate GDI drawing
+	}
+	else
+	{
+		textRect.bottom = textRect.top + textHeight;
+	}
 
-	// Because of caching, and modules overriding algnment, this textformat could have *any* alignment. Always set it explicity.
-	dtextFormat.SetTextAlignment(alignment);
+	textRect.Offset(0.0f, textY);
 
 	dc.DrawTextU(text, dtextFormat, textRect, brush, (int32_t)DrawTextOptions::Clip);
 }
 
 void TextEditWidget::Init(const char* style)
 {
-	style_ = style;
-	if (dtextFormat.isNull())
-	{
-//		auto font = GetFont(getHost(), getGuiHost(), style, &typeface_);
-		dtextFormat = GetTextFormat(patchMemoryHost_, guiHost_, style , &typeface_); // getGuiHost()->CreateTextFormat(font->);
+	InitTextFormat(style, false, false);
 
-		alignment = TextAlignment::Leading; // Left
-		dtextFormat.SetParagraphAlignment(ParagraphAlignment::Center);
-		dtextFormat.SetWordWrapping(WordWrapping::NoWrap); // prevent word wrapping into two lines that don't fit box.
+	if (typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		textY = typeface_->getLegacyVerticalOffset(); // emulate GDI drawing
+	}
+	else
+	{
+		VerticalCenterText(false);
 	}
 }
 
 GmpiDrawing::Size TextEditWidget::getSize()
 {
 //	return Size(8.0f, ceilf(typeface_->pixelHeight_) + 4); // + GetSystemMetrics(SM_CYEDGE) * 4 + hack.
-	return Size(8.0f, ceilf(typeface_->pixelHeight_));
-														   /*
-	auto text_size= dtextFormat.GetTextExtentU(text);
-
-	text_size.height = FontCache::instance()->getOriginalPixelHeight(style_);
-
-	// allow for margins.
-	text_size.height += 2;
-	text_size.width += 2;
-
-	return text_size;
-*/
+	return Size(8.0f, static_cast<float>(typeface_->pixelHeight_));
 }
 
 bool TextEditWidget::onPointerDown(int32_t flags, GmpiDrawing_API::MP1_POINT point)
@@ -81,18 +72,19 @@ void TextEditWidget::OnPopupmenuComplete(int32_t result)
 {
 	if (result == gmpi::MP_OK)
 	{
-		OnChangedEvent(nativeFileDialog.GetText());
+		OnChangedEvent(nativeWidget.GetText());
 	}
 
-	nativeFileDialog.setNull(); // release it.
+	nativeWidget.setNull(); // release it.
 }
 
 void TextEditWidget::onPointerUp(int32_t flags, GmpiDrawing_API::MP1_POINT point)
 {
 	GmpiGui::GraphicsHost host(getGuiHost());
-	nativeFileDialog = host.createPlatformTextEdit(position);
-	nativeFileDialog.SetText(text);
-	nativeFileDialog.SetAlignment(GmpiDrawing::TextAlignment::Trailing);
+	nativeWidget = host.createPlatformTextEdit(position);
+	nativeWidget.SetAlignment(GmpiDrawing::TextAlignment::Trailing);
+	nativeWidget.SetTextSize(static_cast<float>(typeface_->size_));
+	nativeWidget.SetText(text);
 
-	nativeFileDialog.ShowAsync(&onPopupMenuCompleteEvent);
+	nativeWidget.ShowAsync(&onPopupMenuCompleteEvent);
 }

@@ -264,13 +264,14 @@ BOOL CALLBACK dialogEditBox(HWND hwndDlg,
 	WPARAM wParam,
 	LPARAM lParam)
 {
-//	_RPT3(_CRT_WARN, "dialogEditBox msg %0x wParam %d lParam %d\n", message, wParam, lParam);
+	_RPT3(_CRT_WARN, "dialogEditBox msg %0x wParam %d lParam %d\n", message, wParam, lParam);
 
 	HWND child = ::GetWindow(hwndDlg, GW_CHILD);
 
 	switch( message )
 	{
 	case WM_NCACTIVATE:
+	case WM_NEXTDLGCTL: // <tab> key
 		if (wParam == FALSE) // USER CLICKED AWAY
 		{
 			// Simulate "OK" button to close dialog.
@@ -485,7 +486,7 @@ int32_t PGCC_PlatformTextEntry::ShowAsync(gmpi_gui::ICompletionCallback* returnC
 
 	if (multiline_)
 	{
-		lpdit->style |= (ES_MULTILINE | ES_AUTOVSCROLL);
+		lpdit->style |= (ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN);
 	}
 	else
 	{

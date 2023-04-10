@@ -2,17 +2,17 @@
 #include <string>
 #include "../se_sdk3/Drawing_API.h"
 #include "../se_sdk3/mp_sdk_gui2.h"
-#include "../shared/FontCache.h"
 #include "../se_sdk3/Drawing.h"
 #include "Widget.h"
 
-class EditWidget : public Widget, public FontCacheClient
+class EditWidget : public TextWidgetBase
 {
 	std::string text;
 	bool readOnly;
 	int m_visable_chars;
 	gmpi_sdk::mp_shared_ptr<gmpi_gui::IMpPlatformText> nativeEdit;
 	gmpi_gui::MpCompletionHandler onTextEntryCompeteEvent;
+	static GmpiDrawing::Size default_text_size;
 
 	void OnTextEnteredComplete(int32_t result);
 
@@ -22,7 +22,7 @@ public:
 	EditWidget();
 
 	virtual void OnRender(GmpiDrawing::Graphics& dc) override;
-	void Init(const char* style);
+	void Init(const char* style, bool digitsOnly = false);
 	void SetMinVisableChars(int chars)
 	{
 		m_visable_chars = chars;

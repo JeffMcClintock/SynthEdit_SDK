@@ -125,6 +125,7 @@ GmpiDrawing::TextFormat_readonly FontCache::GetTextFormat(gmpi::IMpUserInterface
 		return textformat;
 	}
 
+	// error: creates std::unique_ptr to fontmetadata
 	return CreateTextFormatAndCache(host, guiHost, fontmetadata, returnMetadata);
 }
 

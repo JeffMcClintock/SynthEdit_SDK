@@ -7,19 +7,18 @@ using namespace GmpiGuiHosting;
 
 #if defined(_WIN32) // skip compilation on macOS
 
-
 #include <vector>
 #include <string>
 #include <memory>
 #include <chrono>
 #include <d3d11_1.h>
-#include "../se_sdk3_hosting/gmpi_gui_hosting.h"
-#include "../se_sdk3_hosting/ContainerView.h"
-#include "TimerManager.h"
-#include "../shared/xplatform.h"
 #include "DirectXGfx.h"
+#include "TimerManager.h"
 #include "../../conversion.h"
+#include "../shared/xplatform.h"
 #include "../se_sdk3/mp_sdk_gui2.h"
+#include "../se_sdk3_hosting/gmpi_gui_hosting.h"
+#include "../se_sdk3_hosting/GraphicsRedrawClient.h"
 
 namespace SynthEdit2
 {
@@ -35,15 +34,16 @@ namespace GmpiGuiHosting
 		bool firstPresent = false;
 		UpdateRegionWinGdi updateRegion_native;
 		std::unique_ptr<gmpi::directx::GraphicsContext> context;
-		GmpiDrawing::SizeL swapChainSize = {};
+		gmpi_sdk::mp_shared_ptr<IGraphicsRedrawClient> frameUpdateClient;
 
 	protected:
-		static const int viewDimensions = 7968; // DIPs (divisible by grids 60x60 + 2 24 pixel borders)
+		GmpiDrawing::SizeL swapChainSize = {};
 
-		ID2D1DeviceContext* mpRenderTarget;
-		IDXGISwapChain1* m_swapChain;
+		ID2D1DeviceContext* mpRenderTarget = {};
+		IDXGISwapChain1* m_swapChain = {};
 
-		gmpi_sdk::mp_shared_ptr<SynthEdit2::ContainerView> containerView;
+		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics3> gmpi_gui_client; // usually a ContainerView at the topmost level
+		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpKeyClient> gmpi_key_client;
 
 		// Paint() uses Direct-2d which block on vsync. Therefore all invalid rects should be applied in one "hit", else windows message queue chokes calling WM_PAINT repeately and blocking on every rect.
 		std::vector<GmpiDrawing::RectL> backBufferDirtyRects;
@@ -57,13 +57,15 @@ namespace GmpiGuiHosting
 		std::wstring toolTipText;
 		bool reentrant;
 		bool lowDpiMode = {};
+		bool isTrackingMouse = false;
+		GmpiDrawing::Point cubaseBugPreviousMouseMove = { -1,-1 };
 
 	public:
+		static const int viewDimensions = 7968; // DIPs (divisible by grids 60x60 + 2 24 pixel borders)
 		gmpi::directx::Factory DrawingFactory;
 
 		DrawingFrameBase() :
-			 containerView(0)
-			,mpRenderTarget(nullptr)
+			mpRenderTarget(nullptr)
 			,m_swapChain(nullptr)
 			, toolTipShown(false)
 			, tooltipWindow(0)
@@ -77,10 +79,17 @@ namespace GmpiGuiHosting
 			StopTimer();
 
 			// Free GUI objects first so they can release fonts etc before releasing factorys.
-			containerView = nullptr;
+			gmpi_gui_client = nullptr;
 
 			ReleaseDevice();
 		}
+
+		// provids a default message handler. Note that some clients provide their own. e.g. MyFrameWndDirectX
+		LRESULT WindowProc(
+			HWND hwnd,
+			UINT message,
+			WPARAM wParam,
+			LPARAM lParam);
 
 		// to help re-create device when lost.
 		void ReleaseDevice()
@@ -113,12 +122,17 @@ namespace GmpiGuiHosting
 		void CreateDevice();
 		void CreateDeviceSwapChainBitmap();
 
-		void Init(SynthEdit2::IPresenter* presentor, int pviewType);
-
-		void AddView(SynthEdit2::ContainerView* pcontainerView)
+		void AddView(gmpi_gui_api::IMpGraphics3* pcontainerView)
 		{
-			containerView.Attach(pcontainerView);
-			containerView->setHost(static_cast<gmpi_gui::IMpGraphicsHost*>(this));
+			gmpi_gui_client = pcontainerView;
+			pcontainerView->queryInterface(IGraphicsRedrawClient::guid, frameUpdateClient.asIMpUnknownPtr());
+			pcontainerView->queryInterface(gmpi_gui_api::IMpKeyClient::guid, gmpi_key_client.asIMpUnknownPtr());
+
+			gmpi_sdk::mp_shared_ptr<gmpi::IMpUserInterface2> pinHost;
+			gmpi_gui_client->queryInterface(gmpi::MP_IID_GUI_PLUGIN2, pinHost.asIMpUnknownPtr());
+
+			if(pinHost)
+				pinHost->setHost(static_cast<gmpi_gui::IMpGraphicsHost*>(this));
 		}
 
 		void OnPaint();
@@ -184,9 +198,14 @@ namespace GmpiGuiHosting
 		void TooltipOnMouseActivity();
 		void ShowToolTip();
 		void HideToolTip();
+		void OnSize(UINT width, UINT height);
 		virtual bool OnTimer() override;
 		virtual void autoScrollStart() {}
 		virtual void autoScrollStop() {}
+
+		auto getClient() {
+			return gmpi_gui_client;
+		}
 
 		GMPI_REFCOUNT_NO_DELETE;
 	};
@@ -194,23 +213,18 @@ namespace GmpiGuiHosting
 	// This is used in VST3. Native HWND window frame.
 	class DrawingFrame : public DrawingFrameBase
 	{
-		HWND windowHandle;
-		HWND parentWnd;
-		GmpiDrawing::Point cubaseBugPreviousMouseMove = { -1,-1 };
+		HWND windowHandle = {};
+		HWND parentWnd = {};
 
 	public:
-		DrawingFrame() :
-			windowHandle(0)
-		{
-		}
 		
-		virtual HWND getWindowHandle() override
+		HWND getWindowHandle() override
 		{
 			return windowHandle;
 		}
 
-		LRESULT WindowProc(UINT message, WPARAM wParam,	LPARAM lParam);
-		void open(void* pParentWnd);
+		void open(void* pParentWnd, const GmpiDrawing_API::MP1_SIZE_L* overrideSize = {});
+		void ReSize(int left, int top, int right, int bottom);
 		virtual void DoClose() {}
 	};
 } // namespace.

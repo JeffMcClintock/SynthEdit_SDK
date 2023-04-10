@@ -73,6 +73,8 @@ public:
 	GMPI_REFCOUNT;
 };
 
+class MpController;
+
 class UndoManager
 {
 	//                      description   preset XML
@@ -89,22 +91,40 @@ class UndoManager
 public:
 	bool enabled = {};
 
-	void initial(class MpController* controller, std::string description);
+	void initial(class MpController* controller);
+
+	void initialFromXml(MpController* controller, std::string xml);
 
 	void push(std::string description, const std::string& preset);
 
 	void snapshot(class MpController* controller, std::string description);
 
-	void undo(class MpController* controller);
-	void redo(class MpController* controller);
-	void getA(class MpController* controller);
-	void getB(class MpController* controller);
-	void copyAB(class MpController* controller);
+	void undo(MpController* controller);
+	void redo(MpController* controller);
+	void getA(MpController* controller);
+	void getB(MpController* controller);
+	void copyAB(MpController* controller);
+	void UpdateGui(MpController* controller);
 	void debug();
+	bool canUndo();
+	bool canRedo();
 };
 
 class MpController : public IGuiHost2, public interThreadQueUser, public TimerClient
 {
+public:
+	// presets from factory.xmlpreset resource.
+	struct presetInfo
+	{
+		std::string name;
+		std::string category;
+		int index;			// Internal Factory presets only.
+		std::wstring filename;	// External disk presets only.
+		std::size_t hash;
+		bool isFactory;
+		bool isSession = false; // is temporary preset to accomodate preset loaded from DAW session (but not an existing preset)
+	};
+
 protected:
 	static const int timerPeriodMs = 35;
 
@@ -119,23 +139,11 @@ private:
 	static const int startupTimerInit = ignoreProgramChangeStartupTimeMs / timerPeriodMs;
 	int startupTimerCounter = startupTimerInit;
 	bool ignoreProgramChange = false;
+	bool presetsFolderChanged = false;
 
 protected:
-
 	::UndoManager undoManager;
     bool isInitialized = {};
-
-	// presets from factory.xmlpreset resource.
-	struct presetInfo
-	{
-		std::string name;
-		std::string category;
-		int index;			// Internal Factory presets only.
-		std::wstring filename;	// External disk presets only.
-		bool isFactory;
-		bool isSession = false; // is temporary preset to accomodate preset loaded from DAW session (but not an existing preset)
-		std::size_t hash;
-	};
 
 	std::vector< std::unique_ptr<MpParameter> > parameters_;
 	std::map< std::pair<int, int>, int > moduleParameterIndex;		// Module Handle/ParamID to Param Handle.
@@ -169,9 +177,10 @@ public:
     ~MpController();
 
 	void ScanPresets();
-
 	void setPresetFromDaw(const std::string& xml, bool updateProcessor);
-
+	void SavePreset(int32_t presetIndex);
+	void SavePresetAs(const std::string& presetName);
+	void DeletePreset(int presetIndex);
 	void UpdatePresetBrowser();
 
 	void Initialize();
@@ -196,10 +205,11 @@ public:
 	{
 		return static_cast<int>(presets.size());
 	}
-	auto getPresetInfo(int index)
+	presetInfo getPresetInfo(int index) // return a copy on purpose so we can rescan presets from inside PresetMenu.callbackOnDeleteClicked lambda
 	{
 		return presets[index];
 	}
+	bool isPresetModified();
 	void FileToString(const platform_string& path, std::string& buffer);
 
 	MpController::presetInfo parsePreset(const std::wstring& filename, const std::string& xml);
@@ -209,7 +219,10 @@ public:
 	std::vector<MpController::presetInfo> scanPresetFolder(platform_string PresetFolder, platform_string extension);
 
 	void ParamToDsp(MpParameter* param, int32_t voice = 0);
+//	void HostControlToDsp(MpParameter* param, int32_t voice = 0);
+	void SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param);
 	void UpdateProgramCategoriesHc(MpParameter * param);
+	MpParameter* createHostParameter(int32_t hostControl);
 	virtual int32_t sendSdkMessageToAudio(int32_t handle, int32_t id, int32_t size, const void* messageData) override;
 	void OnSetHostControl(int hostControl, int32_t paramField, int32_t size, const void * data, int32_t voice);
 
@@ -237,11 +250,13 @@ public:
 	int32_t getParameterModuleAndParamId(int32_t parameterHandle, int32_t* returnModuleHandle, int32_t* returnModuleParameterId) override;
 	RawView getParameterValue(int32_t parameterHandle, int32_t fieldId, int32_t voice = 0) override;
 
+	MpParameter* getHostParameter(int32_t hostControl);
+
 	void ImportPresetXml(const char* filename, int presetIndex = -1);
-	std::string getPresetXml();
+	std::string getPresetXml(std::string presetNameOverride = {});
 	void setPreset(class TiXmlNode* parentXml, bool updateProcessor, int preset);
 	void setPreset(const std::string& xml, bool updateProcessor = true, int preset = 0);
-	void ExportPresetXml(const char* filename);
+	void ExportPresetXml(const char* filename, std::string presetNameOverride = {});
 	void ImportBankXml(const char * filename);
 	void setModified(bool presetIsModified);
 	void ExportBankXml(const char * filename);
@@ -276,10 +291,10 @@ public:
 	}
 
 	// interThreadQueUser
-	virtual bool OnTimer() override;
-	virtual bool onQueMessageReady(int handle, int msg_id, class my_input_stream& p_stream) override;
+	bool OnTimer() override;
+	bool onQueMessageReady(int handle, int msg_id, class my_input_stream& p_stream) override;
 
-	virtual void serviceGuiQueue() override
+	void serviceGuiQueue() override
 	{
 		message_que_dsp_to_ui.pollMessage(this);
 	}

@@ -15,15 +15,6 @@ using namespace JmUnicodeConversions;
 namespace JmUnicodeConversions
 {
 
-inline std::string WStringToUtf8_mac(const std::wstring& p_cstring)
-{
-	const auto size = wcstombs(0, p_cstring.c_str(), 0);
-	std::string res;
-	res.resize(size);
-	wcstombs((char*)res.data(), p_cstring.c_str(), size);
-	return res;
-}
-
 inline std::string WStringToUtf8(const std::wstring& p_cstring )
 {
 #if defined(_WIN32)
@@ -53,52 +44,54 @@ inline std::string WStringToUtf8(const std::wstring& p_cstring )
 	);
 	return res;
 #else
-	return WStringToUtf8_mac(p_cstring);
+	const auto size = wcstombs(0, p_cstring.c_str(), 0);
+	std::string res;
+	res.resize(size);
+	wcstombs((char*)res.data(), p_cstring.c_str(), size);
+	return res;
 #endif
 }
 
-inline std::wstring Utf8ToWstring_mac(const std::string& p_string)
-{
-	const auto size = mbstowcs(0, p_string.c_str(), 0);
-	std::wstring res;
-	res.resize(size);
-	mbstowcs(const_cast<wchar_t*>(res.data()), p_string.c_str(), size);
-	return res;
-}
-
-inline std::wstring Utf8ToWstring( const std::string& p_string )
+inline std::wstring Utf8ToWstring(const char* pstr, size_t psize)
 {
 #if defined(_WIN32)
-	std::wstring res;
 	const size_t size = MultiByteToWideChar(
 		CP_UTF8,
 		0,
-		p_string.data(),
-		static_cast<int>(p_string.size()),
+		pstr,
+		static_cast<int>(psize),
 		0,
 		0
 	);
 
+	std::wstring res;
 	res.resize(size);
 
 	MultiByteToWideChar(
 		CP_UTF8,
 		0,
-		p_string.data(),
-		static_cast<int>(p_string.size()),
+		pstr,
+		static_cast<int>(psize),
 		const_cast<LPWSTR>(res.data()),
 		static_cast<int>(size)
 	);
-	return res;
 #else
-	return Utf8ToWstring_mac(p_string);
+	const auto size = mbstowcs(0, pstr, 0);
+	std::wstring res;
+	res.resize(size);
+	mbstowcs(const_cast<wchar_t*>(res.data()), pstr, size);
 #endif
+	return res;
+}
+
+inline std::wstring Utf8ToWstring(const std::string& p_string)
+{
+	return Utf8ToWstring(p_string.data(), p_string.size());
 }
 
 inline std::wstring Utf8ToWstring(const char* p_string)
 {
-	std::string s(p_string);
-	return Utf8ToWstring(s);
+	return Utf8ToWstring(p_string, strlen(p_string));
 }
 
 #ifdef _WIN32

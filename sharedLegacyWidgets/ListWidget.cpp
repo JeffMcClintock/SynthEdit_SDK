@@ -81,19 +81,12 @@ void ListWidget::OnRender(Graphics& g)
 
 void ListWidget::Init(const char* style)
 {
-	if (dtextFormat.isNull())
-	{
-		dtextFormat = GetTextFormat(getHost(), getGuiHost(), style, &typeface_);
-
-		dtextFormat.SetTextAlignment(TextAlignment::Leading); // Left
-		dtextFormat.SetParagraphAlignment(ParagraphAlignment::Center);
-		dtextFormat.SetWordWrapping(WordWrapping::NoWrap); // prevent word wrapping into two lines that don't fit box.
-	}
+	InitTextFormat(style, false);
 }
 
 GmpiDrawing::Size ListWidget::getSize()
 {
-	return Size(8.0f, ceilf(typeface_->pixelHeight_) + 8);// +4); // + GetSystemMetrics(SM_CYEDGE) * 4 + hack.
+	return Size(8.0f, static_cast<float>(typeface_->pixelHeight_) + 8);// +4); // + GetSystemMetrics(SM_CYEDGE) * 4 + hack.
 }
 
 bool ListWidget::onPointerDown(int32_t flags, GmpiDrawing_API::MP1_POINT point)

@@ -804,6 +804,15 @@ unsigned, can't handle negative points. not much practical use.
 	static const gmpi::MpGuid SE_IID_GEOMETRYSINK_MPGUI =
 	{ 0x10385f43, 0x3c3, 0x436b,{ 0xb6, 0xb0, 0x74, 0xa4, 0xec, 0x61, 0x7a, 0x22 } };
 
+	class DECLSPEC_NOVTABLE IMpGeometrySink2 : public IMpGeometrySink
+	{
+	public:
+		virtual void MP_STDCALL SetFillMode(MP1_FILL_MODE) = 0;
+	};
+	// {A935E374-8F14-4824-A5CB-58287E994193}
+	static const gmpi::MpGuid SE_IID_GEOMETRYSINK2_MPGUI =
+	{ 0xa935e374, 0x8f14, 0x4824, { 0xa5, 0xcb, 0x58, 0x28, 0x7e, 0x99, 0x41, 0x93 } };
+
 	class DECLSPEC_NOVTABLE IMpPathGeometry : public IMpResource //IMpGeometry
 	{
 	public:

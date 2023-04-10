@@ -41,7 +41,7 @@ void BitmapWidget::SetNormalised(float newAnimationPosition)
 
 bool BitmapWidget::onPointerDown(int32_t flags, GmpiDrawing_API::MP1_POINT point)
 {
-	if (bitmapMetadata_->orientation == (int) ImageMetadata::MouseResponse::Ignore ) // -1) // ignores mouse.
+	if (!bitmapMetadata_ || bitmapMetadata_->orientation == (int) ImageMetadata::MouseResponse::Ignore ) // -1) // ignores mouse.
 		return false;
 
 	// make relative.

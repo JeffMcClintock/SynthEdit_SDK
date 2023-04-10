@@ -105,7 +105,7 @@ namespace gmpi
 		};
 
 		// Provide fallback implementations of Arcs, Quadratic beziers, and bulk operations.
-		class GeometrySink : public GmpiDrawing_API::IMpGeometrySink
+		class GeometrySink : public GmpiDrawing_API::IMpGeometrySink2
 		{
 		protected:
 			GmpiDrawing_API::MP1_POINT startPoint;

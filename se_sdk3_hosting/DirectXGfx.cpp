@@ -2,10 +2,11 @@
 
 #include <sstream>
 #include "./DirectXGfx.h"
-#include "../shared\xplatform.h"
+#include "../shared/xplatform.h"
 #include "../shared/xp_simd.h"
-#include "../se_sdk3_hosting/gmpi_gui_hosting.h"
 #include "../shared/fast_gamma.h"
+#include "../shared/unicode_conversion.h"
+#include "../se_sdk3_hosting/gmpi_gui_hosting.h"
 #include "BundleInfo.h"
 #include "d2d1helper.h"
 
@@ -104,7 +105,8 @@ namespace gmpi
 
 		void TextFormat::GetTextExtentU(const char* utf8String, int32_t stringLength, GmpiDrawing_API::MP1_SIZE* returnSize)
 		{
-			auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
+			//auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
+			const auto widestring = JmUnicodeConversions::Utf8ToWstring(utf8String, stringLength);
 
 			IDWriteFactory* writeFactory = 0;
 			auto hr = DWriteCreateFactory(
@@ -295,7 +297,8 @@ namespace gmpi
 		{
 			*TextFormat = nullptr;
 
-			auto fontFamilyNameW = stringConverter.from_bytes(fontFamilyName);
+			//auto fontFamilyNameW = stringConverter.from_bytes(fontFamilyName);
+			auto fontFamilyNameW = JmUnicodeConversions::Utf8ToWstring(fontFamilyName);
 			std::wstring lowercaseName(fontFamilyNameW);
 			std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower);
 
@@ -582,7 +585,8 @@ If so that'd be far more efficient so do that.)
 			}
 			else
 			{
-				auto uriW = stringConverter.from_bytes(utf8Uri);
+				// auto uriW = stringConverter.from_bytes(utf8Uri);
+				const auto uriW = JmUnicodeConversions::Utf8ToWstring(utf8Uri);
 
 				// To load a bitmap from a file, first use WIC objects to load the image and to convert it to a Direct2D-compatible format.
 				hr = pIWICFactory->CreateDecoderFromFilename(
@@ -688,7 +692,9 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 
 		void GraphicsContext::DrawTextU(const char* utf8String, int32_t stringLength, const GmpiDrawing_API::IMpTextFormat* textFormat, const GmpiDrawing_API::MP1_RECT* layoutRect, const GmpiDrawing_API::IMpBrush* brush, int32_t flags)
 		{
-			auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
+			// auto widestring = stringConverter->from_bytes(utf8String, utf8String + stringLength);
+			const auto widestring = JmUnicodeConversions::Utf8ToWstring(utf8String, stringLength);
+			
 			auto DxTextFormat = reinterpret_cast<const TextFormat*>(textFormat);
 			auto b = ((Brush*)brush)->nativeBrush();
 			auto tf = DxTextFormat->native();
@@ -710,7 +716,7 @@ D3D11 ERROR: ID3D11Device::CreateTexture2D: The Dimensions are invalid. For feat
 				adjusted.bottom += adjust;
 			}
 
-			context_->DrawText(widestring.data(), (UINT32)widestring.size(), tf, reinterpret_cast<const D2D1_RECT_F*>(&adjusted), b, (D2D1_DRAW_TEXT_OPTIONS)flags);
+			context_->DrawText(widestring.data(), (UINT32)widestring.size(), tf, reinterpret_cast<const D2D1_RECT_F*>(&adjusted), b, (D2D1_DRAW_TEXT_OPTIONS)flags | D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
 #ifdef LOG_DIRECTX_CALLS
 			{
@@ -889,14 +895,14 @@ return gmpi::MP_FAIL; // creating WIC from D2DBitmap not implemented fully.
 			uint8_t* sourcePixels = pixelsSource.getAddress();
 
 			// WIX currently not premultiplying correctly, so redo it respecting gamma.
-			const double over255 = 1.0 / 255.0;
+			const float over255 = 1.0f / 255.0f;
 			for (int i = 0; i < totalPixels; ++i)
 			{
 				int alpha = sourcePixels[3];
 
 				if (alpha != 255 && alpha != 0)
 				{
-					float AlphaNorm = alpha / 255.f;
+					float AlphaNorm = alpha * over255;
 					float overAlphaNorm = 1.f / AlphaNorm;
 
 					for (int j = 0; j < 3; ++j)

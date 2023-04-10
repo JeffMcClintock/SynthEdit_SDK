@@ -11,6 +11,10 @@ void TextWidget::OnRender(Graphics& g)
 {
 	Rect r = position;
 
+#if 0 //def _DEBUG
+	backgroundColor.a = 0.25f;
+#endif
+
 	// Background Fill.
 	auto brush = g.CreateSolidColorBrush(backgroundColor);
 
@@ -20,54 +24,53 @@ void TextWidget::OnRender(Graphics& g)
 
 	static const float border = 1;
 	Rect textRect(r);
-	textRect.top -= 2; // emulate GDI drawing
-	textRect.left += border;
+	textRect.left += border; // backwards?
 	textRect.right -= border;
+	if (typeface_->verticalSnapBackwardCompatibilityMode)
+	{
+		textRect.top -= 2.0f;
+	}
 
-	auto directXOffset = typeface_->getLegacyVerticalOffset();
-	textRect.top += directXOffset;
-	textRect.bottom += directXOffset;
+	// Center in cell.
+	textRect.Offset(0.0f, textY);
 
-	// Because of caching, and modules overriding algnment, this textformat could have *any* alignment. Always set it explicity.
-	dtextFormat.SetTextAlignment(alignment);
-
-//	g.DrawTextU(text, dtextFormat, textRect, g.CreateSolidColorBrush(Color::White), (int32_t)DrawTextOptions::Clip);
 	g.DrawTextU(text, dtextFormat, textRect, brush, (int32_t)DrawTextOptions::Clip);
 
 //	_RPT4(_CRT_WARN, "DrawSize (%f,%f)\n", textRect.getWidth(), textRect.getHeight());
 }
 
-void TextWidget::Init(const char* style)
+void TextWidget::Init(const char* style, bool centered)
 {
-	style_ = style;
-	if (dtextFormat.isNull())
+	InitTextFormat(style, false, centered);
+
+	backgroundColor = typeface_->getBackgroundColor();
+
+	if (typeface_->verticalSnapBackwardCompatibilityMode)
 	{
-		dtextFormat = GetTextFormat(patchMemoryHost_, guiHost_, style , &typeface_);
-
-		alignment = TextAlignment::Leading; // Left
-		dtextFormat.SetParagraphAlignment(ParagraphAlignment::Center);
-		dtextFormat.SetWordWrapping(WordWrapping::NoWrap); // prevent word wrapping into two lines that don't fit box.
-
-		backgroundColor = typeface_->getBackgroundColor();
+		textY = typeface_->getLegacyVerticalOffset(); // emulate GDI drawing
+	}
+	else
+	{
+		if(centered)
+		{
+			VerticalCenterText();
+		}
 	}
 }
 
 GmpiDrawing::Size TextWidget::getSize()
 {
-	auto text_size= dtextFormat.GetTextExtentU(text);
+	auto widgetSize = dtextFormat.GetTextExtentU(text);
 
 //	_RPT4(_CRT_WARN, "text extent'%s'", text.c_str());
 //	_RPT2(_CRT_WARN, " text_size (%f,%f) \n", text_size.width, text_size.height);
 
-//	text_size.height = FontCache::instance()->getOriginalPixelHeight(style_);
-	FontMetadata* returnMetadata;
-	FontCache::instance()->GetTextFormat(getHost(), getGuiHost(), style_, &returnMetadata);
-	text_size.height = (float) returnMetadata->pixelHeight_;
+	widgetSize.height = (float)typeface_->pixelHeight_;
 
 	// allow for margins.
 //? 	text_size.height += 2;
-	text_size.width += 2; // from CMyEdit3::GetMinSize()
+	widgetSize.width += 2; // from CMyEdit3::GetMinSize()
 
-	return text_size;
+	return widgetSize;
 }
 

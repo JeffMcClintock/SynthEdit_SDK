@@ -16,20 +16,17 @@ it_enum_list::it_enum_list(const std::wstring  &p_enum_list) :
 m_enum_list(p_enum_list)
 {
 	// two formats are allowed, a list of values or a range
-//	if( m_enum_list.Left(5) == std::wstring (_T("range")) )
 	if( m_enum_list.substr(0,5) == std::wstring ( L"range" ) ) // how about upper/mixed case?
 	{
 		m_range_mode = true;
 		std::wstring  list = m_enum_list;
 
-//		list = list.Right( list.GetLength() - 5);
 		list = list.substr( 6, list.size() - 1);
 
 		std::string::size_type p = list.find(L",");
 		assert( p != string::npos );	// no range specified
 
 		range_lo = StringToInt( list );
-//		list = list.Right( list.GetLength() - p -1);
 		list = list.substr( p + 1, list.size() - 1);
 		range_hi = StringToInt( list );
 	}
@@ -45,16 +42,9 @@ void it_enum_list::First()
 	if( m_range_mode )
 	{
 		m_current.value = range_lo - 1;
-//		m_current.text.Format(_T("%d"),range_lo);
-//		m_current.index = 0;
 	}
 	else
 	{
-/*
-#if defined( _DEBUG )
-		m_temp_list = m_enum_list;
-#endif
-*/
 		range_lo = 0;
 		m_current.value = -1;
 	}
@@ -80,13 +70,10 @@ void it_enum_list::Next()
 	}
 	else
 	{
-//		{
 		// find next comma
-//		int p = m_enum_list.Find(',', range_lo);
 		std::string::size_type p = m_enum_list.find(L",", range_lo);
 		if( p == string::npos ) // none left
 		{
-//			p = m_enum_list.GetLength();
 			p = m_enum_list.size();
 
 			if( range_lo >= (int) p ) // then we are done
@@ -97,10 +84,8 @@ void it_enum_list::Next()
 		}
 
 		size_t sub_string_length = p - range_lo;
-//		m_current.text = m_enum_list.Mid( range_lo, sub_string_length);
 		m_current.text = m_enum_list.substr( range_lo, sub_string_length);
 
-//		int p_eq = m_current.text.Find('=');
 		std::string::size_type p_eq = m_current.text.find(L"=");
 		if( p_eq != string::npos )
 		{
@@ -131,7 +116,7 @@ void it_enum_list::Next()
 			--en;
 		}
 
-		if( st > 0 || en < (int) m_current.text.size() )
+		if( st > 0 || en < m_current.text.size() )
 		{
 			m_current.text = m_current.text.substr(st,en-st);
 		}

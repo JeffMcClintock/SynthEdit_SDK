@@ -1,6 +1,7 @@
 #include <codecvt>
 #include <locale>
 #include <thread>
+#include <filesystem>
 #include "Controller.h"
 #include "../../tinyxml/tinyxml.h"
 #include "../tinyXml2/tinyxml2.h"
@@ -16,7 +17,7 @@
 #include "../../UniqueSnowflake.h"
 #include "../shared/FileWatcher.h"
 #include "mfc_emulation.h"
-#if (GMPI_IS_PLATFORM_JUCE==0)
+#if !defined(SE_USE_JUCE_UI)
 #include "GuiPatchAutomator3.h"
 #endif
 #include "BundleInfo.h"
@@ -34,6 +35,7 @@ MpController::~MpController()
 
 void MpController::ScanPresets()
 {
+	presets.clear(); // fix crash on JUCE
 	presets = scanNativePresets(); // Scan VST3 presets (both VST2 and VST3)
 
 	// Factory presets from bundles presets folder.
@@ -61,7 +63,7 @@ void MpController::ScanPresets()
 			if (!isDuplicate)
 			{
 				preset.isFactory = true;
-				presets.push_back(preset);
+				presets.push_back({ preset });
 			}
 		}
 	}
@@ -143,6 +145,13 @@ void MpController::ScanPresets()
 				return a.name < b.name;
 			});
 	}
+
+#ifdef _DEBUG
+	for (auto& preset : presets)
+	{
+		assert(!preset.filename.empty() || preset.isSession || preset.isFactory);
+	}
+#endif
 }
 
 void MpController::UpdatePresetBrowser()
@@ -281,10 +290,27 @@ void MpController::Initialize()
 		if (!parameter_xml->FirstChildElement("patch-list"))
 		{
 			assert(!stateful_);
-			// init to zero
-			const char* nothing = "\0\0\0\0\0\0\0\0";
-			std::string raw(nothing, getDataTypeSize(dataType) );
-			seParameter->rawValues_.push_back(raw);
+
+			// Special case HC_VOICE_PITCH needs to be initialized to standard western scale
+			if (HC_VOICE_PITCH == hostControl)
+			{
+				const int middleA = 69;
+				constexpr float invNotesPerOctave = 1.0f / 12.0f;
+				seParameter->rawValues_.reserve(128);
+				for (float key = 0; key < 128; ++key)
+				{
+					const float pitch = 5.0f + static_cast<float>(key - middleA) * invNotesPerOctave;
+					std::string raw((const char*) &pitch, sizeof(pitch));
+					seParameter->rawValues_.push_back(raw);
+				}
+			}
+			else
+			{
+				// init to zero
+				const char* nothing = "\0\0\0\0\0\0\0\0";
+				std::string raw(nothing, getDataTypeSize(dataType));
+				seParameter->rawValues_.push_back(raw);
+			}
 		}
 
 		seParameter->parameterHandle_ = ParameterHandle;
@@ -369,12 +395,12 @@ void MpController::Initialize()
 		toPlatformString(BundleInfo::instance()->getPresetFolder()),
 		[this]()
 			{
-				ScanPresets();
-				UpdatePresetBrowser();
+				// note: called from background thread.
+				presetsFolderChanged = true;
 			}
 	);
     
-	undoManager.initial(this, "Init");
+	undoManager.initial(this);
 
     isInitialized = true;
 }
@@ -449,9 +475,16 @@ void MpController::FileToString(const platform_string& path, std::string& buffer
 	std::ifstream t(path, std::ifstream::in | std::ifstream::binary);
 	t.seekg(0, std::ios::end);
 	const size_t size = t.tellg();
-	buffer.resize(size);
-	t.seekg(0);
-	t.read((char*) buffer.data(), buffer.size());
+	if (t.fail())
+	{
+		buffer.clear();
+	}
+	else
+	{
+		buffer.resize(size);
+		t.seekg(0);
+		t.read((char*)buffer.data(), buffer.size());
+	}
 #endif
 }
 
@@ -507,9 +540,9 @@ MpController::presetInfo MpController::parsePreset(const std::wstring& filename,
 		category,
 		-1,
 		ToWstring(filename),
+		std::hash<std::string>{}(xml),
 		false, // isFactory
-		false, // isSession
-		std::hash<std::string>{}(xml)
+		false // isSession
 	};
 }
 
@@ -553,6 +586,8 @@ void MpController::setParameterValue(RawView value, int32_t parameterHandle, gmp
 	}
 
 	auto seParameter = (*it).second;
+
+	bool takeUndoSnapshot = false;
 
 	// Special case for MIDI Learn
 	if (paramField == gmpi::MP_FT_MENU_SELECTION)
@@ -601,20 +636,33 @@ void MpController::setParameterValue(RawView value, int32_t parameterHandle, gmp
 			seParameter->updateProcessor(paramField, voice);
 
 			if (seParameter->stateful_ && paramField == gmpi::MP_FT_VALUE)
-				setModified(true);
+			{
+				if (!seParameter->isGrabbed()) // e.g. momentary button
+				{
+					takeUndoSnapshot = true;
+				}
+			}
 		}
 	}
 
+	// take an undo snapshot anytime a knob is released
 	if (paramField == gmpi::MP_FT_GRAB)
 	{
 		const bool grabbed = (bool)value;
-		if (!grabbed)
+		if (!grabbed && seParameter->stateful_)
 		{
-			const auto paramName = WStringToUtf8( (std::wstring) seParameter->getValueRaw(gmpi::MP_FT_SHORT_NAME, 0));
-
-			const std::string desc = "Changed parameter " + paramName;
-			undoManager.snapshot(this, desc);
+			takeUndoSnapshot = true;
 		}
+	}
+
+	if (takeUndoSnapshot)
+	{
+		setModified(true);
+
+		const auto paramName = WStringToUtf8((std::wstring)seParameter->getValueRaw(gmpi::MP_FT_SHORT_NAME, 0));
+
+		const std::string desc = "Changed parameter: " + paramName;
+		undoManager.snapshot(this, desc);
 	}
 }
 
@@ -630,10 +678,34 @@ void UndoManager::debug()
 #endif
 }
 
-void UndoManager::initial(class MpController* controller, std::string description)
+void UndoManager::initial(MpController* controller)
 {
 	history.clear();
-	snapshot(controller, description);
+	snapshot(controller, {});
+
+	UpdateGui(controller);
+}
+
+void UndoManager::initialFromXml(MpController* controller, std::string xml)
+{
+	history.clear();
+	push({}, std::move(xml));
+}
+
+bool UndoManager::canUndo()
+{
+	return undoPosition > 0 && undoPosition < size();
+}
+
+bool UndoManager::canRedo()
+{
+	return undoPosition >= 0 && undoPosition < size() - 1;
+}
+
+void UndoManager::UpdateGui(MpController* controller)
+{
+	*(controller->getHostParameter(HC_CAN_UNDO)) = canUndo();
+	*(controller->getHostParameter(HC_CAN_REDO)) = canRedo();
 }
 
 void UndoManager::push(std::string description, const std::string& preset)
@@ -654,6 +726,7 @@ void UndoManager::snapshot(MpController* controller, std::string description)
 
 	push(description, controller->getPresetXml());
 
+	UpdateGui(controller);
 	debug();
 }
 
@@ -665,6 +738,11 @@ void UndoManager::undo(MpController* controller)
 	--undoPosition;
 	controller->setPreset(history[undoPosition].second);
 
+	// if wer're back to the original preset, set modified=false.
+	if (!canUndo())
+		controller->setModified(false);
+
+	UpdateGui(controller);
 	debug();
 }
 
@@ -678,6 +756,9 @@ void UndoManager::redo(MpController* controller)
 
 	undoPosition = next;
 
+	controller->setModified(true);
+
+	UpdateGui(controller);
 	debug();
 }
 
@@ -730,7 +811,7 @@ void UndoManager::copyAB(MpController* controller)
 
 gmpi_gui::IMpGraphicsHost* MpController::getGraphicsHost()
 {
-#if (GMPI_IS_PLATFORM_JUCE==0)
+#if !defined(SE_USE_JUCE_UI)
 	for (auto g : m_guis2)
 	{
 		auto pa = dynamic_cast<GuiPatchAutomator3*>(g);
@@ -782,17 +863,26 @@ void MpController::OnSetHostControl(int hostControl, int32_t paramField, int32_t
 				{
 					setPreset(session_preset_xml);
 				}
-				else if (presets[preset].filename.find(L".xmlpreset") != string::npos) // file preset.
+				else if (presets[preset].isFactory)
 				{
 					loadFactoryPreset(preset, false);
 				}
 				else
 				{
-					// file preset.
-					const auto xml = loadNativePreset(presets[preset].filename);
+					std::string xml;
+					if (presets[preset].filename.find(L".xmlpreset") != string::npos)
+					{
+						platform_string nativePath = toPlatformString(presets[preset].filename);
+						FileToString(nativePath, xml);
+					}
+					else
+					{
+						xml = loadNativePreset(presets[preset].filename);
+					}
 					setPreset(xml);
 				}
 
+				undoManager.initial(this);
 				setModified(false);
 			}
 		}
@@ -834,8 +924,7 @@ void MpController::OnSetHostControl(int hostControl, int32_t paramField, int32_t
 				break;
 			};
 
-#if (GMPI_IS_PLATFORM_JUCE==0)
-            
+#if !defined(SE_USE_JUCE_UI)
             // L"Load Preset=2,Save Preset,Import Bank,Export Bank"
             if (patchCommand > 5)
                 break;
@@ -922,50 +1011,62 @@ int32_t MpController::sendSdkMessageToAudio(int32_t handle, int32_t id, int32_t 
 	return gmpi::MP_OK;
 }
 
+#if 0
+// these can't update processor with normal handle-based method becuase their handles are assigned at runtime, only in the controller.
+void MpController::HostControlToDsp(MpParameter* param, int32_t voice)
+{
+	assert(param->getHostControl() >= 0);
+
+	my_msg_que_output_stream s(getQueueToDsp(), UniqueSnowflake::APPLICATION, "hstc");
+
+	SerialiseParameterValueToDsp(s, param);
+}
+#endif
+
+void MpController::SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param)
+{
+	//---send a binary message
+	const int32_t voice = 0;
+	bool isVariableSize = param->datatype_ == DT_TEXT || param->datatype_ == DT_BLOB;
+
+	auto raw = param->getValueRaw(gmpi::MP_FT_VALUE, voice);
+
+	bool due_to_program_change = false;
+	int32_t recievingMessageLength = (int)(sizeof(bool) + raw.size());
+	if (isVariableSize)
+	{
+		recievingMessageLength += (int)sizeof(int32_t);
+	}
+
+	if (param->isPolyPhonic())
+	{
+		recievingMessageLength += (int)sizeof(int32_t);
+	}
+
+	stream << recievingMessageLength;
+	stream << due_to_program_change;
+
+	if (param->isPolyPhonic())
+	{
+		stream << voice;
+	}
+
+	if (isVariableSize)
+	{
+		stream << (int32_t)raw.size();
+	}
+
+	stream.Write(raw.data(), (unsigned int)raw.size());
+
+	stream.Send();
+}
+
 void MpController::ParamToDsp(MpParameter* param, int32_t voice)
 {
 	assert(dynamic_cast<SeParameter_vst3_hostControl*>(param) == nullptr); // These have (not) "unique" handles that may map to totally random DSP parameters.
 
-	//---send a binary message
-	{
-		bool isVariableSize = param->datatype_ == DT_TEXT || param->datatype_ == DT_BLOB;
-
-		auto raw = param->getValueRaw(gmpi::MP_FT_VALUE, voice);
-
-		bool due_to_program_change = false;
-		int32_t recievingMessageLength = (int)(sizeof(int32_t) + sizeof(bool) + raw.size());
-		if (isVariableSize)
-		{
-			recievingMessageLength += (int)sizeof(int32_t);
-		}
-
-		if (param->isPolyPhonic())
-		{
-			recievingMessageLength += (int)sizeof(int32_t);
-		}
-
-		int patch = 0;
-
-       	my_msg_que_output_stream s(getQueueToDsp(), param->parameterHandle_, "ppc\0");
-
-		s << recievingMessageLength;
-		s << due_to_program_change;
-		s << patch;
-
-		if (param->isPolyPhonic())
-		{
-			s << voice;
-		}
-
-		if (isVariableSize)
-		{
-			s << (int32_t)raw.size();
-		}
-
-		s.Write(raw.data(), (unsigned int)raw.size());
-        
-        s.Send();
-	}
+	my_msg_que_output_stream s(getQueueToDsp(), param->parameterHandle_, "ppc\0"); // "ppc"
+	SerialiseParameterValueToDsp(s, param);
 }
 
 void MpController::UpdateProgramCategoriesHc(MpParameter* param)
@@ -988,6 +1089,112 @@ void MpController::UpdateProgramCategoriesHc(MpParameter* param)
 	param->setParameterRaw(gmpi::FieldType::MP_FT_VALUE, RawView(enumList));
 }
 
+MpParameter* MpController::createHostParameter(int32_t hostControl)
+{
+	SeParameter_vst3_hostControl* p = {};
+
+	switch (hostControl)
+	{
+	case HC_PATCH_COMMANDS:
+		p = new SeParameter_vst3_hostControl(this, hostControl);
+		p->enumList_ = L"Load Preset=2,Save Preset,Import Bank,Export Bank";
+		if (undoManager.enabled)
+		{
+			p->enumList_ += L", Undo=17, Redo";
+		}
+		break;
+
+	case HC_CAN_UNDO:
+	case HC_CAN_REDO:
+		p = new SeParameter_vst3_hostControl(this, hostControl);
+		break;
+
+	case HC_PROGRAM:
+	{
+		p = new SeParameter_vst3_hostControl(this, hostControl);
+		p->datatype_ = DT_INT;
+		p->maximum = (std::max)(0.0, static_cast<double>(presets.size() - 1));
+		const int32_t initialVal = -1; // ensure patch-browser shows <NULL> at first.
+		RawView raw(initialVal);
+		p->setParameterRaw(gmpi::MP_FT_VALUE, (int32_t)raw.size(), raw.data());
+	}
+	break;
+
+	case HC_PROGRAM_NAME:
+		p = new SeParameter_vst3_hostControl(this, hostControl);
+		{
+			auto raw2 = ToRaw4(L"Factory");
+			p->setParameterRaw(gmpi::MP_FT_VALUE, (int32_t)raw2.size(), raw2.data());
+		}
+		break;
+
+	case HC_PROGRAM_NAMES_LIST:
+	{
+		auto param = new SeParameter_vst3_hostControl(this, hostControl);
+		p = param;
+		p->datatype_ = DT_TEXT;
+
+		UpdateProgramCategoriesHc(param);
+	}
+	break;
+
+	case HC_PROGRAM_CATEGORIES_LIST:
+	{
+		auto param = new SeParameter_vst3_hostControl(this, hostControl);
+		p = param;
+		p->datatype_ = DT_TEXT;
+
+		UpdateProgramCategoriesHc(param);
+	}
+	break;
+
+	case HC_PROGRAM_MODIFIED:
+	{
+		auto param = new SeParameter_vst3_hostControl(this, hostControl);
+		p = param;
+		p->datatype_ = DT_BOOL;
+	}
+	break;
+
+
+	/* what would it do?
+	case HC_MIDI_CHANNEL:
+	break;
+	*/
+	}
+
+	if (!p)
+		return {};
+
+	p->stateful_ = false;
+
+	// clashes with valid handles on DSP, ensure NEVER sent to DSP!!
+
+	// generate unique parameter handle, assume all other parameters already registered.
+	p->parameterHandle_ = 0;
+	if (!ParameterHandleIndex.empty())
+		p->parameterHandle_ = ParameterHandleIndex.rbegin()->first + 1;
+
+	ParameterHandleIndex.insert(std::make_pair(p->parameterHandle_, p));
+	parameters_.push_back(std::unique_ptr<MpParameter>(p));
+
+	return p;
+}
+
+MpParameter* MpController::getHostParameter(int32_t hostControl)
+{
+	const auto it = std::find_if(
+		parameters_.begin()
+		, parameters_.end()
+		, [hostControl](std::unique_ptr<MpParameter>& p) {return p->getHostControl() == hostControl; }
+	);
+	
+	if(it != parameters_.end())
+		return (*it).get();
+
+	return createHostParameter(hostControl);
+}
+
 int32_t MpController::getParameterHandle(int32_t moduleHandle, int32_t moduleParameterId)
 {
 	int hostControl = -1 - moduleParameterId;
@@ -1004,90 +1211,8 @@ int32_t MpController::getParameterHandle(int32_t moduleHandle, int32_t modulePar
 			}
 		}
 
-		SeParameter_vst3_hostControl* p = nullptr;
-
-		switch (hostControl)
+		if (auto p = createHostParameter(hostControl); p)
 		{
-		case HC_PATCH_COMMANDS:
-			p = new SeParameter_vst3_hostControl(this, hostControl);
-			p->enumList_ = L"Load Preset=2,Save Preset,Import Bank,Export Bank";
-			if (undoManager.enabled)
-			{
-				p->enumList_ += L", Undo=17, Redo";
-			}
-			break;
-
-		case HC_PROGRAM:
-			{
-			p = new SeParameter_vst3_hostControl(this, hostControl);
-				p->datatype_ = DT_INT;
-				p->maximum = (std::max)(0.0, static_cast<double>( presets.size() - 1));
-				const int32_t initialVal = -1; // ensure patch-browser shows <NULL> at first.
-				RawView raw(initialVal);
-				p->setParameterRaw(gmpi::MP_FT_VALUE, (int32_t) raw.size(), raw.data());
-			}
-			break;
-
-		case HC_PROGRAM_NAME:
-			p = new SeParameter_vst3_hostControl(this, hostControl);
-			{
-				auto raw2 = ToRaw4(L"Factory");
-				p->setParameterRaw(gmpi::MP_FT_VALUE, (int32_t)raw2.size(), raw2.data());
-			}
-			break;
-
-		case HC_PROGRAM_NAMES_LIST:
-		{
-			auto param = new SeParameter_vst3_hostControl(this, hostControl);
-			p = param;
-			p->datatype_ = DT_TEXT;
-			param->rawValues_.push_back(ToRaw4(std::wstring()));
-
-			UpdateProgramCategoriesHc(param);
-		}
-		break;
-
-		case HC_PROGRAM_CATEGORIES_LIST:
-		{
-			auto param = new SeParameter_vst3_hostControl(this, hostControl);
-			p = param;
-			p->datatype_ = DT_TEXT;
-			param->rawValues_.push_back(ToRaw4(std::wstring()));
-
-			UpdateProgramCategoriesHc(param);
-		}
-		break;
-
-		case HC_PROGRAM_MODIFIED:
-		{
-			auto param = new SeParameter_vst3_hostControl(this, hostControl);
-			p = param;
-			p->datatype_ = DT_BOOL;
-			param->rawValues_.push_back(ToRaw4(false));
-		}
-		break;
-
-
-		/* what would it do?
-		case HC_MIDI_CHANNEL:
-		break;
-		*/
-		}
-
-		if (p)
-		{
-			p->stateful_ = false;
-
-			// clashes with valid handles on DSP, ensure NEVER sent to DSP!!
-
-			// generate unique parameter handle, assume all other parameters already registered.
-			p->parameterHandle_ = 0;
-			if (!ParameterHandleIndex.empty())
-				p->parameterHandle_ = ParameterHandleIndex.rbegin()->first + 1;
-
-			ParameterHandleIndex.insert(std::make_pair(p->parameterHandle_, p));
-			parameters_.push_back(std::unique_ptr<MpParameter>(p));
-
 			return p->parameterHandle_;
 		}
 	}
@@ -1172,6 +1297,13 @@ bool MpController::OnTimer()
 	if (startupTimerCounter-- == 0)
 	{
 		OnStartupTimerExpired();
+	}
+	
+	if (presetsFolderChanged)
+	{
+		presetsFolderChanged = false;
+		ScanPresets();
+		UpdatePresetBrowser();
 	}
 
 	return true;
@@ -1332,7 +1464,7 @@ void MpController::ImportPresetXml(const char* filename, int presetIndex)
 	setPreset(hDoc.ToNode(), true, presetIndex);
 }
 
-std::string MpController::getPresetXml()
+std::string MpController::getPresetXml(std::string presetNameOverride)
 {
 	std::string presetName, presetCategory;
 
@@ -1363,6 +1495,11 @@ std::string MpController::getPresetXml()
 
 		return a->parameterHandle_ < b->parameterHandle_;
 	});
+
+	if (!presetNameOverride.empty())
+	{
+		presetName = presetNameOverride;
+	}
 
 	TiXmlDocument doc;
 	TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "", "");
@@ -1719,14 +1856,30 @@ void MpController::setPresetFromDaw(const std::string& xml, bool updateProcessor
 {
 	setPreset(xml, updateProcessor);
 
+	std::string presetName;
+	{
+		auto parameterHandle = getParameterHandle(-1, -1 - HC_PROGRAM_NAME);
+		if (auto it = ParameterHandleIndex.find(parameterHandle) ; it != ParameterHandleIndex.end())
+		{
+			const auto raw = (*it).second->getValueRaw(gmpi::FieldType::MP_FT_VALUE, 0);
+			auto presetNameW = RawToValue<std::wstring>(raw.data(), raw.size());
+			presetName = WStringToUtf8(presetNameW);
+		}
+	}
+
 	// When DAW loads preset XML, try to determine if it's a factory preset, and update browser to suit.
-	int32_t presetIndex = -1;
+	int32_t presetIndex = -1; // exact match
+	int32_t presetSameNameIndex = -1; // name matches, but not settings.
 
 	/*
 	XML will not match if any parameter was set outside the normalized range, because it will get clamped in the plugin.
 	*/
   //  _RPT2(_CRT_WARN, "setPresetFromDaw: hash=%d\nXML:\n%s\n", (int) std::hash<std::string>{}(xml), xml.c_str());
 	auto hash = std::hash<std::string>{}(xml);
+
+	// If preset has no name, treat it as a (modified) "Default"
+	if (presetName.empty())
+		presetName = "Default";
 
 	// Check if preset coincides with a factory preset, if so update browser to suit.
 	int idx = 0;
@@ -1737,27 +1890,48 @@ void MpController::setPresetFromDaw(const std::string& xml, bool updateProcessor
 			presetIndex = idx;
 			break;
 		}
-
+		if (preset.name == presetName && !preset.isSession)
+		{
+			presetSameNameIndex = idx;
+			break;
+		}
+		
 		++idx;
 	}
 
 	if (presetIndex == -1)
 	{
-		// remove any existing "Session preset"
-		presets.erase(
-			std::remove_if(presets.begin(), presets.end(), [](presetInfo& preset) { return preset.isSession; })
-			, presets.end()
-		);
-		session_preset_xml.clear();
+		if (presetSameNameIndex != -1)
+		{
+			// assume it's the same preset, except it's been modified
+			presetIndex = presetSameNameIndex;
 
-		// preset not available, add it to presets.
-		presetIndex = static_cast<int32_t>(presets.size());
-		presets.push_back(
-			parsePreset({}, xml)
-		);
-		presets.back().name = "Session";
-		presets.back().isSession = true;
-		session_preset_xml = xml;
+			// put original as undo state
+			std::string newXml;
+			const platform_string nativePath = toPlatformString(presets[presetIndex].filename);
+			FileToString(nativePath, newXml);
+			undoManager.initialFromXml(this, newXml);
+			undoManager.snapshot(this, "Load Session Preset");
+			setModified(true);
+		}
+		else
+		{
+			// remove any existing "Session preset"
+			presets.erase(
+				std::remove_if(presets.begin(), presets.end(), [](presetInfo& preset) { return preset.isSession; })
+				, presets.end()
+			);
+			session_preset_xml.clear();
+			
+			// preset not available and not the same name as any existing ones, add it to presets as 'session' preset.
+			presetIndex = static_cast<int32_t>(presets.size());
+			presets.push_back(
+				parsePreset({}, xml)
+			);
+			presets.back().name = presetName;
+			presets.back().isSession = true;
+			session_preset_xml = xml;
+		}
 	}
 
 	{
@@ -1780,19 +1954,19 @@ void MpController::setPresetFromDaw(const std::string& xml, bool updateProcessor
 		{
 			auto p = (*it).second;
 
-			std::wstring presetName;
+			std::wstring name;
 			if(presetIndex == -1)
 			{
 				const auto raw = p->getValueRaw(gmpi::FieldType::MP_FT_VALUE, 0);
-				presetName = RawToValue<std::wstring>(raw.data(), raw.size());
+				name = RawToValue<std::wstring>(raw.data(), raw.size());
 			}
 			else
 			{
 				// Preset found.
-				presetName = Utf8ToWstring(presets[presetIndex].name);
+				name = Utf8ToWstring(presets[presetIndex].name);
 			}
 
-			if(p->setParameterRaw(gmpi::FieldType::MP_FT_VALUE, RawView(presetName)) && updateProcessor)
+			if(p->setParameterRaw(gmpi::FieldType::MP_FT_VALUE, RawView(name)) && updateProcessor)
 			{
 				p->updateProcessor(gmpi::FieldType::MP_FT_VALUE, 0);
 			}
@@ -1800,12 +1974,97 @@ void MpController::setPresetFromDaw(const std::string& xml, bool updateProcessor
 	}
 }
 
+bool MpController::isPresetModified()
+{
+	return undoManager.canUndo();
+}
+
+void MpController::SavePreset(int32_t presetIndex)
+{
+	const auto presetFolderW = BundleInfo::instance()->getPresetFolder();
+	CreateFolderRecursive(presetFolderW);
+
+	auto preset = getPresetInfo(presetIndex);
+	const auto presetFolder = WStringToUtf8(presetFolderW);
+	const auto fullPath = combinePathAndFile(presetFolder, preset.name) + ".xmlpreset";
+
+	ExportPresetXml(fullPath.c_str());
+
+	setModified(false);
+	undoManager.initial(this);
+
+	ScanPresets();
+	UpdatePresetBrowser();
+}
+
+void MpController::SavePresetAs(const std::string& presetName)
+{
+	const auto presetFolderW = BundleInfo::instance()->getPresetFolder();
+	CreateFolderRecursive(presetFolderW);
+
+	const auto presetFolder = WStringToUtf8(presetFolderW);
+	const auto fullPath = combinePathAndFile(presetFolder, presetName ) + ".xmlpreset";
+
+	ExportPresetXml(fullPath.c_str(), presetName);
+
+	setModified(false);
+
+	ScanPresets();
+
+	// find the new preset
+	for (int32_t presetIndex = 0; presetIndex < presets.size(); ++presetIndex)
+	{
+		if (presets[presetIndex].name == presetName)
+		{
+			auto parameterHandle = getParameterHandle(-1, -1 - HC_PROGRAM);
+			auto it = ParameterHandleIndex.find(parameterHandle);
+			if (it != ParameterHandleIndex.end())
+			{
+				auto p = (*it).second;
+				p->setParameterRaw(gmpi::FieldType::MP_FT_VALUE, RawView(presetIndex));
+			}
+			break;
+		}
+	}
+
+	UpdatePresetBrowser();
+}
+
+void MpController::DeletePreset(int presetIndex)
+{
+	assert(presetIndex >= 0 && presetIndex < presets.size());
+
+	auto parameterHandle = getParameterHandle(-1, -1 - HC_PROGRAM);
+	auto it = ParameterHandleIndex.find(parameterHandle);
+	if (it != ParameterHandleIndex.end())
+	{
+		auto p = (*it).second;
+
+		auto currentPreset = (int32_t) p->getValueRaw(gmpi::FieldType::MP_FT_VALUE, 0);
+
+		// if we're delteing the current preset, switch back to preset 0
+		if (currentPreset == presetIndex)
+		{
+			int32_t newCurrentPreset = 0;
+			(*p) = newCurrentPreset;
+		}
+	}
+#if defined(__cpp_lib_filesystem)
+	std::filesystem::remove(presets[presetIndex].filename);
+#else
+    std::remove(WStringToUtf8(presets[presetIndex].filename).c_str());
+#endif
+
+	ScanPresets();
+	UpdatePresetBrowser();
+}
+
 // Note: Don't handle polyphonic stateful parameters.
-void MpController::ExportPresetXml(const char* filename)
+void MpController::ExportPresetXml(const char* filename, std::string presetNameOverride)
 {
 	ofstream myfile;
 	myfile.open(filename);
-	myfile << getPresetXml();
+	myfile << getPresetXml(presetNameOverride);
 	myfile.close();
 }
 
@@ -1970,11 +2229,5 @@ void MpController::ImportBankXml(const char* xmlfilename)
 
 void MpController::setModified(bool presetIsModified)
 {
-	auto parameterHandle = getParameterHandle(-1, -1 - HC_PROGRAM_MODIFIED);
-	auto it = ParameterHandleIndex.find(parameterHandle);
-	if (it != ParameterHandleIndex.end())
-	{
-		auto p = (*it).second;
-		p->setParameterRaw(gmpi::FieldType::MP_FT_VALUE, RawView(presetIsModified));
-	}
+	(*getHostParameter(HC_PROGRAM_MODIFIED)) = presetIsModified;
 }

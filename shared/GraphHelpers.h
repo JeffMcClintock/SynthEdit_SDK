@@ -25,6 +25,10 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+#include "../shared/GraphHelpers.h"
+*/
+
 #include "Drawing.h"
 #include <vector>
 
@@ -32,56 +36,47 @@ using namespace GmpiDrawing;
 
 inline void SimplifyGraph(const std::vector<Point>& in, std::vector<Point>& out)
 {
-	out.clear();
-
 	if (in.size() < 2)
 	{
 		out = in;
 		return;
 	}
 
-	const float tollerance = 0.3f;
+	out.clear();
 
-	float slope{};
-	bool first = true;
-	Point prev{};
+	constexpr float tollerance = 0.3f;
 
-	for (int i = 0; i < in.size(); ++i)
-	{
-		if (first)
-		{
-			prev = in[i];
-			out.push_back(prev);
+	auto prev = in[0];
+    auto lastOut = prev;
+    lastOut.y -= 1000.0f; // force prediction failure on first point.
+	float slope = 0.0f;
+                
+    for(auto& p : in)
+    {
+        if(p.x < lastOut.x + 0.00001f) // skip points with same x value (infinite slope)
+            continue;
 
-			assert(i != in.size() - 1); // should never be last one?
+        const float predictedY = lastOut.y + slope * (p.x - lastOut.x);
+        const float err = p.y - predictedY;
 
-			slope = (in[i + 1].y - prev.y) / (in[i + 1].x - prev.x);
-			++i; // next one can be assumed to fit the prediction (so skip it).
-			first = false;
-		}
-		else
-		{
-			const float predictedY = prev.y + slope * (in[i].x - prev.x);
-			const float err = in[i].y - predictedY;
-
-			if (err > tollerance || err < -tollerance)
-			{
-				i -= 2; // insert prev in 'out', then recalc slope
-				first = true;
-			}
-		}
-	}
-
-	if (out.back() != in.back())
-	{
-		out.push_back(in.back());
-	}
+        if (err > tollerance || err < -tollerance)
+        {
+            out.push_back(prev);
+            lastOut = prev;
+            slope = (p.y - lastOut.y) / (p.x - lastOut.x);
+        }
+         
+        prev = p;
+    }
+    
+    assert(out.back() != in.back());
+    
+    if(out.back().x < in.back().x - 0.00001f) // skip points with same x value (infinite slope)
+        out.push_back(in.back());
 }
 
 inline PathGeometry DataToGraph(Graphics& g, const std::vector<Point>& inData)
 {
-	const float tollerance = 0.3f;
-
 	auto geometry = g.GetFactory().CreatePathGeometry();
 	auto sink = geometry.Open();
 	bool first = true;
