@@ -213,7 +213,7 @@ if(${BUILD_GMPI_PLUGIN_IS_OFFICIAL_MODULE})
     add_custom_command(TARGET ${BUILD_GMPI_PLUGIN_PROJECT_NAME}
     # Run after all other rules within the target have been executed
     POST_BUILD
-    COMMAND xcopy /c /y "\"$(OutDir)$(TargetName)$(TargetExt)\"" "\"C:\\SE\\SE15\\SynthEdit\\modules64\""
+    COMMAND xcopy /c /y "\"$(OutDir)$(TargetName)$(TargetExt)\"" "\"C:\\SE\\SE15\\SynthEdit\\modules64\\\""
     COMMENT "Copy to SynthEdit plugin folder"
     )
 else()
