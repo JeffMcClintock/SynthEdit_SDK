@@ -58,6 +58,7 @@ namespace SynthEdit2
 		assert(guiObjectMap.empty());
 
 		// Clear out previous view.
+		assert(!isIteratingChildren);
 		children.clear();
 		elementBeingDragged = nullptr;
 		patchAutomatorWrapper_ = nullptr;

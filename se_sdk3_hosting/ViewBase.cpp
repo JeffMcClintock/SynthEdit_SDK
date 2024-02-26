@@ -4,6 +4,7 @@
 #include <iostream>
 #include "ViewBase.h"
 #include "ConnectorView.h"
+#include "ConnectorViewStruct.h"
 #include "modules/se_sdk3_hosting/Presenter.h"
 #include "ResizeAdorner.h"
 #include "GuiPatchAutomator3.h"
@@ -66,6 +67,7 @@ namespace SynthEdit2
 			auto ob = std::make_unique<ModuleViewPanel>(L"SE PatchCableChangeNotifier", this, Presenter()->GenerateTemporaryHandle());
 			patchCableNotifier = ob.get();
 			guiObjectMap.insert(std::pair<int, ModuleView*>(ob->getModuleHandle(), ob.get()));
+			assert(!isIteratingChildren);
 			children.push_back(std::move(ob));
 		}
 
@@ -108,6 +110,7 @@ namespace SynthEdit2
 			{
 				if(typeName == "Line")
 				{
+					assert(!isIteratingChildren);
 					children.push_back(std::make_unique<ConnectorView2>(&module_json, this));
 				}
 				else
@@ -144,10 +147,12 @@ namespace SynthEdit2
 
 				if( (module->getSelected() || isBackground) && Presenter()->editEnabled())
 				{
+					assert(!isIteratingChildren);
 					children.push_back(module->createAdorner(this));
 				}
 
 				guiObjectMap.insert(std::pair<int, ModuleView*>(module->getModuleHandle(), module.get()));
+				assert(!isIteratingChildren);
 				children.push_back(std::move(module));
 			}
 		}
@@ -168,6 +173,7 @@ namespace SynthEdit2
 				auto r = guiObjectMap.insert(std::pair<int, ModuleView*>(ob->getModuleHandle(), ob.get()));
 				assert(r.second);
 
+				assert(!isIteratingChildren);
 				children.push_back(std::move(ob)); // ob now null.
 			}
 
@@ -260,6 +266,47 @@ namespace SynthEdit2
 								auto& default_element = pin_element["default"];
 								if(!default_element.empty())
 								{
+									InterfaceObject* pinInfo{};
+
+									// find the pin description for this pin.
+									for(auto& pd : moduleInfo->gui_plugs)
+									{
+										if (pd.second->getPlugDescID({}) == pinId)
+										{
+											pinInfo = pd.second;
+											break;
+										}
+									}
+
+									// Can't find desc? assume it's an auto-duplicating pin.
+									if(!pinInfo && !moduleInfo->gui_plugs.empty())
+									{
+										auto& last = *moduleInfo->gui_plugs.rbegin();
+
+										if (last.second->autoDuplicate({}))
+										{
+											pinInfo = last.second;
+										}
+									}
+
+									if (pinInfo)
+									{
+										assert(pinInfo->GetDirection() == DR_OUT || !wrapper->isPinConnected(pinId) || !wrapper->isPinConnectionActive(pinId)); // can be connected to muted/unavailable module.
+
+										auto dt = pinInfo->GetDatatype();
+										if (dt == DT_ENUM) // special hack for enum lists on properties of GUI modules.
+										{
+											dt = DT_INT;
+										}
+
+										auto raw = ParseToRaw(dt, default_element.asString());
+
+										wrapper->setPin(0, 0, pinId, 0, (int32_t)raw.size(), (void*)(&raw[0]));
+
+										alreadSetDefault.push_back(pinId);
+									}
+
+#if 0
 									auto def = default_element.asString();
 									for(auto it2 = moduleInfo->gui_plugs.begin(); it2 != moduleInfo->gui_plugs.end(); ++it2)
 									{
@@ -274,13 +321,14 @@ namespace SynthEdit2
 
 											auto raw = ParseToRaw(dt, def);
 
-											assert(!wrapper->isPinConnected(pinId) || !wrapper->isPinConnectionActive(pinId)); // can be connected to muted/unavailable module.
+											assert(pinInfo.GetDirection() == DR_OUT || !wrapper->isPinConnected(pinId) || !wrapper->isPinConnectionActive(pinId)); // can be connected to muted/unavailable module.
 											wrapper->setPin(0, 0, pinInfo.getPlugDescID(0), 0, (int)raw.size(), (void*)(&raw[0]));
 
 											alreadSetDefault.push_back(pinId);
 											break;
 										}
 									}
+#endif
 								}
 
 								++pinId; // Allows pinIdx to default to 1 + prev Idx. TODO, only used by slider2, could add this to exportXml.
@@ -584,6 +632,7 @@ namespace SynthEdit2
 			{
 				if((flags & gmpi_gui_api::GG_POINTER_FLAG_FIRSTBUTTON) != 0) // Drag selection box.
 				{
+					assert(!isIteratingChildren);
 					children.push_back(std::unique_ptr<IViewChild>(new SelectionDragBox(this, point)));
 					autoScrollStart();
 					return gmpi::MP_OK;
@@ -601,6 +650,7 @@ namespace SynthEdit2
 		{
 			if ((*it).get() == child)
 			{
+				assert(!isIteratingChildren);
 				children.erase(it);
 				break;
 			}
@@ -617,7 +667,7 @@ namespace SynthEdit2
 		{
 			auto& m = *it;
 
-			if (m->hitTest(flags, selectionRect))
+			if (m->hitTestR(flags, selectionRect))
 			{
 				modulesToSelect.push_back(m->getModuleHandle());
 			}
@@ -682,10 +732,18 @@ namespace SynthEdit2
 		return gmpi::MP_OK;
 	}
 
+	void ViewBase::onSubPanelMadeVisible()
+	{
+		// if a sub-panel just blinked into existence, need to update mouse over object on myself AND on it. Else the next click will be ignored.
+		// calling ViewBase to avoid the offset imposed by the sub-panel (which has already been accounted for)
+		ViewBase::onPointerMove(0, lastMovePoint);
+	}
+
 	void ViewBase::calcMouseOverObject(int32_t flags)
 	{
 		IViewChild* hitObject{};
 
+		isIteratingChildren = true;
 		for(auto it = children.rbegin(); it != children.rend(); ++it) // iterate in reverse for correct Z-Order.
 		{
 			auto& m = *it;
@@ -695,6 +753,7 @@ namespace SynthEdit2
 				break;
 			}
 		}
+		isIteratingChildren = false;
 
 		if(hitObject != mouseOverObject)
 		{
@@ -800,6 +859,7 @@ namespace SynthEdit2
 			cable->pickup(1, fromPoint);
 			cable->type = type;
 
+			assert(!isIteratingChildren);
 			children.push_back(std::unique_ptr<IViewChild>(cable));
 
 			int32_t flags = gmpi_gui_api::GG_POINTER_FLAG_NEW | gmpi_gui_api::GG_POINTER_FLAG_INCONTACT | gmpi_gui_api::GG_POINTER_FLAG_PRIMARY | gmpi_gui_api::GG_POINTER_FLAG_CONFIDENCE;
@@ -945,6 +1005,7 @@ namespace SynthEdit2
 					const auto dragLineRect = (*it)->GetClipRect();
 					invalidateRect(&dragLineRect);
 
+					assert(!isIteratingChildren);
 					it = children.erase(it);
 					break;
 				}
@@ -980,6 +1041,7 @@ namespace SynthEdit2
 				{
 					mouseOverObject = {};
 				}
+				assert(!isIteratingChildren);
 				it = children.erase(it);
 				continue;
 			}
@@ -993,6 +1055,7 @@ namespace SynthEdit2
 		for(auto& c : cableList.cables)
 		{
 			//			_RPT2(_CRT_WARN, "New Cable %x -> %x\n", c.fromUgHandle, c.toUgHandle);
+			assert(!isIteratingChildren);
 			children.push_back(std::make_unique<PatchCableView>(this, c.fromUgHandle, c.fromUgPin, c.toUgHandle, c.toUgPin, c.colorIndex));
 		}
 
@@ -1070,6 +1133,7 @@ namespace SynthEdit2
 			if(*it == child)
 			{
 				auto c = std::move(*it);
+				assert(!isIteratingChildren);
 				it = children.erase(it);
 				children.push_back(std::move(c));
 				break;
@@ -1083,6 +1147,7 @@ namespace SynthEdit2
 		{
 			if(*it == child)
 			{
+				assert(!isIteratingChildren);
 				auto c = std::move(*it);
 				it = children.erase(it);
 				children.insert(children.begin(), std::move(c));
@@ -1132,6 +1197,7 @@ namespace SynthEdit2
 						GmpiDrawing::Size unused(0, 0);
 						adorner->measure(GmpiDrawing::Size(0, 0), &unused); // provide for resizbility calc.
 						invalidRect = adorner->getLayoutRect();
+						assert(!isIteratingChildren);
 						children.push_back(std::move(adorner));
 					}
 					else
@@ -1154,6 +1220,7 @@ namespace SynthEdit2
 						auto r = m->GetClipRect();
 						invalidateRect(&r);
 
+						assert(!isIteratingChildren);
 						it = children.erase(it);
 						if(mouseOverObject == m)
 						{
@@ -1210,6 +1277,7 @@ namespace SynthEdit2
 			releaseCapture();
 
 		// Clear out previous view.
+		assert(!isIteratingChildren);
 		children.clear();
 		elementBeingDragged = nullptr;
 		patchAutomatorWrapper_ = nullptr;

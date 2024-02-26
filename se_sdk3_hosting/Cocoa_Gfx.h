@@ -6,11 +6,14 @@
 
 #include <codecvt>
 #include <map>
+#include <mach-o/dyld.h>
 #include "../se_sdk3/Drawing.h"
 #include "../shared/xp_simd.h"
 #include "./Gfx_base.h"
 #include "BundleInfo.h"
 #include "mfc_emulation.h"
+
+#define USE_BACKING_BUFFER 1
 
 /* TODO
 
@@ -236,7 +239,7 @@ namespace gmpi
 #endif
         }
         
-        void setBestColorSpace(NSWindow* window)
+        void setBestColorSpace(/*NSWindow* window*/)
         {
             /* even non-wide displays benifit from kCGColorSpaceExtendedLinearSRGB, they appear to dither to approximate it
 
@@ -510,6 +513,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
             inline void setNativeColor()
             {
                 nativec_ = factory_->toNative(color);
+                [nativec_ retain];
             }
             
 		public:
@@ -541,7 +545,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 
 			~SolidColorBrush()
 			{
-				// crash       [nativec_ release];
+				[nativec_ release];
 			}
 
 			// IMPORTANT: Virtual functions much 100% match GmpiDrawing_API::IMpSolidColorBrush to simulate inheritance.
@@ -879,21 +883,19 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 			}
 
 			TextFormat(std::wstring_convert<std::codecvt_utf8<wchar_t>>* pstringConverter, const char* pfontFamilyName, GmpiDrawing_API::MP1_FONT_WEIGHT pfontWeight, GmpiDrawing_API::MP1_FONT_STYLE pfontStyle, GmpiDrawing_API::MP1_FONT_STRETCH pfontStretch, float pfontSize) :
-//				CocoaWrapper<GmpiDrawing_API::IMpTextFormat, const __CFDictionary>(nullptr)
 				fontWeight(pfontWeight)
 				, fontStyle(pfontStyle)
 				, fontStretch(pfontStretch)
 				, fontSize(pfontSize)
 			{
-                _RPT1(0, "TextFormat() %d\n", this);
-         
 				fontFamilyName = fontSubstitute(pfontFamilyName);
                 
                 NSFontTraitMask fontTraits = 0;
                 if(pfontWeight >= GmpiDrawing_API::MP1_FONT_WEIGHT_DEMI_BOLD)
                     fontTraits |= NSBoldFontMask;
                 
-                if(pfontStyle == GmpiDrawing_API::MP1_FONT_STYLE_ITALIC)
+                // Simulate Oblique with Italic
+                if(pfontStyle == GmpiDrawing_API::MP1_FONT_STYLE_ITALIC || pfontStyle == GmpiDrawing_API::MP1_FONT_STYLE_OBLIQUE)
                     fontTraits |= NSItalicFontMask;
                 
                 auto nsFontName = [NSString stringWithCString: fontFamilyName.c_str() encoding: NSUTF8StringEncoding ];
@@ -903,40 +905,11 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
                 // not sure why, but ignoring it seems to work OK.
                 try
                 {
-                    /*
-                     weight
-                     A hint for the weight desired, on a scale of 0 to 15: a value of 5 indicates a normal or book weight, and 9 or more a bold or heavier weight. The weight is ignored if fontTraitMask includes NSBoldFontMask.
-                     
-                     // from chrome
-                     
-                     NSInteger ToNSFontManagerWeight(Weight weight) {
-                       switch (weight) {
-                         case Weight::THIN:
-                           return 2;
-                         case Weight::EXTRA_LIGHT:
-                           return 3;
-                         case Weight::LIGHT:
-                           return 4;
-                         case Weight::INVALID:
-                         case Weight::NORMAL:
-                           return 5;
-                         case Weight::MEDIUM:
-                           return 6;
-                         case Weight::SEMIBOLD:
-                           return 8;
-                         case Weight::BOLD:
-                           return 9;
-                         case Weight::EXTRA_BOLD:
-                           return 10;
-                         case Weight::BLACK:
-                           return 11;
-                       }
-                     */
-                    
                     const int roundNearest = 50;
                     const int nativeFontWeight = 1 + (pfontWeight + roundNearest) / 100;
-                    
-                    nativefont = [[NSFontManager sharedFontManager] fontWithFamily:nsFontName traits:fontTraits weight:nativeFontWeight size:fontSize ];
+
+                    auto fm = [NSFontManager sharedFontManager];
+                    nativefont = [fm fontWithFamily:nsFontName traits:fontTraits weight:nativeFontWeight size:fontSize ];
                 }
                 catch(...)
                 {
@@ -946,6 +919,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
                 // fallback to system font if nesc.
                 if(!nativefont)
                 {
+                    // systemFontOfSize uses a different weight system
                     static const CGFloat weightConversion[] = {
                         NSFontWeightUltraLight, // MP1_FONT_WEIGHT_THIN = 100
                         NSFontWeightThin,       // MP1_FONT_WEIGHT_ULTRA_LIGHT = 200
@@ -965,15 +939,24 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
                     const auto nativeFontWeight = weightConversion[nativeFontWeightIndex];
 
                     // final fallback. system font.
-                        nativefont = [NSFont systemFontOfSize:fontSize weight:nativeFontWeight];
+                    nativefont = [NSFont systemFontOfSize:fontSize weight:nativeFontWeight];
                 }
 
 				nativeStyle = [[NSMutableParagraphStyle alloc] init];
+                
+//auto test = [NSMutableParagraphStyle defaultParagraphStyle];
+                
 				[nativeStyle setAlignment : NSTextAlignmentLeft];
-
+                
+                // line height seems to vary between Apple DAWs and others.
+                // might need to investigate lineHeight and lineSpacing settings also
+                const CGFloat fixedLineHeight = [nativefont leading] + [nativefont ascender] - [nativefont descender];
+                [nativeStyle setMinimumLineHeight:fixedLineHeight];
+                [nativeStyle setMaximumLineHeight:fixedLineHeight];
+                
 				native2 = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                            nativefont   , NSFontAttributeName,
-                           nativeStyle        , NSParagraphStyleAttributeName,
+                           nativeStyle  , NSParagraphStyleAttributeName,
                            nil];
                 
                 CalculateTopAdjustment();
@@ -981,7 +964,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
             
             ~TextFormat()
             {
-                   _RPT1(0, "~TextFormat() %d\n", this);
+//                   _RPT1(0, "~TextFormat() %d\n", this);
 
 #if !__has_feature(objc_arc)
 //                [native2 release];
@@ -993,7 +976,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
             void CalculateTopAdjustment()
             {
                 // Calculate compensation for different bounding box height between mac and direct2D.
-                // On Direct2D boudning rect height is typicaly much less than Cocoa.
+                // On Direct2D bounding rect height is typicaly much less than Cocoa.
                 // I don't know any algorithm for converting the extra height.
                 // Fix is to disregard extra height on both platforms.
                 GmpiDrawing_API::MP1_FONT_METRICS fontMetrics {};
@@ -1106,60 +1089,14 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 		class bitmapPixels final : public GmpiDrawing_API::IMpBitmapPixels
 		{
 			int bytesPerRow;
+            class Bitmap* seBitmap = {};
             NSImage** inBitmap_;
             NSBitmapImageRep* bitmap2 = {};
 			int32_t flags;
             
         public:
-            bitmapPixels(NSImage** inBitmap, bool _alphaPremultiplied, int32_t pflags) :
-                inBitmap_(inBitmap)
-                ,flags(pflags)
-			{
-                NSSize s = [*inBitmap size];
-                bytesPerRow = s.width * 4;
-                
-                constexpr int bitsPerSample = 8;
-                constexpr int samplesPerPixel = 4;
-                constexpr int bitsPerPixel = bitsPerSample * samplesPerPixel;
-                
-                    bitmap2 = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:nil
-                        pixelsWide : s.width
-                        pixelsHigh : s.height
-                        bitsPerSample : bitsPerSample
-                        samplesPerPixel : samplesPerPixel
-                        hasAlpha : YES
-                        isPlanar : NO
-                    colorSpaceName: NSCalibratedRGBColorSpace
-                        bitmapFormat : 0
-                        bytesPerRow : bytesPerRow
-                        bitsPerPixel : bitsPerPixel];
- 
-                // Copy the image to the new imageRep (effectivly converts it to correct pixel format/brightness etc)
-                if (0 != (flags & GmpiDrawing_API::MP1_BITMAP_LOCK_READ))
-                {
-                    NSGraphicsContext * context;
-                    context = [NSGraphicsContext graphicsContextWithBitmapImageRep : bitmap2];
-                    [NSGraphicsContext saveGraphicsState];
-                    [NSGraphicsContext setCurrentContext : context];
-                    [*inBitmap drawAtPoint: NSZeroPoint fromRect: NSZeroRect operation: NSCompositingOperationCopy fraction: 1.0];
-                    
-                    [NSGraphicsContext restoreGraphicsState];
-                }
-			}
-
-			~bitmapPixels()
-			{
-				if (0 != (flags & GmpiDrawing_API::MP1_BITMAP_LOCK_WRITE))
-				{
-                    // replace bitmap with a fresh one, and add pixels to it.
-                    *inBitmap_ = [[NSImage alloc] init];
-                    [*inBitmap_ addRepresentation:bitmap2];
-				}
-                else
-                {
-                    [bitmap2 release];
-				}
-			}
+            bitmapPixels(Bitmap* bitmap /*NSImage** inBitmap*/, bool _alphaPremultiplied, int32_t pflags);
+			~bitmapPixels();
 
 			uint8_t* MP_STDCALL getAddress() const override
             {
@@ -1174,7 +1111,7 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 				return (uint8_t)((t + 1 + (t >> 8)) >> 8); // fast way to divide by 255
 			}
 
-			GMPI_QUERYINTERFACE1(GmpiDrawing_API::SE_IID_BITMAP_PIXELS_MPGUI, GmpiDrawing_API::IMpBitmapPixels);
+            GMPI_QUERYINTERFACE1(GmpiDrawing_API::SE_IID_BITMAP_PIXELS_MPGUI, GmpiDrawing_API::IMpBitmapPixels);
 			GMPI_REFCOUNT;
 		};
 
@@ -1183,7 +1120,8 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 			GmpiDrawing_API::IMpFactory* factory = nullptr;
 
 		public:
-			NSImage* nativeBitmap_;
+			NSImage* nativeBitmap_ = nullptr;
+			NSBitmapImageRep* additiveBitmap_ = nullptr;
 
 			Bitmap(GmpiDrawing_API::IMpFactory* pfactory, const char* utf8Uri) :
 				nativeBitmap_(nullptr)
@@ -1260,7 +1198,14 @@ CG_AVAILABLE_STARTING(10.12, 10.0);
 #if !__has_feature(objc_arc)
 //                [nativeBitmap_ release];
 #endif
-                [nativeBitmap_ release];
+                if(nativeBitmap_)
+                {
+                    [nativeBitmap_ release];
+                }
+                if(additiveBitmap_)
+                {
+                    [additiveBitmap_ release];
+                }
 			}
 
 			inline NSImage* GetNativeBitmap()
@@ -1313,12 +1258,12 @@ return gmpi::MP_FAIL;
 				*returnInterface = 0;
 
 				gmpi_sdk::mp_shared_ptr<gmpi::IMpUnknown> b2;
-				b2.Attach(new bitmapPixels(&nativeBitmap_, true, flags));
+				b2.Attach(new bitmapPixels(this /*&nativeBitmap_*/, true, flags));
 
 				return b2->queryInterface(GmpiDrawing_API::SE_IID_BITMAP_PIXELS_MPGUI, (void**)(returnInterface));
 			}
 
-			void MP_STDCALL ApplyAlphaCorrection() override {};
+			void MP_STDCALL ApplyAlphaCorrection() override {}
 
 			void ApplyAlphaCorrection2() {}
 
@@ -1361,7 +1306,7 @@ return gmpi::MP_FAIL;
                 [nsPath stroke];
             }
             void FillPath(GraphicsContext* context, NSBezierPath* nsPath) const override;
-
+            
             void MP_STDCALL SetExtendModeX(GmpiDrawing_API::MP1_EXTEND_MODE extendModeX) override
             {
 //                native()->SetExtendModeX((D2D1_EXTEND_MODE)extendModeX);
@@ -1457,7 +1402,7 @@ return gmpi::MP_FAIL;
 				*returnInterface = 0;
 				return gmpi::MP_NOSUPPORT;
 			}
-			GMPI_REFCOUNT;
+   			GMPI_REFCOUNT;
 		};
 
 
@@ -1485,9 +1430,9 @@ return gmpi::MP_FAIL;
 #endif
                 if(geometry_)
                 {
-                [geometry_ release];
+                    [geometry_ release];
                 }
-			}
+            }
 
 			inline NSBezierPath* native()
 			{
@@ -1600,6 +1545,7 @@ return gmpi::MP_FAIL;
 			std::vector<GmpiDrawing_API::MP1_RECT> clipRectStack;
 			NSAffineTransform* currentTransform;
 			NSView* view_;
+            inline static int logicProFix = -1;
             
 		public:
 			GraphicsContext(NSView* pview, gmpi::cocoa::DrawingFactory* pfactory) :
@@ -1607,6 +1553,17 @@ return gmpi::MP_FAIL;
 				, view_(pview)
 			{
 				currentTransform = [NSAffineTransform transform];
+                
+                // no idea what the real cause is
+                if(logicProFix == -1) // -1 = not-set
+                {
+                    char path[1024];
+                    uint32_t size{std::size(path)};
+                    _NSGetExecutablePath(path, &size);
+                    
+                    std::string pathstr{path, size};
+                    logicProFix = pathstr.find("arrow.xpc") != std::string::npos;
+                }
 			}
 
 			~GraphicsContext()
@@ -1713,13 +1670,7 @@ return gmpi::MP_FAIL;
 				auto scb = dynamic_cast<const SolidColorBrush*>(brush);
 
 				CGRect bounds = CGRectMake(layoutRect->left, layoutRect->top, layoutRect->right - layoutRect->left, layoutRect->bottom - layoutRect->top);
-/*
-                if (stringLength > 4 && utf8String[4] == 'q')
-                {
-                    int test=3;
-                    bounds.size.height = 100.0f;
-                }
-*/
+
                 GmpiDrawing::Size textSize {};
                 if (textformat->paragraphAlignment != (int)GmpiDrawing::TextAlignment::Leading
                     || flags != GmpiDrawing_API::MP1_DRAW_TEXT_OPTIONS_CLIP)
@@ -1785,12 +1736,9 @@ return gmpi::MP_FAIL;
                     // 'wrap'.
                     [textformat->native2[NSParagraphStyleAttributeName] setLineBreakMode:NSLineBreakByWordWrapping];
                 }
-                 
-//                GmpiDrawing_API::MP1_FONT_METRICS fontMetrics;
- //               ((GmpiDrawing_API::IMpTextFormat*) textFormat)->GetFontMetrics(&fontMetrics);
                 
-//                float testLineHeightMultiplier = 0.5f;
-//                float shiftUp = testLineHeightMultiplier * fontMetrics.bodyHeight();
+                // maximumLineHeight minimumLineHeight
+// no diff                [textformat->native2[NSParagraphStyleAttributeName] setLineHeightMultiple:1.0];
 
                 // macOS draws extra padding at top of text bounds. Compensate for it.
 				if (!textformat->getUseLegacyBaseLineSnapping())
@@ -1836,7 +1784,17 @@ return gmpi::MP_FAIL;
                     float macBaselineCorrection = roundPixel(winBaseline - macBaseline, scale);
 #else
                     const float baseline = layoutRect->top + textformat->ascent;
-                    const float macBaselineCorrection = winBaseline - baseline + textformat->baselineCorrection;
+                    float macBaselineCorrection{};
+                    
+                    // adjust text vertical alignment for Logix Pro issue
+                    if(logicProFix)
+                    {
+                        macBaselineCorrection = winBaseline - baseline - textformat->baselineCorrection + 1;
+                    }
+                    else
+                    {
+                        macBaselineCorrection = winBaseline - baseline + textformat->baselineCorrection;
+                    }
 #endif
                     
                     bounds.origin.y += macBaselineCorrection;
@@ -1863,8 +1821,23 @@ return gmpi::MP_FAIL;
                 // do last so don't affect font metrics.
   //              [textformat->native2[NSParagraphStyleAttributeName] setLineHeightMultiple:testLineHeightMultiplier];
  //               textformat->native2[NSBaselineOffsetAttributeName] = [NSNumber numberWithFloat:shiftUp];
+#if USE_BACKING_BUFFER
+                // Create a flipped coordinate system
+                [[NSGraphicsContext currentContext] saveGraphicsState];
+                NSAffineTransform *transform = [NSAffineTransform transform];
+                [transform scaleXBy:1 yBy:-1];
+                [transform translateXBy:0 yBy:-2 * bounds.origin.y - bounds.size.height];
 
-				[str drawInRect : bounds withAttributes : textformat->native2];
+                [transform concat];
+
+                // Draw in the flipped coordinate system
+                [str drawInRect : bounds withAttributes : textformat->native2];
+
+                // Restore the original graphics state
+                [[NSGraphicsContext currentContext] restoreGraphicsState];
+#else
+                [str drawInRect : bounds withAttributes : textformat->native2];
+#endif
                 
  //               [textformat->native2[NSParagraphStyleAttributeName] setLineHeightMultiple:1.0f];
 
@@ -1958,65 +1931,81 @@ return gmpi::MP_FAIL;
 			{
 				auto bm = ((Bitmap*)mpBitmap);
 				auto bitmap = bm->GetNativeBitmap();
+    
+                GmpiDrawing_API::MP1_SIZE_U imageSize;
+                bm->GetSize(&imageSize);
+                
+                auto destRect = gmpi::cocoa::NSRectFromRect(*destinationRectangle);
+                
+#if USE_BACKING_BUFFER
+                auto sourceRect = gmpi::cocoa::NSRectFromRect(*sourceRectangle);
+                
+                // mirror source rectangle
+                sourceRect.origin.y = imageSize.height - (sourceRect.origin.y + sourceRect.size.height);
+                
+                // Create a flipped coordinate system
+                [[NSGraphicsContext currentContext] saveGraphicsState];
+                NSAffineTransform *transform = [NSAffineTransform transform];
+                [transform scaleXBy:1 yBy:-1];
+                [transform translateXBy:0 yBy:-2 * destRect.origin.y - destRect.size.height];
+
+                [transform concat];
+
+                // Draw in the flipped coordinate system
+#else
+                GmpiDrawing::Rect sourceRectangleFlipped(*sourceRectangle);
+                sourceRectangleFlipped.bottom = imageSize.height - sourceRectangle->top;
+                sourceRectangleFlipped.top = imageSize.height - sourceRectangle->bottom;
+                
+                auto sourceRect = gmpi::cocoa::NSRectFromRect(sourceRectangleFlipped);
+
+#endif
 				if (bitmap)
 				{
-                    GmpiDrawing_API::MP1_SIZE_U imageSize;
-                    bm->GetSize(&imageSize);
-                    
-                    GmpiDrawing::Rect sourceRectangleFlipped(*sourceRectangle);
-                    sourceRectangleFlipped.bottom = imageSize.height - sourceRectangle->top;
-                    sourceRectangleFlipped.top = imageSize.height - sourceRectangle->bottom;
-#ifdef _DEBUG
-                    // Cocoa clamps all pixels value to no greater than alpha, which prevents emissive images working.
-                    // https://stackoverflow.com/questions/48969223/core-image-filter-cisourceovercompositing-not-appearing-as-expected-with-alpha-o
-if(imageSize.height == 101 && imageSize.width == 101)
-{
-    // Investigate setting the *working color space* and or the output color space. kCIContextWorkingColorSpace
-    // or converting source to linear colorspace
-    //auto workingColorSpace = CGColorSpace(name: CGColorSpace.sRGB);
-     //           CGContextRef ctx = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+                    [bitmap drawInRect : destRect fromRect : sourceRect operation : NSCompositingOperationSourceOver fraction : opacity respectFlipped : TRUE hints : nil];
+                }
+                if(bm->additiveBitmap_)
+                {
+                #if 1
+                    [bm->additiveBitmap_ drawInRect : destRect fromRect : sourceRect operation : NSCompositingOperationPlusLighter fraction : opacity respectFlipped : TRUE hints : nil];
 
-    //CGContextRelease(ctx);
-    
-    static NSCompositingOperation op = NSCompositingOperationClear;
-                    // TODO for correct compositing, experiment with NSCompositingOperationPlusLighter (not)NSCompositingOperationDestinationOver /* R = S*(1 – Da) + D */
-                    // i.e. premultiplied
-    
-            [bitmap drawInRect : gmpi::cocoa::NSRectFromRect(*destinationRectangle) fromRect : gmpi::cocoa::NSRectFromRect(sourceRectangleFlipped) operation: NSCompositingOperationPlusLighter fraction: opacity respectFlipped: TRUE hints: nil];
-            
-            op = (NSCompositingOperation) (1 + (int) op);
-            if(op == NSCompositingOperationLuminosity)
-                op = NSCompositingOperationClear;
- }
- else
- #endif
- {
-                    [bitmap drawInRect : gmpi::cocoa::NSRectFromRect(*destinationRectangle) fromRect : gmpi::cocoa::NSRectFromRect(sourceRectangleFlipped) operation : NSCompositingOperationSourceOver fraction : opacity respectFlipped : TRUE hints : nil];
-                    }
-				}
+                #else // imagerep (don't work due to flip
+                    auto rect = gmpi::cocoa::NSRectFromRect(*destinationRectangle);
+                    
+                    // Create a flipped coordinate system (imagerep don't understand flipped)
+                    [[NSGraphicsContext currentContext] saveGraphicsState];
+                    NSAffineTransform *transform = [NSAffineTransform transform];
+                    [transform translateXBy:0 yBy:rect.size.height];
+                    [transform scaleXBy:1 yBy:-1];
+                    [transform concat];
+
+                    // Draw the image in the flipped coordinate system
+                    [bm->additiveBitmap_ drawInRect : rect fromRect : sourceRect operation : NSCompositingOperationPlusLighter fraction : opacity respectFlipped : TRUE hints : nil];
+                    
+                    // Restore the original graphics state
+                    [[NSGraphicsContext currentContext] restoreGraphicsState];
+                    #endif
+                }
+#if USE_BACKING_BUFFER
+                // Restore the original graphics state
+                [[NSGraphicsContext currentContext] restoreGraphicsState];
+#endif
 			}
 
 			void MP_STDCALL SetTransform(const GmpiDrawing_API::MP1_MATRIX_3X2* transform) override
 			{
-				// Remove the transformations by applying the inverse transform.
-				[currentTransform invert];
-				[currentTransform concat];
-/*
-				NSAffineTransformStruct
-					transformStruct = [currentTransform transformStruct];
-
-				transformStruct.m11 = transform->_11;
-				transformStruct.m12 = transform->_12;
-				transformStruct.m21 = transform->_21;
-				transformStruct.m22 = transform->_22;
-				transformStruct.tX = transform->_31;
-				transformStruct.tY = transform->_32;
+                // Remove the current transformations by applying the inverse transform.
+                try
+                {
+                    [currentTransform invert];
+                    [currentTransform concat];
+                }
+                catch(...)
+                {
+                    // some transforms are not reversible. e.g. scaling everything down to a point.
+                    // int test = 9;
+                };
                 
-                typedef struct {
-                    CGFloat m11, m12, m21, m22;
-                    CGFloat tX, tY;
-                } NSAffineTransformStruct;
-*/
                 NSAffineTransformStruct transformStruct {
                     transform->_11,
                     transform->_12,
@@ -2173,23 +2162,24 @@ if(imageSize.height == 101 && imageSize.width == 101)
 
 			void MP_STDCALL BeginDraw() override
 			{
-				//		context_->BeginDraw();
 			}
 
 			int32_t MP_STDCALL EndDraw() override
 			{
-				//		auto hr = context_->EndDraw();
-
-				//		return hr == S_OK ? (gmpi::MP_OK) : (gmpi::MP_FAIL);
 				return gmpi::MP_OK;
 			}
    
+            NSView* getNativeView()
+            {
+                return view_;
+            }
+/*
             int getQuartzYorigin()
             {
                 const auto frameSize = [view_ frame];
                 return frameSize.size.height;
             }
-/*
+
             int32_t MP_STDCALL CreateMesh(GmpiDrawing_API::IMpMesh** returnObject) override
             {
                 *returnObject = nullptr;
@@ -2207,6 +2197,34 @@ if(imageSize.height == 101 && imageSize.width == 101)
 			GMPI_REFCOUNT_NO_DELETE;
 		};
 
+        class GraphicsContext2 : public GraphicsContext, public GmpiDrawing_API::IMpDeviceContextExt
+        {
+        public:
+            GraphicsContext2(NSView* pview, gmpi::cocoa::DrawingFactory* pfactory) : GraphicsContext(pview, pfactory){}
+
+            int32_t MP_STDCALL CreateBitmapRenderTarget(GmpiDrawing_API::MP1_SIZE_L desiredSize, bool enableLockPixels, GmpiDrawing_API::IMpBitmapRenderTarget** returnObject) override;
+
+            int32_t MP_STDCALL queryInterface(const gmpi::MpGuid& iid, void** returnInterface) override
+            {
+                *returnInterface = 0;
+                if (iid == GmpiDrawing_API::SE_IID_DEVICECONTEXT_MPGUI || iid == MP_IID_UNKNOWN)
+                {
+                    *returnInterface = static_cast<GmpiDrawing_API::IMpDeviceContext*>(this);
+                    addRef();
+                    return gmpi::MP_OK;
+                }
+                if (iid == GmpiDrawing_API::IMpDeviceContextExt::guid)
+                {
+                    *returnInterface = static_cast<GmpiDrawing_API::IMpDeviceContextExt*>(this);
+                    addRef();
+                    return gmpi::MP_OK;
+                }
+                return MP_NOSUPPORT;
+            }
+
+            GMPI_REFCOUNT_NO_DELETE;
+        };
+        
 		// https://stackoverflow.com/questions/10627557/mac-os-x-drawing-into-an-offscreen-nsgraphicscontext-using-cgcontextref-c-funct
 		class bitmapRenderTarget : public GraphicsContext // emulated by carefull layout public GmpiDrawing_API::IMpBitmapRenderTarget
 		{
@@ -2224,10 +2242,19 @@ if(imageSize.height == 101 && imageSize.width == 101)
 
             void MP_STDCALL BeginDraw() override
             {
-                // To match Flipped View, Flip Bitmap Context too.
-                // (Alternative is [image setFlipped:TRUE] in contructor, but that method is deprected).
-                [image lockFocusFlipped:TRUE];
+#if USE_BACKING_BUFFER
+                [image lockFocus];
 
+                // draw upside down
+                NSAffineTransform* transform = [NSAffineTransform transform];
+                [transform scaleXBy:1 yBy:-1];
+                [transform translateXBy:0 yBy:-[image size].height];
+                [transform concat];
+#else
+                // To match Flipped View, Flip Bitmap Context too.
+                // (Alternative is [image setFlipped:TRUE] in constructor, but that method is deprected).
+                [image lockFocus Flipped:TRUE];
+#endif
                 GraphicsContext::BeginDraw();
             }
             
@@ -2278,7 +2305,11 @@ if(imageSize.height == 101 && imageSize.width == 101)
 
 			return b2->queryInterface(GmpiDrawing_API::SE_IID_BITMAP_RENDERTARGET_MPGUI, reinterpret_cast<void **>(bitmapRenderTarget));
 		}
-
+        int32_t GraphicsContext2::CreateBitmapRenderTarget(GmpiDrawing_API::MP1_SIZE_L desiredSize, bool enableLockPixels, GmpiDrawing_API::IMpBitmapRenderTarget** returnObject)
+        {
+            GmpiDrawing_API::MP1_SIZE sizef{ static_cast<float>(desiredSize.width), static_cast<float>(desiredSize.height) };
+            return CreateCompatibleRenderTarget(&sizef, returnObject);
+        }
     
         inline int32_t MP_STDCALL DrawingFactory::CreateTextFormat(const char* fontFamilyName, void* unused /* fontCollection */, GmpiDrawing_API::MP1_FONT_WEIGHT fontWeight, GmpiDrawing_API::MP1_FONT_STYLE fontStyle, GmpiDrawing_API::MP1_FONT_STRETCH fontStretch, float fontSize, void* unused2 /* localeName */, GmpiDrawing_API::IMpTextFormat** textFormat)
         {
@@ -2324,19 +2355,150 @@ if(imageSize.height == 101 && imageSize.width == 101)
 
         void BitmapBrush::FillPath(GraphicsContext* context, NSBezierPath* nsPath) const
         {
+            [NSGraphicsContext saveGraphicsState];
+
+            auto view = context->getNativeView();
+            
+#if USE_BACKING_BUFFER
+            // Adjust offset to be relative to the top (Windows) not bottom (mac)
+            CGFloat yOffset = view.bounds.size.height - const_cast<Bitmap&>(bitmap_).GetSizeF().height;
+#else
+            // convert to Core Grapics co-ords
+            CGFloat yOffset = NSMaxY([view convertRect:view.bounds toView:nil]);
+#endif
+            GmpiDrawing::Matrix3x2 moduleTransform;
+            context->GetTransform(&moduleTransform);
+            auto offset = GmpiDrawing::TransformPoint(moduleTransform, {0.0f, 0.0f});
+            // apply brushes transfer. we support only translation on mac
+            offset = GmpiDrawing::TransformPoint(brushProperties_.transform, offset);
+            
+            // also need to apply current drawing transform for modules not at [0,0]
+            
+            [[NSGraphicsContext currentContext] setPatternPhase:NSMakePoint(offset.x, yOffset - offset.y)];
             [[NSColor colorWithPatternImage:bitmap_.nativeBitmap_] set];
-            
-            // calc image offset considering that Quartz origin is at bottom of View
-            const auto correction = context->getQuartzYorigin() - const_cast<Bitmap&>(bitmap_).GetSizeF().height;
-            
-            // we handle only translation on mac
-            const auto offset = GmpiDrawing::TransformPoint(brushProperties_.transform, {});
-            
-            CGContextRef ctx = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-            CGContextSetPatternPhase(ctx, CGSize{offset.x, -offset.y + correction} );
-            
             [nsPath fill];
+            
+            [NSGraphicsContext restoreGraphicsState];
         }
 
+        inline bitmapPixels::bitmapPixels(Bitmap* sebitmap /*NSImage** inBitmap*/, bool _alphaPremultiplied, int32_t pflags) :
+                inBitmap_(&sebitmap->nativeBitmap_ /*inBitmap*/)
+                ,flags(pflags)
+                ,seBitmap(sebitmap)
+        {
+            NSSize s = [*inBitmap_ size];
+            bytesPerRow = s.width * 4;
+            
+            constexpr int bitsPerSample = 8;
+            constexpr int samplesPerPixel = 4;
+            constexpr int bitsPerPixel = bitsPerSample * samplesPerPixel;
+
+            auto initial_bitmap = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:nil
+                pixelsWide : s.width
+                pixelsHigh : s.height
+                bitsPerSample : bitsPerSample
+                samplesPerPixel : samplesPerPixel
+                hasAlpha : YES
+                isPlanar : NO
+                colorSpaceName: NSCalibratedRGBColorSpace
+                bitmapFormat : 0
+                bytesPerRow : bytesPerRow
+                bitsPerPixel : bitsPerPixel];
+                
+            bitmap2 = [initial_bitmap bitmapImageRepByRetaggingWithColorSpace:NSColorSpace.sRGBColorSpace];
+            [bitmap2 retain];
+
+            // Copy the image to the new imageRep (effectivly converts it to correct pixel format/brightness etc)
+            if (0 != (flags & GmpiDrawing_API::MP1_BITMAP_LOCK_READ))
+            {
+                NSGraphicsContext * context;
+                context = [NSGraphicsContext graphicsContextWithBitmapImageRep : bitmap2];
+                [NSGraphicsContext saveGraphicsState];
+                [NSGraphicsContext setCurrentContext : context];
+                [*inBitmap_ drawAtPoint: NSZeroPoint fromRect: NSZeroRect operation: NSCompositingOperationCopy fraction: 1.0];
+                
+                [NSGraphicsContext restoreGraphicsState];
+            }
+        }
+        
+   		inline bitmapPixels::~bitmapPixels()
+        {
+            if (0 != (flags & GmpiDrawing_API::MP1_BITMAP_LOCK_WRITE))
+            {
+                // scan for overbright pixels
+                bool hasOverbright = false;
+                {
+                    GmpiDrawing_API::MP1_SIZE_U imageSize{};
+                    seBitmap->GetSize(&imageSize);
+                    const int totalPixels = imageSize.height * getBytesPerRow() / sizeof(uint32_t);
+
+                    uint32_t* destPixels = (uint32_t*) getAddress();
+
+                    for (int i = 0; i < totalPixels; ++i)
+                    {
+                        uint8_t* p = (uint8_t*) destPixels;
+                        auto& alpha = p[3];
+                        if(alpha != 255 && *destPixels != 0) // skip solid or blank pixels.
+                        {
+                            if(p[0] > alpha || p[1] > alpha || p[2] > alpha)
+                            {
+                                hasOverbright = true;
+                                break;
+                            }
+                        }
+
+                        ++destPixels;
+                    }
+                }
+                
+                if(hasOverbright)
+                {
+                    // create and populate the additive bitmap
+                    NSSize s = [bitmap2 size];
+                    
+                    constexpr int bitsPerSample = 8;
+                    constexpr int samplesPerPixel = 4;
+                    constexpr int bitsPerPixel = bitsPerSample * samplesPerPixel;
+
+                    NSBitmapImageRep* initial_bitmap = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:nil
+                        pixelsWide : s.width
+                        pixelsHigh : s.height
+                        bitsPerSample : bitsPerSample
+                        samplesPerPixel : samplesPerPixel
+                        hasAlpha : YES
+                        isPlanar : NO
+                        colorSpaceName: NSCalibratedRGBColorSpace
+                        bitmapFormat : 0
+                        bytesPerRow : bytesPerRow
+                        bitsPerPixel : bitsPerPixel];
+                                                          
+                    auto source = (uint32_t*)([bitmap2 bitmapData]);
+                    auto dest = (uint32_t*)([initial_bitmap bitmapData]);
+                    
+                    const int totalPixels = s.height * bytesPerRow / sizeof(uint32_t);
+
+                    for (int i = 0; i < totalPixels; ++i)
+                    {
+                        // Retain Alpha of bitmap2, but black-out RGB. Copy RGB to additiveBitmap_ and set alpha to 255.
+                        *dest = 0xFF000000 | *source; //0x88008888;
+                        *source &= 0xFF000000;
+                        
+                        ++source;
+                        ++dest;
+                    }
+                    seBitmap->additiveBitmap_ = [initial_bitmap bitmapImageRepByRetaggingWithColorSpace:NSColorSpace.sRGBColorSpace];
+                    
+                    [seBitmap->additiveBitmap_ retain];
+                }
+                
+                // replace bitmap with a fresh one, and add pixels to it.
+                *inBitmap_ = [[NSImage alloc] init];
+                [*inBitmap_ addRepresentation:bitmap2];
+            }
+            else
+            {
+                [bitmap2 release];
+            }
+        }
 	} // namespace
 } // namespace

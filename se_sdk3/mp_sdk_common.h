@@ -122,8 +122,6 @@ namespace gmpi
 #if defined __BORLANDC__
 	#pragma -a8
 #elif defined(_WIN32) || defined(__FLAT__) || defined (CBUILDER)
-	// GCC 3 err #pragma pack(push)
-	// #pragma pack(8)
 	#pragma pack(push,8)
 #endif
 
@@ -343,7 +341,7 @@ public:
 
 enum MP_PinDirection{ MP_IN, MP_OUT };
 
-enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10, MP_STRING_UTF8=12 };
+enum MP_PinDatatype{ MP_ENUM=0, MP_STRING=1, MP_MIDI=2, MP_FLOAT64, MP_BOOL=4, MP_AUDIO=5, MP_FLOAT32=6, MP_INT32=8, MP_INT64=9, MP_BLOB=10, MP_STRING_UTF8=12, MP_BLOB2 };
 
 // SynthEdit imbedded file.
 class IProtectedFile
@@ -503,6 +501,17 @@ public:
 // {B486F4DE-9010-4AA0-9D0C-DCD9F8879257}
 static const MpGuid MP_IID_HOST_EMBEDDED_FILE_SUPPORT =
 { 0xb486f4de, 0x9010, 0x4aa0, { 0x9d, 0xc, 0xdc, 0xd9, 0xf8, 0x87, 0x92, 0x57 } };
+
+// SynthEdit-specific.
+class ISharedBlob : public IMpUnknown
+{
+public:
+	virtual int32_t MP_STDCALL read(uint8_t** returnData, int64_t* returnSize) = 0;
+
+	// {770D50E5-796D-4495-9C3E-6C21EBEA7F72}
+	inline static const MpGuid guid =
+	{ 0x770d50e5, 0x796d, 0x4495, { 0x9c, 0x3e, 0x6c, 0x21, 0xeb, 0xea, 0x7f, 0x72 } };
+};
 
 
 // GUI PLUGIN
@@ -1163,7 +1172,7 @@ private:
 	{
 		enum { result = gmpi::MP_BOOL };
 	};
-	template<int N> struct PinDataTypeTraits<float,N>
+	template<int N> struct PinDataTypeTraits<float, N>
 	{
 		enum { result = gmpi::MP_FLOAT32 };
 	};
@@ -1179,7 +1188,7 @@ private:
 	{
 		enum { result = gmpi::MP_STRING_UTF8 };
 	};
-	template<int N> struct PinDataTypeTraits<MpBlob,N>
+	template<int N> struct PinDataTypeTraits<MpBlob, N>
 	{
 		enum { result = gmpi::MP_BLOB };
 	};

@@ -51,6 +51,7 @@ namespace SynthEdit2
 			if(!resourcePtr)
 			{
 				resourcePtr = std::make_shared<T>(factory);
+				resourceStructs[factory.Get()] = resourcePtr;
 			}
 
 			return resourcePtr;
@@ -316,6 +317,7 @@ namespace SynthEdit2
 		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics> pluginGraphics;
 		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics2> pluginGraphics2;
 		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics3> pluginGraphics3;
+		gmpi_sdk::mp_shared_ptr<gmpi_gui_api::IMpGraphics4> pluginGraphics4; // includes pluginGraphics3
 
 		GmpiDrawing::Rect pluginGraphicsPos;
 
@@ -334,7 +336,7 @@ namespace SynthEdit2
 		// While connections are being made, note which pins already sent data.
 		std::vector<int> alreadySentDataPins_;
 
-		int32_t mouseCaptured;
+		bool mouseCaptured = false;
 
 		virtual bool isRackModule() = 0;
 
@@ -383,6 +385,8 @@ namespace SynthEdit2
 		GmpiDrawing::TextFormat tf_plugs_left;
 		GmpiDrawing::TextFormat tf_plugs_right;
 		GmpiDrawing::TextFormat tf_header;
+
+		std::unordered_map< std::string, gmpi_sdk::mp_shared_ptr<GmpiDrawing_API::IMpPathGeometry> > outlineCache;
 	};
 
 	class ModuleViewStruct : public ModuleView
@@ -462,12 +466,16 @@ namespace SynthEdit2
 		virtual void OnRender(GmpiDrawing::Graphics& g) override;
 		virtual int32_t measure(GmpiDrawing::Size availableSize, GmpiDrawing::Size* returnDesiredSize) override;
 		virtual int32_t arrange(GmpiDrawing::Rect finalRect) override;
+		GmpiDrawing::Rect GetClipRect() override;
+
 		bool EndCableDrag(GmpiDrawing_API::MP1_POINT point, ConnectorViewBase* dragline) override;
 
 		bool isVisable() override
 		{
 			return pluginGraphics.get() != nullptr;
 		}
+		bool hitTestR(int32_t flags, GmpiDrawing_API::MP1_RECT selectionRect) override;
+
 		bool isShown() override;
 		bool isDraggable(bool editEnabled) override;
 

@@ -7,7 +7,7 @@
 #define id_to_int(c1,c2,c3,c4) ((c1) + ((c2) << 8 ) + ((c3) << 16 ) + ((c4) << 24 ))
 
 enum EDirection : uint8_t {DR_IN, DR_OUT, DR_UNUSED, DR_PARAMETER, DR_FEATURE=DR_OUT,DR_CNTRL=DR_IN }; // plug direction
-enum EPlugDataType : int8_t { DT_ENUM, DT_TEXT, DT_MIDI2, DT_MIDI = DT_MIDI2, DT_DOUBLE, DT_BOOL, DT_FSAMPLE, DT_FLOAT, DT_VST_PARAM, DT_INT, DT_INT64, DT_BLOB, DT_CLASS, DT_STRING_UTF8, DT_NONE=-1 };  //plug datatype
+enum EPlugDataType : int8_t { DT_ENUM, DT_TEXT, DT_MIDI2, DT_MIDI = DT_MIDI2, DT_DOUBLE, DT_BOOL, DT_FSAMPLE, DT_FLOAT, DT_VST_PARAM, DT_INT, DT_INT64, DT_BLOB, DT_CLASS, DT_STRING_UTF8, DT_BLOB2, DT_NONE=-1 };  //plug datatype
 
 // Backward compatible verions
 typedef int EDirection_int;

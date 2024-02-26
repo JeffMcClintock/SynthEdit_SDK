@@ -158,11 +158,13 @@ public:
 	{
 		parent->populateContextMenu(contextMenu, moduleHandle, nodeIndex);
 
-//		if (container->isRackModule())
+#ifdef _DEBUG // for now
+		//		if (container->isRackModule())
 		{
 			contextMenu->currentCallback = [=](int32_t idx, GmpiDrawing_API::MP1_POINT point) { return onContextMenu(idx, point); };
 			contextMenu->AddItem("Remove Rack Module", 0);
 		}
+#endif
 	}
 
 	int32_t onContextMenu(int32_t idx, GmpiDrawing::Point point)

@@ -93,7 +93,7 @@ protected:
 	SubProcess_ptr2 actualSubProcess;
 
 	int32_t stabilityCheckCounter = 0;
-	float static_output;
+	float static_output = {};
 
 	static const int historyCount = 32;
 	int historyIdx = 0;
@@ -138,7 +138,6 @@ public:
 	{
 		if (historyIdx <= 0)
 		{
-			static_output = getBuffer(getOutputPin())[0];
 			setSubProcess(actualSubProcess); // safely measure to prevent accidental recursion.
 			OnFilterSettled();
 			return (this->*(getSubProcess()))(sampleFrames); // call subProcessStatic().
@@ -146,8 +145,12 @@ public:
 
 		(this->*(actualSubProcess))(sampleFrames);
 
+		// retain the last output value
+		static_output = *(getBuffer(getOutputPin()) + sampleFrames - 1);
+
 		int todo = (std::min) (historyIdx, sampleFrames);
 		auto o = getBuffer(getOutputPin()) + sampleFrames - todo;
+
 		for (int i = 0; i < todo; ++i)
 		{
 			const float INSIGNIFICANT_SAMPLE = 0.000001f;
@@ -156,7 +159,6 @@ public:
 			{
 				// filter still not settled.
 				historyIdx = historyCount;
-				static_output = *o;
 			}
 			--historyIdx;
 			++o;
@@ -167,6 +169,8 @@ public:
 	void subProcessStatic(int sampleFrames)
 	{
 		auto output = getBuffer(getOutputPin());
+
+		assert(fabs(static_output) < 2000.0f); // sanity check
 
 		for (int s = sampleFrames; s > 0; s--)
 		{
@@ -185,7 +189,6 @@ public:
 			}
 
 			historyIdx = historyCount;
-			static_output = -10000; // unlikely value to trigger countdown.
 		}
 	}
 };

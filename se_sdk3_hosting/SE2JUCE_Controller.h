@@ -17,6 +17,8 @@ class MpParameterJuce : public MpParameter_native
 	std::atomic<bool> dirty;
 	class SeJuceController* juceController = {};
 	bool isInverted_ = false;
+	int hostTag = -1;	// index, sequential.
+	bool dawGrabbed = false; // the grabbed state we last sent to the DAW (logical OR of all grabbers)
 
 	float adjust(float normalised) const
 	{
@@ -26,6 +28,8 @@ class MpParameterJuce : public MpParameter_native
 public:
 
 	MpParameterJuce(class SeJuceController* controller, int ParameterIndex, bool isInverted);
+
+	int getNativeTag() override { return hostTag; }
 
 	void setNormalizedUnsafe(float daw_normalized);
 
@@ -44,6 +48,16 @@ public:
 
 	void updateProcessor(gmpi::FieldType fieldId, int32_t voice) override;
 
+	void onGrabbedChanged() override
+	{
+		if (isGrabbed() != dawGrabbed)
+		{
+			dawGrabbed = isGrabbed();
+
+			controller_->ParamGrabbed(this);
+		}
+	}
+
 	// not required for JUCE.
 	void upDateImmediateValue() override{}
 };
@@ -52,7 +66,7 @@ public:
 class SeJuceController : public MpController, public IHasDirty, private juce::Timer, public IProcessorMessageQues
 {
 	std::atomic<bool> juceParameters_dirty;
-	std::map<int, MpParameterJuce* > tagToParameter;			// DAW parameter Index to parameter
+	std::vector<MpParameterJuce* > tagToParameter;			// DAW parameter Index to parameter
 	class SE2JUCE_Processor* processor = {};
     interThreadQue queueToDsp_;
 
@@ -80,11 +94,6 @@ public:
 		return tagToParameter;
 	}
 
-	void ParamGrabbed(MpParameter_native* param, int32_t voice = 0) override
-	{}
-	
-//	void legacySendProgramChangeToHost(float normalised) override;
-
 	std::string loadNativePreset(std::wstring sourceFilename) override
 	{
 		return {};
@@ -93,7 +102,7 @@ public:
 	{}
 	std::wstring getNativePresetExtension() override
 	{
-		return {};
+		return L"xmlpreset";
 	}
 	std::vector< MpController::presetInfo > scanFactoryPresets() override;
 	void loadFactoryPreset(int index, bool fromDaw) override;
@@ -111,9 +120,9 @@ public:
 		{
 			juceParameters_dirty.store(false, std::memory_order_release);
 
-			for (auto& p : tagToParameter)
+			for (auto p : tagToParameter)
 			{
-				p.second->updateFromImmediate();
+				p->updateFromImmediate();
 			}
 		}
 
@@ -123,10 +132,9 @@ public:
 
 	MpParameterJuce* getDawParameter(int nativeTag)
 	{
-		auto it = tagToParameter.find(nativeTag);
-		if (it != tagToParameter.end())
+		if(nativeTag >= 0 && nativeTag < tagToParameter.size())
 		{
-			return (*it).second;
+			return tagToParameter[nativeTag];
 		}
 
 		return {};
@@ -140,19 +148,18 @@ public:
 		}
 	}
 
-	void ParamToProcessorAndHost(MpParameterJuce* param, gmpi::FieldType fieldId, int32_t voice);
+	void ParamGrabbed(MpParameter_native* param) override;
+	void ParamToProcessorAndHost(MpParameterJuce* param);
 
-	MpParameter_native* makeNativeParameter(int ParameterIndex, bool isInverted = false) override
+	MpParameter_native* makeNativeParameter(int, bool isInverted = false) override
 	{
-		auto param = new MpParameterJuce(this, ParameterIndex, isInverted);
-
-		tagToParameter.insert(std::make_pair(ParameterIndex, param));
-//vst3Parameters.push_back(param); // not used by JUCE? move to VST3 controller
-
-		return param;
+		// JUCE uses a strict sequential parameter index, not the more relaxed tags of VST3 etc
+		const auto sequentialIndex = static_cast<int>(tagToParameter.size());
+		tagToParameter.push_back(new MpParameterJuce(this, sequentialIndex, isInverted));
+		return tagToParameter.back();
 	}
 
-	void OnInitialPresetRecieved();
+//	void OnInitialPresetRecieved();
 
 	void initGuiParameters();
 

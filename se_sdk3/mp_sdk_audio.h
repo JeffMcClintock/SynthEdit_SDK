@@ -311,7 +311,7 @@ public:
 		switch(e->eventType)
 		{
 			case gmpi::EVENT_PIN_SET:
-				if(e->extraData != 0)
+				if(e->extraData)
 				{
 					setValueRaw(e->parm2, e->extraData);
 				}
@@ -484,7 +484,8 @@ typedef MpControlPin<MpBlob, gmpi::MP_OUT>		BlobOutPin;
 typedef MpControlPin<bool, gmpi::MP_IN>			BoolInPin;
 typedef MpControlPin<bool, gmpi::MP_OUT>		BoolOutPin;
 
-// enum (List) pin based on Int Pin
+// enum (List) pin based on Int Pin.
+// WARNING: The pins value is not guaranteed to be in-range. Please clamp to range before use.
 typedef MpControlPin<int, gmpi::MP_IN, gmpi::MP_ENUM>	EnumInPin;
 typedef MpControlPin<int, gmpi::MP_OUT, gmpi::MP_ENUM>	EnumOutPin;
 
@@ -503,6 +504,108 @@ public:
 	const char* operator=(const char* valueUtf8);
 	const wchar_t* operator=(const wchar_t* valueUtf16);
 };
+
+// BLOB2 - Binary datatype. except memory is shared and ref counted
+class Blob2PinBase : public MpPinBase
+{
+protected:
+	gmpi::ISharedBlob* value_ = nullptr;
+
+public:
+	// overrides for audio pins_
+	void setBuffer(float*) override {}
+	void preProcessEvent(const gmpi::MpEvent*) override {}
+	void processEvent(const gmpi::MpEvent*) override {}
+	void postProcessEvent(const gmpi::MpEvent*) override {}
+
+	int getDatatype() const override { return gmpi::MP_BLOB2; }
+	MpBaseMemberPtr getDefaultEventHandler() override { return {}; }
+	void sendFirstUpdate() override {}
+
+	gmpi::ISharedBlob* getValue()
+	{
+		return value_;// value_.get();
+	}
+};
+
+class Blob2InPin : public Blob2PinBase
+{
+	friend class Blob2OutPin;
+
+	bool freshValue_{};
+
+public:
+	int getDirection() const override { return gmpi::MP_IN; }
+	void preProcessEvent(const gmpi::MpEvent* e) override
+	{
+		switch (e->eventType)
+		{
+		case gmpi::EVENT_PIN_SET:
+		{
+			// release previous value.
+			if (value_)
+			{
+				value_->release();
+			}
+
+			if (e->extraData)
+			{
+				value_ = *reinterpret_cast<gmpi::ISharedBlob**>(e->extraData);
+			}
+			else
+			{
+				// 8 byte pointer stored in parm3/parm4.
+				value_ = *reinterpret_cast<gmpi::ISharedBlob**>(const_cast<int32_t*>(&(e->parm3)));
+			}
+
+			freshValue_ = true;
+		}
+		break;
+		};
+	}
+	void postProcessEvent(const gmpi::MpEvent* e) override
+	{
+		switch (e->eventType)
+		{
+		case gmpi::EVENT_PIN_SET:
+			freshValue_ = false;
+			break;
+		};
+	}
+	bool isUpdated() const
+	{
+		return freshValue_;
+	}
+};
+
+class Blob2OutPin : public Blob2PinBase
+{
+public:
+	int getDirection() const override { return gmpi::MP_OUT; }
+
+	const Blob2InPin& operator=(Blob2InPin& pin)
+	{
+//		if (value_/*.get()*/ != pin.value_/*.get()*/) // avoid unnesc updates (would need to compare bytes)
+		{
+			value_ = pin.value_;
+
+			// send out only the pointer, not the data.
+			sendPinUpdate(sizeof(value_), &value_, -1);
+		}
+		return pin;
+	}
+
+	const gmpi::ISharedBlob* operator=(gmpi::ISharedBlob* value)
+	{
+		value_ = value;
+
+		// send out only the pointer, not the data.
+		sendPinUpdate(sizeof(value_), &value_, -1);
+
+		return value;
+	}
+};
+
 
 class MidiInPin : public MpPinBase
 {
@@ -656,6 +759,7 @@ public:
 		return host.getSampleRate();
 	}
 	void resetSleepCounter();
+	void wakeSubProcessAtLeastOnce();
 	void nudgeSleepCounter()
 	{
 		sleepCount_ = (std::max)(sleepCount_, 1);
@@ -686,7 +790,9 @@ public:
 // This helper class lets you set the block-position manually in able to use shorthand pin setting syntax. e.g. pinOut = 3;
 class TempBlockPositionSetter
 {
+#if defined(_DEBUG)
 	bool saveBlockPosExact_;
+#endif
 	int saveBlockPosition_;
 	MpPluginBase* module_;
 
@@ -733,6 +839,7 @@ public:
 	}
 	void setSleep(bool isOkToSleep);
 	void OnPinStreamingChange( bool isStreaming );
+	void wakeSubProcessAtLeastOnce();
 
 protected:
 	// the default routine, if none set by module.

@@ -16,7 +16,6 @@ namespace gmpi_dynamic_linking
 #if defined(_WIN32)
 	typedef HINSTANCE MP_DllHandle;
 #else
-//	typedef CFBundleRef MP_DllHandle;
 	typedef void* MP_DllHandle;
 #endif
 
@@ -74,7 +73,7 @@ namespace gmpi_dynamic_linking
 		MP_GetDllHandle(&hmodule);
 
 		wchar_t full_path[MAX_PATH] = L"";
-		GetModuleFileNameW((HMODULE)hmodule, full_path, sizeof(full_path));
+		GetModuleFileNameW((HMODULE)hmodule, full_path, std::size(full_path));
 		return std::wstring(full_path);
 	}
     

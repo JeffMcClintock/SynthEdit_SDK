@@ -850,9 +850,9 @@ namespace GmpiDrawing
 			_32 = a[2][1];
 			// a[2][2] = 1.0f;
 #else
-			double det =  _11 * (_22 * 1.0f - 0.0f * _32);
-				  det -=  _12 * (_21 * 1.0f - 0.0f * _31);
-				  det += 0.0f * (_21 *  _32 -  _22 * _31);
+			double det =  _11 * (_22 /** 1.0f - 0.0 * _32*/);
+				  det -=  _12 * (_21 /** 1.0f - 0.0 * _31*/);
+				  // det += 0.0 * (_21 *  _32 -  _22 * _31);
 
 			float s = 1.0f / (float) det;
 
@@ -1248,6 +1248,15 @@ namespace GmpiDrawing
 		}
 	};
 
+	inline constexpr uint32_t rgBytesToPixel(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xff)
+	{
+#ifdef _WIN32
+		return (a << 24) | (r << 16) | (g << 8) | b; // ARGB
+#else
+		return (a << 24) | (b << 16) | (g << 8) | r; // ABGR
+#endif
+	}
+
 	inline Color interpolateColor(Color a, Color b, float fraction)
 	{
 		return Color(
@@ -1544,7 +1553,7 @@ namespace GmpiDrawing
 	class RoundedRect : public GmpiDrawing_API::MP1_ROUNDED_RECT
 	{
 	public:
-		inline RoundedRect(GmpiDrawing_API::MP1_ROUNDED_RECT native) :
+		inline RoundedRect(GmpiDrawing_API::MP1_ROUNDED_RECT native = {}) :
 			GmpiDrawing_API::MP1_ROUNDED_RECT(native)
 		{
 		}
@@ -2382,6 +2391,13 @@ namespace GmpiDrawing
 			return temp;
 		}
 
+		inline BitmapBrush CreateBitmapBrush(Bitmap& bitmap, BitmapBrushProperties& bitmapBrushProperties, BrushProperties& brushProperties)
+		{
+			BitmapBrush temp;
+			Get()->CreateBitmapBrush(bitmap.Get(), &bitmapBrushProperties, &brushProperties, temp.GetAddressOf());
+			return temp;
+		}
+
 		inline SolidColorBrush CreateSolidColorBrush(Color color /*, BrushProperties& brushProperties*/)
 		{
 			SolidColorBrush temp;
@@ -2586,9 +2602,9 @@ namespace GmpiDrawing
 			Get()->FillRectangle(&rect, brush.Get());
 		}
 
-		inline void FillRectangle(float top, float left, float right, float bottom, Brush& brush) // TODO!!! using references hinders the caller creating the brush in the function call.
+		inline void FillRectangle(float left, float top, float right, float bottom, Brush& brush) // TODO!!! using references hinders the caller creating the brush in the function call.
 		{
-			Rect rect(top, left, right, bottom);
+			Rect rect(left, top, right, bottom);
 			Get()->FillRectangle(&rect, brush.Get());
 		}
 		inline void DrawRoundedRectangle(RoundedRect roundedRect, Brush brush, float strokeWidth, StrokeStyle& strokeStyle)
@@ -2754,11 +2770,17 @@ namespace GmpiDrawing
 		{
 			Get()->DrawTextU(utf8String.c_str(), static_cast<int32_t>(utf8String.size()), textFormat.Get(), &rect, brush.Get(), flags);
 		}
-		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags = 0)
+		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, Rect rect, Brush brush, int32_t flags)
 		{
 			static std::wstring_convert<std::codecvt_utf8<wchar_t>> stringConverter;
 			const auto utf8String = stringConverter.to_bytes(wString);
 			this->DrawTextU(utf8String, textFormat, rect, brush, flags);
+		}
+		inline void DrawTextW(std::wstring wString, TextFormat_readonly textFormat, Rect rect, Brush brush, DrawTextOptions options = DrawTextOptions::None)
+		{
+			static std::wstring_convert<std::codecvt_utf8<wchar_t>> stringConverter;
+			const auto utf8String = stringConverter.to_bytes(wString);
+			this->DrawTextU(utf8String, textFormat, rect, brush, (GmpiDrawing_API::MP1_DRAW_TEXT_OPTIONS) options);
 		}
 		// don't care about rect, only position. DEPRECATED, works only when text is left-aligned.
 		inline void DrawTextU(std::string utf8String, TextFormat_readonly textFormat, float x, float y, Brush brush, DrawTextOptions options = DrawTextOptions::None)
@@ -2887,7 +2909,6 @@ namespace GmpiDrawing
 			sink.Close();
 			DrawGeometry(geometry, brush, strokeWidth);
 		}
-
 	};
 /*
 	class TessellationSink : public GmpiSdk::Internal::Object

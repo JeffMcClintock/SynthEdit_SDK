@@ -73,7 +73,7 @@ void MpController::ScanPresets()
 		auto nativePresetsCount = presets.size();
 
 		// Harvest factory preset names.
-		auto factoryPresetFolder = ToPlatformString(BundleInfo::instance()->getImbeddedFileFolder());
+		auto factoryPresetFolder = ToPlatformString(BundleInfo::instance()->getImbedded FileFolder());
 		string filenameUtf8 = ToUtf8String(factoryPresetFolder) + "factory.xmlpreset";
 
 		TiXmlDocument doc;
@@ -391,14 +391,23 @@ void MpController::Initialize()
 		}
 	}
 
+	// crashes in JUCE VST3 plugin helper: EXEC : error : FindFirstChangeNotification function failed. [D:\a\1\s\build\Optimus\Optimus_VST3.vcxproj]
+#if (GMPI_IS_PLATFORM_JUCE==0)
+	{
+		auto presetFolderPath = toPlatformString(BundleInfo::instance()->getPresetFolder());
+		if (!presetFolderPath.empty())
+		{
 	fileWatcher.Start(
-		toPlatformString(BundleInfo::instance()->getPresetFolder()),
+				presetFolderPath,
 		[this]()
 			{
 				// note: called from background thread.
 				presetsFolderChanged = true;
 			}
 	);
+		}
+	}
+#endif
     
 	undoManager.initial(this);
 
@@ -570,7 +579,10 @@ std::vector< MpController::presetInfo > MpController::scanPresetFolder(platform_
                 xml = loadNativePreset(ToWstring(sourceFilename));
 			}
 
-			returnValues.push_back(parsePreset(ToWstring(sourceFilename), xml));
+			if (!xml.empty())
+			{
+				returnValues.push_back(parsePreset(ToWstring(sourceFilename), xml));
+			}
 		}
 	}
 
@@ -1023,10 +1035,9 @@ void MpController::HostControlToDsp(MpParameter* param, int32_t voice)
 }
 #endif
 
-void MpController::SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param)
+void MpController::SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param, int32_t voice)
 {
 	//---send a binary message
-	const int32_t voice = 0;
 	bool isVariableSize = param->datatype_ == DT_TEXT || param->datatype_ == DT_BLOB;
 
 	auto raw = param->getValueRaw(gmpi::MP_FT_VALUE, voice);
@@ -1066,7 +1077,7 @@ void MpController::ParamToDsp(MpParameter* param, int32_t voice)
 	assert(dynamic_cast<SeParameter_vst3_hostControl*>(param) == nullptr); // These have (not) "unique" handles that may map to totally random DSP parameters.
 
 	my_msg_que_output_stream s(getQueueToDsp(), param->parameterHandle_, "ppc\0"); // "ppc"
-	SerialiseParameterValueToDsp(s, param);
+	SerialiseParameterValueToDsp(s, param, voice);
 }
 
 void MpController::UpdateProgramCategoriesHc(MpParameter* param)
@@ -1285,6 +1296,15 @@ bool MpController::onQueMessageReady(int recievingHandle, int recievingMessageId
 			OnLatencyChanged();
 		}
 		break;
+
+#if defined(_DEBUG) && defined(_WIN32)
+		default:
+		{
+			const char* msgstr = (const char*)&recievingMessageId;
+			_RPT1(_CRT_WARN, "MpController::onQueMessageReady() Unhandled message id %c%c%c%c\n", msgstr[3], msgstr[2], msgstr[1], msgstr[0] );
+		}
+		break;
+#endif
 		}
 	}
 	return false;
@@ -1340,7 +1360,8 @@ int32_t MpController::resolveFilename(const wchar_t* shortFilename, int32_t maxC
     
 	if (!has_root_path && !isUrl)
 	{
-		auto default_path = BundleInfo::instance()->getImbeddedFileFolder();
+//		auto default_path = BundleInfo::instance()->getImbedded FileFolder();
+		const auto default_path = BundleInfo::instance()->getResourceFolder();
 
 		l_filename = combine_path_and_file(default_path, l_filename);
 	}
@@ -2000,6 +2021,9 @@ void MpController::SavePreset(int32_t presetIndex)
 void MpController::SavePresetAs(const std::string& presetName)
 {
 	const auto presetFolderW = BundleInfo::instance()->getPresetFolder();
+
+	assert(!presetFolderW.empty()); // you need to call BundleInfo::initPresetFolder(manufacturer, product) when initializing this plugin.
+
 	CreateFolderRecursive(presetFolderW);
 
 	const auto presetFolder = WStringToUtf8(presetFolderW);

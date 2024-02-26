@@ -14,16 +14,6 @@ using namespace GmpiMidiHdProtocol;
 
 */
 
-#if 0 // needed? screws up subclasses
-#if defined(__GNUC__)
-#pragma pack(push,1)
-#else
-#pragma pack(push)
-#pragma pack(1)
-#endif
-
-#endif
-
 namespace gmpi
 {
 	namespace midi
@@ -87,6 +77,39 @@ namespace gmpi
 				// trickyness is: we discard lowest 8 bits to avoid overflow to negative.
 				constexpr float f = 1.0f / (static_cast<float>(1 << 24) - 1);
 				return f * float((m[0] << 16) | (m[1] << 8) | m[2]);
+			}
+
+			// upscale a lower resolution value to a higher on.
+			// always scale the value to the full range
+			inline uint32_t scaleUp(uint32_t srcVal, int srcBits, int dstBits) {
+				// simple bit shift
+				int scaleBits = (dstBits - srcBits);
+				uint32_t bitShiftedValue = srcVal << scaleBits;
+				unsigned int srcCenter = 2 ^ (srcBits - 1);
+				if (srcVal <= srcCenter) {
+					return bitShiftedValue;
+				}
+				// expanded bit repeat scheme
+				int repeatBits = srcBits - 1;
+				int repeatMask = (2 ^ repeatBits) - 1;
+				int repeatValue = srcVal & repeatMask;
+				if (scaleBits > repeatBits) {
+					repeatValue <<= scaleBits - repeatBits;
+				}
+				else {
+					repeatValue >>= repeatBits - scaleBits;
+				}
+				while (repeatValue != 0) {
+					bitShiftedValue |= repeatValue;
+					repeatValue >>= repeatBits;
+				}
+				return bitShiftedValue;
+			}
+
+			inline uint32_t scaleDown(uint32_t srcVal, int srcBits, int dstBits) {
+				// simple bit shift
+				const int scaleBits = (srcBits - dstBits);
+				return srcVal >> scaleBits;
 			}
 		}
 
@@ -284,6 +307,8 @@ namespace GmpiMidi
 		CC_AllSoundOff = 120,
 		CC_ResetAllControllers = 121,
 		CC_AllNotesOff = 123,
+		CC_MonoOn = 126,
+		CC_PolyOn = 127,
 	};
 }
 
@@ -304,13 +329,13 @@ namespace gmpi
 
 		enum MessageType //: unsigned char
 		{
-			Utility = 0x0, // 32 bits Utility Messages 
-			System = 0x1, // 32 bits System Real Time and System Common Messages (except System Exclusive)
-			ChannelVoice32 = 0x2, // 32 bits MIDI 1.0 Channel Voice Messages
-			Data64 = 0x3, // 64 bits Data Messages (including System Exclusive)
-			ChannelVoice64 = 0x4, // 64 bits MIDI 2.0 Channel Voice Messages
-			Data128 = 0x5, // 128 bits Data Messages
-			Reserved = 0x6, // 32 bits Reserved for future definition by MMA/AME
+			Utility        = 0x0, //  32 bits Utility Messages 
+			System         = 0x1, //  32 bits System Real Time and System Common Messages (except System Exclusive)
+			ChannelVoice32 = 0x2, //  32 bits MIDI 1.0 Channel Voice Messages
+			Data64         = 0x3, //  64 bits Data Messages (including System Exclusive)
+			ChannelVoice64 = 0x4, //  64 bits MIDI 2.0 Channel Voice Messages
+			Data128        = 0x5, // 128 bits Data Messages
+			Reserved       = 0x6, //  32 bits Reserved for future definition by MMA/AME
 		};
 
 		enum Status //: unsigned char
@@ -399,10 +424,66 @@ namespace gmpi
 			hdr.messageType = static_cast<uint8_t>(msg[0] >> 4);
 			hdr.group = static_cast<uint8_t>(msg[0] & 0x0f);
 
-			if (msg.size() > 1)
+			size_t expectedSize = 0;
+
+			switch (hdr.messageType)
+			{
+			case 0: //  32 bits Utility Messages 
+			case 1: //  32 bits System Real Time and System Common Messages (except System Exclusive)
+			case 2: //  32 bits MIDI 1.0 Channel Voice Messages
+				expectedSize = 4;
+				break;
+
+			case 3: //  64 bits Data Messages (including System Exclusive)
+			case 4: //  64 bits MIDI 2.0 Channel Voice Messages
+				expectedSize = 8;
+				break;
+
+			case 5: // 128 bits Data Messages
+				expectedSize = 16;
+				break;
+
+			case 6:
+			case 7:
+				expectedSize = 4; //  32 bits Reserved for future definition by MMA/AME
+				break;
+
+			case 8:
+			case 9:
+			case 0xA:
+				expectedSize = 8; //  64 bits Reserved for future definition by MMA/AME
+				break;
+
+			case 0xB:
+			case 0xC:
+				expectedSize = 12; //  64 bits Reserved for future definition by MMA/AME
+				break;
+
+			case 0xD:
+			case 0xE:
+			case 0xF:
+				expectedSize = 16; //  128 bits Reserved for future definition by MMA/AME
+				break;
+
+			default:
+				break;
+			}
+
+			const bool valid = expectedSize == msg.size();
+			if(!valid)
+			{
+				hdr.messageType = 0xff; // not recognized
+				return hdr;
+			}
+
+			if (ChannelVoice64 == hdr.messageType)
 			{
 				hdr.channel = static_cast<uint8_t>(msg[1] & 0x0f);
 				hdr.status = static_cast<uint8_t>(msg[1] >> 4);
+			}
+			else
+			{
+				hdr.messageType = 0xff; // not handled
 			}
 
 			return hdr;
@@ -629,13 +710,13 @@ namespace gmpi
 			};
 		}
 
-		inline rawMessage64 makeNotePitchMessage(uint8_t noteNumber, float value, uint8_t channel = 0, uint8_t channelGroup = 0)
+		inline rawMessage64 makeNotePitchMessage(uint8_t noteNumber, float semitone, uint8_t channel = 0, uint8_t channelGroup = 0)
 		{
 			// 7 bits: Pitch in semitones, based on default Note Number equal temperament scale.
 			// 25 bits: Fractional Pitch above Note Number (i.e., fraction of one semitone).
 			constexpr float semitoneToNormalized = static_cast<float>(1 << 24);
 
-			const int32_t rawValue = static_cast<uint32_t>(value * semitoneToNormalized);
+			const int32_t rawValue = static_cast<uint32_t>(semitone * semitoneToNormalized);
 			return rawMessage64
 			{
 				static_cast<uint8_t>((gmpi::midi_2_0::ChannelVoice64 << 4) | (channelGroup & 0x0f)),
@@ -857,7 +938,7 @@ namespace gmpi
 			unsigned short incoming_nrpn[16] = {};
 			unsigned short incoming_rpn_value = {};
 			// RPNs are 14 bit values, so this value never occurs, represents "no rpn"
-			static const unsigned short NULL_RPN = 0xffff;
+			inline static const unsigned short NULL_RPN = 0xffff;
 			void cntrl_update_msb(unsigned short& var, short hb) const
 			{
 				var = (var & 0x7f) + (hb << 7);	// mask off high bits and replace
@@ -870,7 +951,10 @@ namespace gmpi
 		public:
 			MidiConverter2(std::function<void(const midi::message_view, int)> psink) :
 				sink(psink)
-			{}
+			{
+				std::fill(std::begin(incoming_rpn), std::end(incoming_rpn), NULL_RPN);
+				std::fill(std::begin(incoming_nrpn), std::end(incoming_nrpn), NULL_RPN);
+			}
 
 			void processMidi(const midi::message_view msg, int timestamp)
 			{
@@ -943,7 +1027,8 @@ namespace gmpi
 
 					const auto msgout = gmpi::midi_2_0::makePolyPressure(
 						controller.controllerNumber, // actually key-number
-						controller.value
+						controller.value,
+						header.channel
 					);
 
 					sink({ msgout.m }, timestamp);
@@ -984,7 +1069,7 @@ namespace gmpi
 						{
 							const auto msgout = gmpi::midi_2_0::makeRpnRaw(
 								incoming_rpn[header.channel],
-								static_cast<uint32_t>(incoming_rpn_value) << 18, // 14 bit value shifted as far as possible int 32-bit value.
+								gmpi::midi::utils::scaleUp(incoming_rpn_value, 14, 32), // 14 bit value converted to 32-bit value.
 								header.channel
 							);
 							sink({ msgout.m }, timestamp);
@@ -993,7 +1078,7 @@ namespace gmpi
 						{
 							const auto msgout = gmpi::midi_2_0::makeNrpnRaw(
 								incoming_rpn[header.channel],
-								static_cast<uint32_t>(incoming_rpn_value) << 18,
+								gmpi::midi::utils::scaleUp(incoming_rpn_value, 14, 32), // 14 bit value converted to 32-bit value.
 								header.channel
 							);
 							sink({ msgout.m }, timestamp);
@@ -1005,27 +1090,39 @@ namespace gmpi
 					{
 						cntrl_update_lsb(incoming_rpn_value, static_cast<short>(msg[2]));
 
-						const auto msgout = gmpi::midi_2_0::makeRpnRaw(
-							incoming_rpn[header.channel],
-							static_cast<uint32_t>(incoming_rpn_value) << 16,
+						if (incoming_rpn[header.channel] != NULL_RPN)
+						{
+							const auto msgout = gmpi::midi_2_0::makeRpnRaw(
+								incoming_rpn[header.channel],
+								gmpi::midi::utils::scaleUp(incoming_rpn_value, 14, 32), // 14 bit value converted to 32-bit value.
+								header.channel
+							);
+
+							sink({ msgout.m }, timestamp);
+						}
+						else
+						{
+							const auto msgout = gmpi::midi_2_0::makeNrpnRaw(
+								incoming_rpn[header.channel],
+								gmpi::midi::utils::scaleUp(incoming_rpn_value, 14, 32), // 14 bit value converted to 32-bit value.
+								header.channel
+							);
+							sink({ msgout.m }, timestamp);
+						}
+						}
+					break;
+
+					default:
+					{
+						const auto msgout = gmpi::midi_2_0::makeController(
+							controller.controllerNumber,
+							controller.value,
 							header.channel
 						);
 
 						sink({ msgout.m }, timestamp);
 					}
 					break;
-
-					default:
-					{
-					const auto msgout = gmpi::midi_2_0::makeController(
-						controller.controllerNumber,
-						controller.value,
-						header.channel
-					);
-
-							sink({ msgout.m }, timestamp);
-						}
-				break;
 					}
 
 				}
@@ -1102,9 +1199,13 @@ namespace gmpi
 			int lowerZoneMasterChannel = 0;
 			int upperZoneMasterChannel = -1;
 
+			// for not specifically MPE stuff, just use a normal MIDI 1.0 -> 2.0 converter
+			MidiConverter2 midiConverter2;
+
 		public:
 			MpeConverter(std::function<void(const midi::message_view, int)> psink) :
-				sink(psink)
+				sink(psink),
+				midiConverter2([this](const midi::message_view msg, int timestamp) { sink(msg, timestamp);})
 			{
 				std::fill(std::begin(channelBender), std::end(channelBender), 0.5f);
 				std::fill(std::begin(channelBrightness), std::end(channelBrightness), 0.0f);
@@ -1122,9 +1223,10 @@ namespace gmpi
 				const auto header = midi_1_0::decodeHeader(msg);
 
 				// 'Master' MIDI Channels are reserved for conveying messages that apply to the entire Zone.
+				// Just convert to MIDI 2.0 and pass them though unchanged.
 				if (header.channel == lowerZoneMasterChannel || header.channel == upperZoneMasterChannel)
 				{
-// ?? need more info					pinMIDIOut.send(midiMessage, size);
+					midiConverter2.processMidi(msg, timestamp);
 					return;
 				}
 
@@ -1224,7 +1326,7 @@ namespace gmpi
 							note.velocity
 						);
 
-						//pinMIDIOut.send((const unsigned char*)&out, sizeof(out));
+						//pinMIDIOut.send(out.begin(), out.size());
 						sink({ msgout.m }, timestamp);
 					}
 				}
@@ -1270,7 +1372,7 @@ namespace gmpi
 								info.MidiKeyNumber,
 								channelPressure[header.channel]
 							);
-							//pinMIDIOut.send((const unsigned char*)&out, sizeof(out));
+							//pinMIDIOut.send(out.begin(), out.size());
 							sink({ msgout.m }, timestamp);
 						}
 					}
@@ -1348,6 +1450,9 @@ namespace gmpi
 
 				const auto header = midi_2_0::decodeHeader(msg);
 
+				if (header.messageType != gmpi::midi_2_0::ChannelVoice64 || header.channel > 15)
+					return;
+
 				// Handle MPE Configuration messages. (MCM)
 				if (gmpi::midi_2_0::Status::RPN == header.status && (header.channel == 0 || header.channel == 15))
 				{
@@ -1358,20 +1463,24 @@ namespace gmpi
 						if (0 == header.channel)
 						{
 							lower_zone_size = rpn.value >> 7; // MSB only
-							upper_zone_size = (std::min)(upper_zone_size, 15 - lower_zone_size);
 
 							if (lower_zone_size)
+							{
 								lowerZoneMasterChannel = header.channel;
+								upper_zone_size = (std::min)(upper_zone_size, 14 - lower_zone_size);
+							}
 							else
 								lowerZoneMasterChannel = -1;
 						}
 						else
 						{
 							upper_zone_size = rpn.value >> 7;
-							lower_zone_size = (std::min)(lower_zone_size, 15 - upper_zone_size);
 
 							if (upper_zone_size)
+							{
 								upperZoneMasterChannel = header.channel;
+								lower_zone_size = (std::min)(lower_zone_size, 14 - upper_zone_size);
+							}
 							else
 								upperZoneMasterChannel = -1;
 						}
@@ -1390,7 +1499,9 @@ namespace gmpi
 					return;
 				}
 
-				if (header.channel >= lower_zone_size && header.channel <= 15 - upper_zone_size)
+				const bool isLowerZone = lower_zone_size > 0 && header.channel <= lower_zone_size;
+				const bool isUpperZone = upper_zone_size > 0 && header.channel >= 15 - upper_zone_size;
+				if (!isUpperZone && !isLowerZone)
 				{
 					// no conversion.
 					sink(msg, timestamp);
@@ -1587,12 +1698,16 @@ namespace gmpi
 				{
 				case 1: // force Off
 					lowerZoneMasterChannel = -1;
+					upperZoneMasterChannel = -1;
 					lower_zone_size = 0;
+					upper_zone_size = 0;
 					break;
 
-				case 2: // force On
+				case 2: // force On (one zone)
 					lowerZoneMasterChannel = 0;
 					lower_zone_size = 15;
+					upperZoneMasterChannel = -1;
+					upper_zone_size = 0;
 					break;
 
 				default:
@@ -1669,7 +1784,7 @@ namespace gmpi
 					uint8_t msgout[] = {
 						static_cast<uint8_t>((midi_1_0::status_type::NoteOn << 4) | header.channel),
 						keyNumber,
-						(std::max)((uint8_t)1, gmpi::midi::utils::floatToU7(note.velocity))
+						(std::max)((uint8_t)1, gmpi::midi::utils::floatToU7(note.velocity)) // note on w Vel zero is note OFF (don't allow)
 					};
 
 					sink({ msgout }, timestamp);
@@ -1750,7 +1865,7 @@ namespace gmpi
 					uint8_t msgout[] = {
 						static_cast<uint8_t>((midi_1_0::status_type::PolyAfterTouch << 4) | header.channel),
 						midi2NoteToKey[aftertouch.noteNumber],
-						(std::max)((uint8_t)1, gmpi::midi::utils::floatToU7(aftertouch.value))
+						gmpi::midi::utils::floatToU7(aftertouch.value)
 					};
 
 					sink({ msgout }, timestamp);
@@ -1964,7 +2079,3 @@ namespace gmpi
 		*/
 	}
 }
-
-#if 0
-#pragma pack(pop)
-#endif

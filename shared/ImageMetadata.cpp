@@ -324,8 +324,9 @@ void SkinMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 						string category = words[1];
 						transform(category.begin(), category.end(), category.begin(), towlower);
 
-						fonts_.push_back(category);
-						current = &(fonts_.back());
+						fonts_.push_back(std::make_unique<FontMetadata>(category));
+
+						current = fonts_.back().get();
 					}
 				}
 
@@ -464,9 +465,9 @@ void SkinMetadata::Serialise(mp_shared_ptr<gmpi::IProtectedFile2> stream)
 	// compensate for incomplete font information.
 	for (auto&f : fonts_)
 	{
-		if (f.faceFamilies_.empty())
+		if (f->faceFamilies_.empty())
 		{
-			f.faceFamilies_.push_back("Verdana");
+			f->faceFamilies_.push_back("Verdana");
 		}
 	}
 }
@@ -475,12 +476,19 @@ const FontMetadata* SkinMetadata::getFont(std::string category) const
 {
 	transform(category.begin(), category.end(), category.begin(), towlower);
 
-	for( auto it = fonts_.begin(); it != fonts_.end(); ++it )
+	for (auto& f : fonts_)
 	{
-		if( ( *it ).category_ == category )
+		if( f->category_ == category )
 		{
-			return &( *it );
+			return f.get();
 		}
 	}
-	return &defaultFont_;
+	return defaultFont_.get();
+}
+
+SkinMetadata::SkinMetadata()
+{
+	defaultFont_ = std::make_unique<FontMetadata>("default");
+	defaultFont_->faceFamilies_.push_back("Arial");
+	defaultFont_->color_ = 0xff000000 | GmpiDrawing::Color::Black; // From SE.
 }

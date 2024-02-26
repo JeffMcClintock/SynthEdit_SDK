@@ -22,14 +22,16 @@ class SE2JUCE_Processor : public juce::AudioProcessor, public juce::AudioProcess
     SynthRuntime processor;
 
     // unusual: Controller is held as member of processor, as JUCE don't support the concept.
-    SeJuceController controller;
     juce::AudioPlayHead::CurrentPositionInfo timeInfo;  // JUCE format
     my_VstTimeInfo timeInfoSe;                          // SE format
     gmpi::midi_2_0::MidiConverter2 midiConverter;
 
+protected:
+    SeJuceController controller;
+
 public:
     //==============================================================================
-    SE2JUCE_Processor();
+    SE2JUCE_Processor(std::function<juce::AudioParameterFloatAttributes(int32_t)> customizeParameter = {});
     ~SE2JUCE_Processor() override;
 
     //==============================================================================

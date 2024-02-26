@@ -3,9 +3,10 @@
 
 #include "unicode_conversion.h"
 #include "RawConversions.h"
+#include "BundleInfo.h"
 
 //==============================================================================
-SE2JUCE_Processor::SE2JUCE_Processor() :
+SE2JUCE_Processor::SE2JUCE_Processor(std::function<juce::AudioParameterFloatAttributes(int32_t)> customizeParameter) :
     // init the midi converter
     midiConverter(
         // provide a lambda to accept converted MIDI 2.0 messages
@@ -26,13 +27,19 @@ SE2JUCE_Processor::SE2JUCE_Processor() :
                        )
 #endif
 {
+    BundleInfo::instance()->initPresetFolder(JucePlugin_Manufacturer, JucePlugin_Name);
+
     processor.connectPeer(&controller);
     controller.Initialize(this);
 
-    for(auto& itp : controller.nativeParameters())
+    if(!customizeParameter)
     {
-        auto p = itp.second;
+        customizeParameter = [](int32_t paramID) { return juce::AudioParameterFloatAttributes{}; };
+	}
 
+    int sequentialIndex = 0;
+    for(auto& p : controller.nativeParameters())
+    {
 //        _RPTW2(0, L"%2d: %s\n", index, p->name_.c_str());
 
         juce::AudioProcessorParameter* juceParameter = {};
@@ -50,27 +57,45 @@ SE2JUCE_Processor::SE2JUCE_Processor() :
 
             juceParameter =
                 new juce::AudioParameterChoice(
-                    {std::to_string(p->getNativeIndex()), 1},       // parameterID/versionhint
+                    {std::to_string(sequentialIndex), 1},       // parameterID/versionhint
                     WStringToUtf8(p->name_).c_str(),                // parameter name
                     choices,
                     defaultItemIndex
                 );
         }
-        else
+        else if (p->datatype_ == gmpi::MP_BOOL)
         {
             juceParameter =
+                new juce::AudioParameterBool(
+                    { std::to_string(sequentialIndex), 1 },       // parameterID/versionhint
+                    WStringToUtf8(p->name_).c_str(),      // parameter name
+                    false
+                );
+        }
+        else
+        {
+            // handle inverted parameters
+            const auto actualMin = static_cast<float>(p->normalisedToReal(0.0));
+            const auto actualMax = static_cast<float>(p->normalisedToReal(1.0));
+            const auto minimumReal = (std::min)(actualMin, actualMax);
+            const auto maximumReal = (std::max)(actualMin, actualMax);
+
+            auto attributes = customizeParameter(p->parameterHandle_);
+
+            juceParameter =
                 new juce::AudioParameterFloat(
-                    {std::to_string(p->getNativeIndex()), 1},       // parameterID/versionhint
+                    {std::to_string(sequentialIndex), 1},       // parameterID/versionhint
                     WStringToUtf8(p->name_).c_str(),                // parameter name
-                    static_cast<float>(p->normalisedToReal(0.0)),   // minimum value
-                    static_cast<float>(p->normalisedToReal(1.0)),   // maximum value
-                    static_cast<float>(p->getValueReal())           // default value
+                    { minimumReal, maximumReal },          // range
+                    static_cast<float>(p->getValueReal()), // default value
+                    attributes
                 );
         }
 
         addParameter(juceParameter);
 
         juceParameter->addListener(this);
+        sequentialIndex++;
     }
 }
 
@@ -84,10 +109,12 @@ void SE2JUCE_Processor::parameterValueChanged(int parameterIndex, float newValue
 
 void SE2JUCE_Processor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)
 {
+    /* feedsback from GUI to GUI
     if (auto p = controller.getDawParameter(parameterIndex); p)
     {
         p->setGrabbed(gestureIsStarting);
     }
+    */
 }
 
 SE2JUCE_Processor::~SE2JUCE_Processor()
@@ -299,11 +326,4 @@ void SE2JUCE_Processor::setStateInformation (const void* data, int sizeInBytes)
 {
     const std::string chunk(static_cast<const char*>(data), sizeInBytes);
 	controller.setPresetFromDaw(chunk, true);
-}
-
-//==============================================================================
-// This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return new SE2JUCE_Processor();
 }

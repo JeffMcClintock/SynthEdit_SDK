@@ -195,7 +195,7 @@ public:
 	}
 
 	// Override these
-	virtual void ParamGrabbed(MpParameter_native* param, int32_t voice = 0) = 0;
+	virtual void ParamGrabbed(MpParameter_native* param) = 0;
 
 	// Presets
 	virtual std::string loadNativePreset(std::wstring sourceFilename) = 0;
@@ -220,7 +220,7 @@ public:
 
 	void ParamToDsp(MpParameter* param, int32_t voice = 0);
 //	void HostControlToDsp(MpParameter* param, int32_t voice = 0);
-	void SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param);
+	void SerialiseParameterValueToDsp(my_msg_que_output_stream& stream, MpParameter* param, int32_t voice = 0);
 	void UpdateProgramCategoriesHc(MpParameter * param);
 	MpParameter* createHostParameter(int32_t hostControl);
 	virtual int32_t sendSdkMessageToAudio(int32_t handle, int32_t id, int32_t size, const void* messageData) override;

@@ -4,6 +4,7 @@
 
 #include <d2d1_2.h>
 #include <d3d11_1.h>
+#include <dxgi1_6.h>
 #include <wrl.h> // Comptr
 #include <Windowsx.h>
 #include <commctrl.h>
@@ -140,7 +141,8 @@ void DrawingFrameBase::initTooltip()
 	{
 		auto instanceHandle = local_GetDllHandle_randomshit();
 		{
-			TOOLINFO ti;
+			TOOLINFO ti{};
+
 			// Create the ToolTip control.
 			HWND hwndTT = CreateWindow(TOOLTIPS_CLASS, TEXT(""),
 				WS_POPUP,
@@ -150,7 +152,7 @@ void DrawingFrameBase::initTooltip()
 				NULL);
 
 			// Prepare TOOLINFO structure for use as tracking ToolTip.
-			ti.cbSize = sizeof(TOOLINFO);
+			ti.cbSize = TTTOOLINFO_V1_SIZE; // win 7 compatible. sizeof(TOOLINFO);
 			ti.uFlags = TTF_SUBCLASS;
 			ti.hwnd = (HWND)getWindowHandle();
 			ti.uId = (UINT)0;
@@ -186,7 +188,7 @@ void DrawingFrameBase::TooltipOnMouseActivity()
 
 void DrawingFrameBase::ShowToolTip()
 {
-	_RPT0(_CRT_WARN, "YEAH!\n");
+//	_RPT0(_CRT_WARN, "YEAH!\n");
 
 	//UTF8StringHelper tooltipText(tooltip);
 	//if (platformObject)
@@ -199,7 +201,7 @@ void DrawingFrameBase::ShowToolTip()
 		rc.right = (LONG)100000;
 		rc.bottom = (LONG)100000;
 		TOOLINFO ti = { 0 };
-		ti.cbSize = sizeof(TOOLINFO);
+		ti.cbSize = TTTOOLINFO_V1_SIZE; // win 7 compatible. sizeof(TOOLINFO);
 		ti.hwnd = (HWND)getWindowHandle(); // frame->getSystemWindow();
 		ti.uId = 0;
 		ti.rect = rc;
@@ -215,12 +217,12 @@ void DrawingFrameBase::ShowToolTip()
 void DrawingFrameBase::HideToolTip()
 {
 	toolTipShown = false;
-	_RPT0(_CRT_WARN, "NUH!\n");
+//	_RPT0(_CRT_WARN, "NUH!\n");
 
 	if (tooltipWindow)
 	{
 		TOOLINFO ti = { 0 };
-		ti.cbSize = sizeof(TOOLINFO);
+		ti.cbSize = TTTOOLINFO_V1_SIZE; // win 7 compatible. sizeof(TOOLINFO);
 		ti.hwnd = (HWND)getWindowHandle(); // frame->getSystemWindow();
 		ti.uId = 0;
 		ti.lpszText = 0;
@@ -363,6 +365,7 @@ LRESULT DrawingFrameBase::WindowProc(
 			GmpiDrawing::Point p(static_cast<float>(pos.x), static_cast<float>(pos.y));
 			p = WindowToDips.TransformPoint(p);
 
+            //The wheel rotation will be a multiple of WHEEL_DELTA, which is set at 120. This is the threshold for action to be taken, and one such action (for example, scrolling one increment) should occur for each delta.
 			const auto zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 			int32_t flags = gmpi_gui_api::GG_POINTER_FLAG_PRIMARY | gmpi_gui_api::GG_POINTER_FLAG_CONFIDENCE;
@@ -943,6 +946,18 @@ void DrawingFrameBase::CreateDevice()
 	ComPtr<IDXGIAdapter> adapter;
 	dxdevice->GetAdapter(adapter.GetAddressOf());
 
+#ifdef _DEBUG
+	ComPtr<IDXGIOutput> currentOutput;
+	adapter->EnumOutputs(0, &currentOutput);
+
+	ComPtr<IDXGIOutput6> output6;
+	currentOutput.As(&output6);
+
+	DXGI_OUTPUT_DESC1 desc1; // DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 (standard  sRGB or SDR displays with Advanced Color capabilities) (0). bits 8
+	output6->GetDesc1(&desc1);
+
+#endif
+
 	// adapter’s parent object is the DXGI factory
 	// 
 	ComPtr<IDXGIFactory2> factory; // Minimum supported client: Windows 8 and Platform Update for Windows 7 
@@ -1015,6 +1030,7 @@ void DrawingFrameBase::CreateDevice()
 	auto propsFallback = props;
 	propsFallback.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;	// Less efficient blit.
 	propsFallback.Format = fallbackFormat;
+	propsFallback.Scaling = DXGI_SCALING_STRETCH;
 
 	for (int x = 0 ; x < 2 ;++x)
 	{
@@ -1037,6 +1053,16 @@ void DrawingFrameBase::CreateDevice()
 	get IDXGISwapChain4 interface
 	sc->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709)
 	*/
+#ifdef _DEBUG
+
+	ComPtr<IDXGISwapChain3> advancedSwapChain;
+	m_swapChain->QueryInterface(advancedSwapChain.ReleaseAndGetAddressOf());
+	UINT colorSpaceSupport = 0;
+	if (advancedSwapChain)
+	{
+		advancedSwapChain->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, &colorSpaceSupport);
+	}
+#endif
 
 	// Creating the Direct2D Device
 	ComPtr<ID2D1Device> device;
@@ -1071,7 +1097,7 @@ void DrawingFrameBase::CreateDevice()
 
 	if (DrawingFactory.getPlatformPixelFormat() == GmpiDrawing_API::IMpBitmapPixels::kBGRA_SRGB) // DX_support_sRGB)
 	{
-		context.reset(new gmpi::directx::GraphicsContext(mpRenderTarget, &DrawingFactory));
+		context.reset(new gmpi::directx::GraphicsContext2(mpRenderTarget, &DrawingFactory));
 	}
 	else
 	{

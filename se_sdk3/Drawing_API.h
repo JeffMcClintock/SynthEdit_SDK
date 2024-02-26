@@ -582,6 +582,7 @@ unsigned, can't handle negative points. not much practical use.
 	class DECLSPEC_NOVTABLE IMpBitmapPixels : public gmpi::IMpUnknown
 	{
 	public:
+		// older Windows uses a format of kRGBA, newer uses kBGRA_SRGB. macOS uses kBGRA (sRGB curves)
 		enum PixelFormat {
 			kARGB,
 			kRGBA,
@@ -970,6 +971,14 @@ unsigned, can't handle negative points. not much practical use.
 	static const gmpi::MpGuid SE_IID_DEVICECONTEXT_MPGUI =
 	{ 0xa1d9751d, 0xc43, 0x4f57,{ 0x89, 0x58, 0xe0, 0xbc, 0xe3, 0x59, 0xb2, 0xfd } };
 
+	struct DECLSPEC_NOVTABLE IMpDeviceContextExt : public gmpi::IMpUnknown
+	{
+		virtual int32_t MP_STDCALL CreateBitmapRenderTarget(GmpiDrawing_API::MP1_SIZE_L desiredSize, bool enableLockPixels, class IMpBitmapRenderTarget** bitmapRenderTarget) = 0;
+
+		// {62972238-ACF7-4C86-8801-B5BA8BEFAC6A}
+		inline static const gmpi::MpGuid guid =
+		{ 0x62972238, 0xacf7, 0x4c86, { 0x88, 0x1, 0xb5, 0xba, 0x8b, 0xef, 0xac, 0x6a } };
+	};
 
 	class DECLSPEC_NOVTABLE IMpBitmapRenderTarget : public IMpDeviceContext
 	{
