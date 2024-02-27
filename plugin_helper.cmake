@@ -208,7 +208,7 @@ endif()
 
 if(CMAKE_HOST_WIN32)
 
-if (SE_LOCAL_BUILD)
+if (${SE_LOCAL_BUILD})
 if(${BUILD_GMPI_PLUGIN_IS_OFFICIAL_MODULE})
     add_custom_command(TARGET ${BUILD_GMPI_PLUGIN_PROJECT_NAME}
     # Run after all other rules within the target have been executed
