@@ -222,7 +222,7 @@ int32_t MpGuiBase2::setHost( gmpi::IMpUnknown* host )
 {
 	host->queryInterface( MP_IID_UI_HOST2, reinterpret_cast<void **>( &patchMemoryHost_ ) );
 	uiHost.Init(host);
-
+	
 	if( patchMemoryHost_ == 0 )
 	{
 		assert(false);

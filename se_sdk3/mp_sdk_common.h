@@ -46,7 +46,7 @@
 // To simplify plugin development. All the headers for the GMPI/SEM
 // API and SDK are inlined together here. You need only include this one header to make a plugin.
 #include <assert.h>
-//#include <string.h> // for memcpy()
+#include <string.h> // for memcpy()
 #include <string>	// for std::wstring
 
 //==== cross-platform integer datatypes =====
@@ -1261,7 +1261,7 @@ template <typename T>
 inline void VariableFromRaw( int size, const void* data, T& returnValue )
 {
 	assert( size == sizeof(T) && "check pin datatype matches XML" ); // Have you re-scanned modules since last change?
-	memcpy( &returnValue, data, size );
+	memcpy( &returnValue, data, static_cast<size_t>(size));
 }
 
 template <>
