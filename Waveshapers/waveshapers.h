@@ -13,11 +13,11 @@ public:
 	Waveshaper(IMpUnknown* host);
 
 	// overrides
-	virtual int32_t MP_STDCALL open();
+	int32_t MP_STDCALL open() override;
 
 	// methods
 	void subProcess(int bufferOffset, int sampleFrames);
-	void onSetPins(void);
+	void onSetPins() override;
 
 protected:
 	// pins_
@@ -38,7 +38,7 @@ private:
 class Waveshaper2b : public Waveshaper
 {
 public:
-    Waveshaper2b(IMpUnknown* host) : Waveshaper(host){};
+    Waveshaper2b(IMpUnknown* host) : Waveshaper(host) {}
 
 protected:
     virtual void FillLookupTable();

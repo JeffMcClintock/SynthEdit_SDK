@@ -1,5 +1,7 @@
 #include "./Waveshaper2.h"
 
+SE_DECLARE_INIT_STATIC_FILE(Waveshaper2);
+
 REGISTER_PLUGIN( Waveshaper2, L"SynthEdit Waveshaper3" );
 
 using namespace std;

@@ -3,15 +3,20 @@
 #pragma warning(disable : 4996)
 
 // Prevent stupid 'min' macro overriding std::min
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 
 #include <algorithm>
 #include <limits>
 #include <cmath>
-#include "./waveshapers.h"
+#include "./Waveshapers.h"
 #include "../shared/expression_evaluate.h"
 #include "../shared/unicode_conversion.h"
 #include "../shared/xp_simd.h"
+
+SE_DECLARE_INIT_STATIC_FILE(Waveshapers);
+SE_DECLARE_INIT_STATIC_FILE(Waveshaper2B);
 
 REGISTER_PLUGIN ( Waveshaper2b, L"SE Waveshaper2B" );
 
@@ -34,7 +39,7 @@ int32_t Waveshaper::open()
 }
 
 // one or more pins_ updated.  Check pin update flags to determin which ones.
-void Waveshaper::onSetPins(void)
+void Waveshaper::onSetPins()
 {
 	if(pinShape.isUpdated())
 	{

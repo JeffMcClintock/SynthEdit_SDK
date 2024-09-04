@@ -8,7 +8,7 @@
 class Waveshaper2 : public Waveshaper
 {
 public:
-	Waveshaper2(IMpUnknown* host) : Waveshaper(host){};
+	Waveshaper2(IMpUnknown* host) : Waveshaper(host) {}
 
 protected:
 	virtual void FillLookupTable();
