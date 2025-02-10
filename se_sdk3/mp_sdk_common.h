@@ -1025,7 +1025,7 @@ namespace gmpi_gui_api
 	class IMpGraphics2;
 }
 
-namespace gmpi
+namespace sesdk // was 'gmpi'
 {
 template< class moduleClass >
 class Register
@@ -1086,6 +1086,8 @@ public:
 };
 
 } // namespace
+
+using namespace sesdk; // allow legacy code to omit the namespace, while still allowing a way to resolve conflicts with (real) GMPI
 
 // Helper for old hosts calling new-style plugins. Deprecated, use IMpLegacyInitialization instead.
 class IoldSchoolInitialisation
