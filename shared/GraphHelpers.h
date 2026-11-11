@@ -30,6 +30,7 @@
 #include "../shared/GraphHelpers.h"
 */
 
+#include <cmath>
 #include <vector>
 #include "Drawing.h"
 
@@ -43,7 +44,8 @@ inline void SimplifyGraph(const std::vector<GmpiDrawing::Point>& in, std::vector
 
 	out.clear();
 
-	constexpr float tollerance = 0.3f;
+	constexpr float tollerance = 0.3f; // points this close in pixels to the projected line are skipped.
+	constexpr float tolleranceX = 0.00001f; // points this close horizontally are skipped. Compared by distance, so graphs may run left->right or right->left.
 
 	auto prev = in[0];
     auto lastOut = prev;
@@ -52,7 +54,7 @@ inline void SimplifyGraph(const std::vector<GmpiDrawing::Point>& in, std::vector
                 
     for(auto& p : in)
     {
-        if(p.x < lastOut.x + 0.00001f) // skip points with same x value (infinite slope)
+        if(fabsf(p.x - lastOut.x) < tolleranceX) // skip points with same x value (infinite slope)
             continue;
 
         const float predictedY = lastOut.y + slope * (p.x - lastOut.x);
@@ -75,7 +77,7 @@ inline void SimplifyGraph(const std::vector<GmpiDrawing::Point>& in, std::vector
     
     assert(out.back() != in.back());
     
-    if(out.back().x < in.back().x - 0.00001f) // skip points with same x value (infinite slope)
+    if(fabsf(in.back().x - out.back().x) > tolleranceX) // skip points with same x value (infinite slope)
         out.push_back(in.back());
 }
 
